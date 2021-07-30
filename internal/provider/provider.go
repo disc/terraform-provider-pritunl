@@ -3,7 +3,7 @@ package provider
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-	"pritunl-terraform/internal/pritunl"
+	"terraform-pritunl/internal/pritunl"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -12,17 +12,17 @@ func Provider() terraform.ResourceProvider {
 			"url": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("SERVICE_URL", ""),
+				DefaultFunc: schema.EnvDefaultFunc("PRITUNL_URL", ""),
 			},
 			"token": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("SERVICE_TOKEN", ""),
+				DefaultFunc: schema.EnvDefaultFunc("PRITUNL_TOKEN", ""),
 			},
 			"secret": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("SERVICE_SECRET", ""),
+				DefaultFunc: schema.EnvDefaultFunc("PRITUNL_SECRET", ""),
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{

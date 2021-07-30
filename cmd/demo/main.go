@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"pritunl-terraform/internal/pritunl"
+	"terraform-pritunl/internal/pritunl"
 )
 
 func main() {

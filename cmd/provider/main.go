@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/plugin"
-	"pritunl-terraform/internal/provider"
+	"terraform-pritunl/internal/provider"
 )
 
 func main() {

@@ -3,9 +3,9 @@ package provider
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"pritunl-terraform/internal/pritunl"
 	"regexp"
 	"strings"
+	"terraform-pritunl/internal/pritunl"
 )
 
 func resourceOrganization() *schema.Resource {
