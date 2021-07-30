@@ -16,7 +16,10 @@ type Client interface {
 	RenameOrganization(id string, name string) error
 	DeleteOrganization(name string) error
 
-	CreateServer(name, protocol, cipher, hash string) (*Server, error)
+	GetServer(id string) (*Server, error)
+	CreateServer(name, protocol, cipher, hash string, port *int) (*Server, error)
+	UpdateServer(id string, updatedServer *Server) error
+	DeleteServer(id string) error
 	AttachOrganizationToServer(organizationId, serverId string) error
 
 	StartServer(serverId string) error
@@ -137,18 +140,48 @@ func (c client) DeleteOrganization(id string) error {
 	return nil
 }
 
-/*
-	{"name":"test-server","network":"192.168.226.0/24","port":15760,"protocol":"udp","dh_param_bits":2048,"ipv6_firewall":true,"dns_servers":["8.8.8.8"],"cipher":"aes128","hash":"sha1","inter_client":true,"restrict_routes":true,"vxlan":true,"id":null,"status":null,"uptime":null,"users_online":null,"devices_online":null,"user_count":null,"network_wg":"","groups":[],"bind_address":null,"port_wg":null,"ipv6":false,"network_mode":"tunnel","network_start":"","network_end":"","wg":false,"multi_device":false,"search_domain":null,"otp_auth":false,"block_outside_dns":false,"jumbo_frames":null,"lzo_compression":null,"ping_interval":null,"ping_timeout":null,"link_ping_interval":null,"link_ping_timeout":null,"inactive_timeout":null,"session_timeout":null,"allowed_devices":null,"max_clients":null,"max_devices":null,"replica_count":1,"dns_mapping":false,"debug":false,"pre_connect_msg":null,"mss_fix":null}
-*/
-func (c client) CreateServer(name, protocol, cipher, hash string) (*Server, error) {
-	var jsonStr = []byte(`{"name": "` + name + `", "protocol": "` + protocol + `", "cipher": "` + cipher + `", "hash": "` + hash + `"}`)
-
-	url := "/server"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+func (c client) GetServer(id string) (*Server, error) {
+	url := fmt.Sprintf("/server/%s", id)
+	req, err := http.NewRequest("GET", url, nil)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var server Server
+	err = json.Unmarshal(body, &server)
+
+	if err != nil {
+		return nil, fmt.Errorf("GetServer: %s: %+v, id=%s, body=%s", err, server, id, body)
+	}
+
+	return &server, nil
+}
+
+func (c client) CreateServer(name, protocol, cipher, hash string, port *int) (*Server, error) {
+	serverStruct := Server{
+		Name:     name,
+		Protocol: protocol,
+		Cipher:   cipher,
+		Hash:     hash,
+	}
+
+	if port != nil {
+		serverStruct.Port = *port
+	}
+
+	jsonData, err := json.Marshal(serverStruct)
+
+	url := "/server"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -163,6 +196,46 @@ func (c client) CreateServer(name, protocol, cipher, hash string) (*Server, erro
 
 	return &server, nil
 }
+
+func (c client) UpdateServer(id string, updatedServer *Server) error {
+	jsonData, err := json.Marshal(updatedServer)
+	if err != nil {
+		return fmt.Errorf("UpdateServer: Error on marshalling data: %s [data=%+v]", err, updatedServer)
+	}
+
+	url := fmt.Sprintf("/server/%s", id)
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("UpdateServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func (c client) DeleteServer(id string) error {
+	url := fmt.Sprintf("/server/%s", id)
+	req, err := http.NewRequest("DELETE", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("DeleteServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var server Server
+	err = json.Unmarshal(body, &server)
+	if err != nil {
+		return fmt.Errorf("DeleteServer: Error on parsing response: %s (id=%s, body=%s)", err, id, body)
+	}
+
+	return nil
+}
+
 func (c client) AttachOrganizationToServer(organizationId, serverId string) error {
 	// /server/61032df34bce2ca96a7571ed/organization/6102ffef1332c1d92cf35cb5
 

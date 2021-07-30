@@ -11,6 +11,17 @@ func main() {
 	baseUrl := "https://connect.cydriver.com"
 	client := pritunl.NewClient(baseUrl, apiToken, apiSecret)
 
+	//orgId := "61042f374bce2ca96a760912"
+	//org, err := client.GetOrganizationByID(orgId)
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//	return
+	//}
+	//
+	//fmt.Printf("%+v", org)
+	//
+	//return
+
 	orgName := "disc-org-test"
 	organization, err := client.CreateOrganization(orgName)
 	if err != nil {
@@ -22,7 +33,7 @@ func main() {
 	protocol := "udp"
 	cipher := "aes128"
 	hash := "sha1"
-	server, err := client.CreateServer(serverName, protocol, cipher, hash)
+	server, err := client.CreateServer(serverName, protocol, cipher, hash, nil)
 	if err != nil {
 		fmt.Println(err.Error())
 		return

@@ -21,15 +21,10 @@ resource "pritunl_organization" "my-second-org" {
   name = "My_Second_Org"
 }
 
-
-//output "first_organization_id" {
-//  value = pritunl_organization.my-first-org.id
-//}
-//
-//output "first_organization_name" {
-//  value = pritunl_organization.my-first-org.name
-//}
-//
-//output "second_organization_id" {
-//  value = my-second-org.name
-//}
+resource "pritunl_server" "main-server" {
+  name = "My_Main_Server2"
+  protocol = "tcp"
+  port = 54321
+//  cipher = "aes128"
+//  hash = "sha1"
+}

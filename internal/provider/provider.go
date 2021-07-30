@@ -27,6 +27,7 @@ func Provider() terraform.ResourceProvider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"pritunl_organization": resourceOrganization(),
+			"pritunl_server":       resourceServer(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

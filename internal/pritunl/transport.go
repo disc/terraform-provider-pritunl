@@ -26,6 +26,8 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
+	fmt.Println(u)
+
 	req.URL = u
 
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)

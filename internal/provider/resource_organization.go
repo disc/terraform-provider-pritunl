@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"regexp"
-	"strings"
 	"terraform-pritunl/internal/pritunl"
 )
 
@@ -33,15 +32,12 @@ func resourceOrganization() *schema.Resource {
 func resourceExistsOrganization(d *schema.ResourceData, meta interface{}) (bool, error) {
 	apiClient := meta.(pritunl.Client)
 
-	_, err := apiClient.GetOrganizationByID(d.Id())
+	organization, err := apiClient.GetOrganizationByID(d.Id())
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return false, nil
-		} else {
-			return false, err
-		}
+		return false, err
 	}
-	return true, nil
+
+	return organization != nil, nil
 }
 
 func resourceReadOrganization(d *schema.ResourceData, meta interface{}) error {
