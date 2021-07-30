@@ -33,8 +33,7 @@ func resourceOrganization() *schema.Resource {
 func resourceExistsOrganization(d *schema.ResourceData, meta interface{}) (bool, error) {
 	apiClient := meta.(pritunl.Client)
 
-	organizationName := d.Id()
-	_, err := apiClient.GetOrganization(organizationName)
+	_, err := apiClient.GetOrganizationByID(d.Id())
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return false, nil
@@ -53,12 +52,12 @@ func resourceReadOrganization(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	name := ""
+	id := ""
 	if organization != nil {
-		name = organization.Name
+		id = organization.ID
 	}
 
-	d.SetId(name)
+	d.SetId(id)
 
 	return nil
 }
@@ -95,7 +94,10 @@ func resourceUpdateOrganization(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	d.SetId(newName)
+	err = d.Set("name", newName)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -108,7 +110,7 @@ func resourceCreateOrganization(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	d.SetId(organization.Name)
+	d.SetId(organization.ID)
 
 	return nil
 }

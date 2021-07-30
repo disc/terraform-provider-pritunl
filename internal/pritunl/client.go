@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type Client interface {
+	GetOrganizationByID(id string) (*Organization, error)
 	GetOrganization(name string) (*Organization, error)
 	CreateOrganization(name string) (*Organization, error)
 	RenameOrganization(id string, name string) error
@@ -30,6 +32,29 @@ type client struct {
 	baseUrl    string
 }
 
+func (c client) GetOrganizationByID(id string) (*Organization, error) {
+	url := fmt.Sprintf("/organization/%s", id)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	// iterate over all pages
+	var organization Organization
+
+	err = json.Unmarshal(body, &organization)
+	if err != nil {
+		return nil, fmt.Errorf("GetOrganizationByID: %s: %+v, id=%s, body=%s", err, organization, id, body)
+	}
+
+	return &organization, nil
+}
+
 func (c client) GetOrganization(name string) (*Organization, error) {
 	url := "/organization"
 	req, err := http.NewRequest("GET", url, nil)
@@ -41,24 +66,20 @@ func (c client) GetOrganization(name string) (*Organization, error) {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 
 	type GetOrganizationsApiResponse struct {
-		Page          int            `json:"page"`
-		PageTotal     int            `json:"page_total"`
-		Organizations []Organization `json:"organizations"`
+		Organizations []Organization
 	}
 
-	// iterate over all pages
-	var response GetOrganizationsApiResponse
+	var organizations []Organization
 
-	err = json.Unmarshal(body, &response)
+	err = json.Unmarshal(body, &organizations)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetOrganization: %s: %+v, name=%s, body=%s", err, organizations, name, body)
 	}
 
-	for _, organization := range response.Organizations {
-		if organization.Name == name {
+	for _, organization := range organizations {
+		if strings.ToLower(organization.Name) == strings.ToLower(name) {
 			return &organization, nil
 		}
 	}
@@ -84,7 +105,7 @@ func (c client) CreateOrganization(name string) (*Organization, error) {
 	var organization Organization
 	err = json.Unmarshal(body, &organization)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateOrganization: %s: %+v, name=%s, body=%s", err, organization, name, body)
 	}
 
 	return &organization, nil
@@ -110,7 +131,7 @@ func (c client) DeleteOrganization(id string) error {
 	var organization Organization
 	err = json.Unmarshal(body, &organization)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteOrganization: %s: %+v, id=%s, body=%s", err, organization, id, body)
 	}
 
 	return nil
