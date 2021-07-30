@@ -1,53 +1,225 @@
 package pritunl
 
 import (
-	"crypto/hmac"
-	"crypto/md5"
-	"crypto/sha256"
-	"encoding/base64"
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
-	"time"
 )
 
-type transport struct {
-	underlyingTransport http.RoundTripper
-	apiToken            string
-	apiSecret           string
-	baseUrl             string
+type Client interface {
+	GetOrganization(name string) (*Organization, error)
+	CreateOrganization(name string) (*Organization, error)
+	RenameOrganization(id string, name string) error
+	DeleteOrganization(name string) error
+
+	CreateServer(name, protocol, cipher, hash string) (*Server, error)
+	AttachOrganizationToServer(organizationId, serverId string) error
+
+	StartServer(serverId string) error
+	StopServer(serverId string) error
+	//RestartServer(serverId string) error
+	//DeleteServer(serverId string) error
+
+	AddRouteToServer(serverId string, network string) error
 }
 
-func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	u, err := url.Parse(t.baseUrl + req.URL.String())
+type client struct {
+	httpClient *http.Client
+	baseUrl    string
+}
+
+func (c client) GetOrganization(name string) (*Organization, error) {
+	url := "/organization"
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
+	type GetOrganizationsApiResponse struct {
+		Page          int            `json:"page"`
+		PageTotal     int            `json:"page_total"`
+		Organizations []Organization `json:"organizations"`
+	}
+
+	// iterate over all pages
+	var response GetOrganizationsApiResponse
+
+	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return nil, err
 	}
 
-	req.URL = u
+	for _, organization := range response.Organizations {
+		if organization.Name == name {
+			return &organization, nil
+		}
+	}
 
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	timestampNano := strconv.FormatInt(time.Now().UnixNano(), 10)
+	return nil, nil
+}
 
-	nonceMac := hmac.New(md5.New, []byte(t.apiSecret))
-	nonceMac.Write([]byte(strings.Join([]string{timestampNano, t.apiToken}, "")))
-	nonce := fmt.Sprintf("%x", nonceMac.Sum(nil))
-	authString := strings.Join([]string{t.apiToken, timestamp, nonce, strings.ToUpper(req.Method), req.URL.Path}, "&")
+func (c client) CreateOrganization(name string) (*Organization, error) {
+	var jsonStr = []byte(`{"name": "` + name + `"}`)
 
-	mac := hmac.New(sha256.New, []byte(t.apiSecret))
-	mac.Write([]byte(authString))
-	signature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
+	url := "/organization"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 
-	req.Header.Add("Auth-Token", t.apiToken)
-	req.Header.Add("Auth-Timestamp", timestamp)
-	req.Header.Add("Auth-Nonce", nonce)
-	req.Header.Add("Auth-Signature", signature)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-	req.Header.Add("Content-Type", "application/json")
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
 
-	return t.underlyingTransport.RoundTrip(req)
+	var organization Organization
+	err = json.Unmarshal(body, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	return &organization, nil
+}
+
+func (c client) RenameOrganization(id string, name string) error {
+	panic("implement me")
+}
+
+func (c client) DeleteOrganization(id string) error {
+	url := fmt.Sprintf("/organization/%s", id)
+	req, err := http.NewRequest("DELETE", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
+	var organization Organization
+	err = json.Unmarshal(body, &organization)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*
+	{"name":"test-server","network":"192.168.226.0/24","port":15760,"protocol":"udp","dh_param_bits":2048,"ipv6_firewall":true,"dns_servers":["8.8.8.8"],"cipher":"aes128","hash":"sha1","inter_client":true,"restrict_routes":true,"vxlan":true,"id":null,"status":null,"uptime":null,"users_online":null,"devices_online":null,"user_count":null,"network_wg":"","groups":[],"bind_address":null,"port_wg":null,"ipv6":false,"network_mode":"tunnel","network_start":"","network_end":"","wg":false,"multi_device":false,"search_domain":null,"otp_auth":false,"block_outside_dns":false,"jumbo_frames":null,"lzo_compression":null,"ping_interval":null,"ping_timeout":null,"link_ping_interval":null,"link_ping_timeout":null,"inactive_timeout":null,"session_timeout":null,"allowed_devices":null,"max_clients":null,"max_devices":null,"replica_count":1,"dns_mapping":false,"debug":false,"pre_connect_msg":null,"mss_fix":null}
+*/
+func (c client) CreateServer(name, protocol, cipher, hash string) (*Server, error) {
+	var jsonStr = []byte(`{"name": "` + name + `", "protocol": "` + protocol + `", "cipher": "` + cipher + `", "hash": "` + hash + `"}`)
+
+	url := "/server"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
+	var server Server
+	err = json.Unmarshal(body, &server)
+	if err != nil {
+		return nil, err
+	}
+
+	return &server, nil
+}
+func (c client) AttachOrganizationToServer(organizationId, serverId string) error {
+	// /server/61032df34bce2ca96a7571ed/organization/6102ffef1332c1d92cf35cb5
+
+	url := fmt.Sprintf("/server/%s/organization/%s", serverId, organizationId)
+	req, err := http.NewRequest("PUT", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
+	return nil
+}
+
+func (c client) StartServer(serverId string) error {
+	url := fmt.Sprintf("/server/%s/operation/start", serverId)
+	req, err := http.NewRequest("PUT", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
+	return nil
+}
+
+func (c client) StopServer(serverId string) error {
+	url := fmt.Sprintf("/server/%s/operation/stop", serverId)
+	req, err := http.NewRequest("PUT", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
+	return nil
+}
+
+// POST /server/610332d44bce2ca96a757523/route
+// {"comment": null, "vpc_region": null, "metric": null, "advertise": false, "nat_interface": null, "id": "382e382e382e322f3332", "nat_netmap": null, "network": "8.8.8.2/32", "server": "610332d44bce2ca96a757523", "nat": true, "vpc_id": null, "net_gateway": false}
+func (c client) AddRouteToServer(serverId string, network string) error {
+	err := c.StopServer(serverId)
+	if err != nil {
+		return err
+	}
+
+	var jsonStr = []byte(`{"server": "` + serverId + `", "network": "` + network + `"}`)
+
+	url := fmt.Sprintf("/server/%s/route", serverId)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
+	err = c.StartServer(serverId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewHttpClient(baseUrl, apiToken, apiSecret string) *http.Client {
@@ -59,4 +231,17 @@ func NewHttpClient(baseUrl, apiToken, apiSecret string) *http.Client {
 			underlyingTransport: http.DefaultTransport,
 		},
 	}
+}
+
+func NewClient(baseUrl, apiToken, apiSecret string) Client {
+	httpClient := &http.Client{
+		Transport: &transport{
+			baseUrl:             baseUrl,
+			apiToken:            apiToken,
+			apiSecret:           apiSecret,
+			underlyingTransport: http.DefaultTransport,
+		},
+	}
+
+	return &client{httpClient: httpClient}
 }
