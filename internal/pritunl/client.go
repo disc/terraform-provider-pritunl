@@ -21,6 +21,7 @@ type Client interface {
 	UpdateServer(id string, updatedServer *Server) error
 	DeleteServer(id string) error
 	AttachOrganizationToServer(organizationId, serverId string) error
+	DetachOrganizationFromServer(organizationId, serverId string) error
 
 	StartServer(serverId string) error
 	StopServer(serverId string) error
@@ -237,10 +238,24 @@ func (c client) DeleteServer(id string) error {
 }
 
 func (c client) AttachOrganizationToServer(organizationId, serverId string) error {
-	// /server/61032df34bce2ca96a7571ed/organization/6102ffef1332c1d92cf35cb5
-
 	url := fmt.Sprintf("/server/%s/organization/%s", serverId, organizationId)
 	req, err := http.NewRequest("PUT", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
+	return nil
+}
+
+func (c client) DetachOrganizationFromServer(organizationId, serverId string) error {
+	url := fmt.Sprintf("/server/%s/organization/%s", serverId, organizationId)
+	req, err := http.NewRequest("DELETE", url, nil)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

@@ -25,6 +25,10 @@ resource "pritunl_server" "main-server" {
   name = "My_Main_Server2"
   protocol = "tcp"
   port = 54321
+  organizations = [
+    pritunl_organization.my-first-org.id,
+    pritunl_organization.my-second-org.id,
+  ]
 //  cipher = "aes128"
 //  hash = "sha1"
 }

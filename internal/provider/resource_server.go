@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"terraform-pritunl/internal/pritunl"
 )
@@ -48,6 +49,16 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Description: "The port for the server",
+				ForceNew:    false,
+			},
+			"organizations": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Required:    false,
+				Optional:    true,
+				Description: "The list of attached organizations for the server",
 				ForceNew:    false,
 			},
 		},
@@ -140,6 +151,22 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 
 	if v, ok := d.GetOk("port"); ok {
 		server.Port = v.(int)
+	}
+
+	if d.HasChange("organizations") {
+		oldOrgs, newOrgs := d.GetChange("organizations")
+		for _, v := range oldOrgs.([]interface{}) {
+			err = apiClient.DetachOrganizationFromServer(v.(string), d.Id())
+			if err != nil {
+				return fmt.Errorf("Error on detaching server to the organization: %s", err)
+			}
+		}
+		for _, v := range newOrgs.([]interface{}) {
+			err = apiClient.AttachOrganizationToServer(v.(string), d.Id())
+			if err != nil {
+				return fmt.Errorf("Error on attaching server to the organization: %s", err)
+			}
+		}
 	}
 
 	err = apiClient.UpdateServer(d.Id(), server)
