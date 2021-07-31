@@ -8,9 +8,9 @@ terraform {
 }
 
 provider "pritunl" {
-  url = "https://connect.cydriver.com"
-  token = "rv2xqPtDiszTLN7IUsMooDXbpYZ7AAiC"
-  secret = "Oq3FeJCa7hBSVD13We39GnVEty86toTI"
+  url = var.pritunl_url
+  token = var.pritunl_api_token
+  secret = var.pritunl_api_secret
 }
 
 resource "pritunl_organization" "alice" {
