@@ -161,6 +161,11 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("organizations") {
+		err = apiClient.StopServer(d.Id())
+		if err != nil {
+			return fmt.Errorf("Error on stopping server: %s", err)
+		}
+
 		oldOrgs, newOrgs := d.GetChange("organizations")
 		for _, v := range oldOrgs.([]interface{}) {
 			err = apiClient.DetachOrganizationFromServer(v.(string), d.Id())
@@ -173,6 +178,11 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 			if err != nil {
 				return fmt.Errorf("Error on attaching server to the organization: %s", err)
 			}
+		}
+
+		err = apiClient.StartServer(d.Id())
+		if err != nil {
+			return fmt.Errorf("Error on starting server: %s", err)
 		}
 	}
 
