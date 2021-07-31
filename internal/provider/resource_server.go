@@ -76,24 +76,13 @@ func resourceServer() *schema.Resource {
 		ReadContext:   resourceReadServer,
 		UpdateContext: resourceUpdateServer,
 		DeleteContext: resourceDeleteServer,
-		//Exists: resourceExistsServer,
-		//Importer: &schema.ResourceImporter{
-		//	State: schema.ImportStatePassthrough,
-		//},
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
 }
 
-func resourceExistsServer(d *schema.ResourceData, meta interface{}) (bool, error) {
-	apiClient := meta.(pritunl.Client)
-
-	server, err := apiClient.GetServer(d.Id())
-	if err != nil {
-		return false, err
-	}
-
-	return server != nil, nil
-}
-
+// Uses for importing
 func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
 }

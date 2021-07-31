@@ -21,22 +21,10 @@ func resourceOrganization() *schema.Resource {
 		ReadContext:   resourceReadOrganization,
 		UpdateContext: resourceUpdateOrganization,
 		DeleteContext: resourceDeleteOrganization,
-		//Exists: resourceExistsOrganization,
-		//Importer: &schema.ResourceImporter{
-		//	State: schema.ImportStatePassthrough,
-		//},
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
-}
-
-func resourceExistsOrganization(d *schema.ResourceData, meta interface{}) (bool, error) {
-	apiClient := meta.(pritunl.Client)
-
-	organization, err := apiClient.GetOrganization(d.Id())
-	if err != nil {
-		return false, err
-	}
-
-	return organization != nil, nil
 }
 
 // Uses for importing

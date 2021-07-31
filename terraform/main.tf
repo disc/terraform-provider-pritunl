@@ -13,13 +13,13 @@ provider "pritunl" {
   secret = var.pritunl_api_secret
 }
 
-//resource "pritunl_organization" "alice" {
-//  name = "AliceOrg"
-//}
-//
-//resource "pritunl_organization" "default" {
-//  name = "Default"
-//}
+resource "pritunl_organization" "alice" {
+  name = "AliceOrg"
+}
+
+resource "pritunl_organization" "default" {
+  name = "Default"
+}
 
 resource "pritunl_organization" "my-first-org" {
   name = "My_First_Org"

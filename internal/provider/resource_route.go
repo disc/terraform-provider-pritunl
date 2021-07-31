@@ -37,21 +37,14 @@ func resourceRoute() *schema.Resource {
 		ReadContext:   resourceReadRoute,
 		UpdateContext: resourceUpdateRoute,
 		DeleteContext: resourceDeleteRoute,
-		//Exists: resourceExistsRoute,
-		//Importer: &schema.ResourceImporter{
-		//	State: schema.ImportStatePassthrough,
-		//},
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
-}
-
-func resourceExistsRoute(d *schema.ResourceData, meta interface{}) (bool, error) {
-	return d.Id() != "", nil
 }
 
 // Uses for importing
 func resourceReadRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	//TODO
-
 	return nil
 }
 
