@@ -23,13 +23,13 @@ resource "pritunl_organization" "my-second-org" {
 
 resource "pritunl_route" "kibana-route" {
   network = "1.1.1.3/32"
-  comment = "Kibana4"
+  comment = "Kibana"
   nat = true
 }
 
 resource "pritunl_route" "grafana-route" {
   network = "1.2.3.4/32"
-  comment = "Grafana2"
+  comment = "Grafana"
   nat = false
 }
 
@@ -38,8 +38,8 @@ resource "pritunl_server" "main-server" {
   protocol = "tcp"
   port = 54321
   organizations = [
-    pritunl_organization.my-first-org.id,
-    pritunl_organization.my-second-org.id,
+    pritunl_organization.my-first-org,
+    pritunl_organization.my-second-org
   ]
   routes = [
     pritunl_route.kibana-route,

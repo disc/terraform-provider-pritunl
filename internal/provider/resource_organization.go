@@ -32,7 +32,7 @@ func resourceOrganization() *schema.Resource {
 func resourceExistsOrganization(d *schema.ResourceData, meta interface{}) (bool, error) {
 	apiClient := meta.(pritunl.Client)
 
-	organization, err := apiClient.GetOrganizationByID(d.Id())
+	organization, err := apiClient.GetOrganization(d.Id())
 	if err != nil {
 		return false, err
 	}
@@ -43,7 +43,7 @@ func resourceExistsOrganization(d *schema.ResourceData, meta interface{}) (bool,
 func resourceReadOrganization(d *schema.ResourceData, meta interface{}) error {
 	apiClient := meta.(pritunl.Client)
 
-	organization, err := apiClient.GetOrganization(d.Get("name").(string))
+	organization, err := apiClient.GetOrganization(d.Id())
 	if err != nil {
 		return err
 	}
@@ -61,12 +61,7 @@ func resourceReadOrganization(d *schema.ResourceData, meta interface{}) error {
 func resourceDeleteOrganization(d *schema.ResourceData, meta interface{}) error {
 	apiClient := meta.(pritunl.Client)
 
-	organization, err := apiClient.GetOrganization(d.Get("name").(string))
-	if err != nil {
-		return err
-	}
-
-	err = apiClient.DeleteOrganization(organization.ID)
+	err := apiClient.DeleteOrganization(d.Id())
 	if err != nil {
 		return err
 	}
@@ -79,20 +74,18 @@ func resourceDeleteOrganization(d *schema.ResourceData, meta interface{}) error 
 func resourceUpdateOrganization(d *schema.ResourceData, meta interface{}) error {
 	apiClient := meta.(pritunl.Client)
 
-	organization, err := apiClient.GetOrganization(d.Get("name").(string))
+	organization, err := apiClient.GetOrganization(d.Id())
 	if err != nil {
 		return err
 	}
 
-	newName := d.Get("new_name").(string)
-	err = apiClient.RenameOrganization(organization.ID, newName)
-	if err != nil {
-		return err
-	}
+	if d.HasChange("name") {
+		organization.Name = d.Get("name").(string)
 
-	err = d.Set("name", newName)
-	if err != nil {
-		return err
+		err = apiClient.UpdateOrganization(d.Id(), organization)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -6,31 +6,30 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 type Client interface {
-	GetOrganizationByID(id string) (*Organization, error)
-	GetOrganization(name string) (*Organization, error)
+	GetOrganization(id string) (*Organization, error)
 	CreateOrganization(name string) (*Organization, error)
-	RenameOrganization(id string, name string) error
+	UpdateOrganization(id string, organization *Organization) error
 	DeleteOrganization(name string) error
 
 	GetServer(id string) (*Server, error)
 	CreateServer(name, protocol, cipher, hash string, port *int) (*Server, error)
-	UpdateServer(id string, updatedServer *Server) error
+	UpdateServer(id string, server *Server) error
 	DeleteServer(id string) error
+
 	AttachOrganizationToServer(organizationId, serverId string) error
 	DetachOrganizationFromServer(organizationId, serverId string) error
+
+	AddRouteToServer(serverId string, route Route) error
+	DeleteRouteFromServer(serverId string, route Route) error
+	UpdateRouteOnServer(serverId string, route Route) error
 
 	StartServer(serverId string) error
 	StopServer(serverId string) error
 	//RestartServer(serverId string) error
 	//DeleteServer(serverId string) error
-
-	AddRouteToServer(serverId string, route Route) error
-	DeleteRouteFromServer(serverId string, route Route) error
-	UpdateRouteOnServer(serverId string, route Route) error
 }
 
 type client struct {
@@ -38,7 +37,7 @@ type client struct {
 	baseUrl    string
 }
 
-func (c client) GetOrganizationByID(id string) (*Organization, error) {
+func (c client) GetOrganization(id string) (*Organization, error) {
 	url := fmt.Sprintf("/organization/%s", id)
 	req, err := http.NewRequest("GET", url, nil)
 
@@ -55,42 +54,10 @@ func (c client) GetOrganizationByID(id string) (*Organization, error) {
 
 	err = json.Unmarshal(body, &organization)
 	if err != nil {
-		return nil, fmt.Errorf("GetOrganizationByID: %s: %+v, id=%s, body=%s", err, organization, id, body)
+		return nil, fmt.Errorf("GetOrganization: %s: %+v, id=%s, body=%s", err, organization, id, body)
 	}
 
 	return &organization, nil
-}
-
-func (c client) GetOrganization(name string) (*Organization, error) {
-	url := "/organization"
-	req, err := http.NewRequest("GET", url, nil)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	type GetOrganizationsApiResponse struct {
-		Organizations []Organization
-	}
-
-	var organizations []Organization
-
-	err = json.Unmarshal(body, &organizations)
-	if err != nil {
-		return nil, fmt.Errorf("GetOrganization: %s: %+v, name=%s, body=%s", err, organizations, name, body)
-	}
-
-	for _, organization := range organizations {
-		if strings.ToLower(organization.Name) == strings.ToLower(name) {
-			return &organization, nil
-		}
-	}
-
-	return nil, nil
 }
 
 func (c client) CreateOrganization(name string) (*Organization, error) {
@@ -117,8 +84,22 @@ func (c client) CreateOrganization(name string) (*Organization, error) {
 	return &organization, nil
 }
 
-func (c client) RenameOrganization(id string, name string) error {
-	panic("implement me")
+func (c client) UpdateOrganization(id string, organization *Organization) error {
+	jsonData, err := json.Marshal(organization)
+	if err != nil {
+		return fmt.Errorf("UpdateOrganization: Error on marshalling data: %s", err)
+	}
+
+	url := fmt.Sprintf("/organization/%s", id)
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
 }
 
 func (c client) DeleteOrganization(id string) error {
@@ -200,10 +181,10 @@ func (c client) CreateServer(name, protocol, cipher, hash string, port *int) (*S
 	return &server, nil
 }
 
-func (c client) UpdateServer(id string, updatedServer *Server) error {
-	jsonData, err := json.Marshal(updatedServer)
+func (c client) UpdateServer(id string, server *Server) error {
+	jsonData, err := json.Marshal(server)
 	if err != nil {
-		return fmt.Errorf("UpdateServer: Error on marshalling data: %s [data=%+v]", err, updatedServer)
+		return fmt.Errorf("UpdateServer: Error on marshalling data: %s", err)
 	}
 
 	url := fmt.Sprintf("/server/%s", id)

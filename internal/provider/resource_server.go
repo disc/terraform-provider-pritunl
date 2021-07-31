@@ -51,7 +51,7 @@ func resourceServer() *schema.Resource {
 			"organizations": {
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
-					Type: schema.TypeString,
+					Type: schema.TypeMap,
 				},
 				Required:    false,
 				Optional:    true,
@@ -99,6 +99,7 @@ func resourceReadServer(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	// TODO: Could it be removed?
 	d.Set("name", d.Get("name").(string))
 	d.Set("protocol", d.Get("protocol").(string))
 	d.Set("cipher", d.Get("cipher").(string))
@@ -128,6 +129,32 @@ func resourceCreateServer(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(server.ID)
 	d.Set("port", server.Port)
+
+	if d.HasChange("organizations") {
+		_, newOrgs := d.GetChange("organizations")
+		for _, v := range newOrgs.([]interface{}) {
+			org := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
+
+			err = apiClient.AttachOrganizationToServer(org.ID, d.Id())
+			if err != nil {
+				return fmt.Errorf("Error on attaching server to the organization: %s", err)
+			}
+		}
+	}
+
+	if d.HasChange("routes") {
+		_, newRoutes := d.GetChange("routes")
+		for _, v := range newRoutes.([]interface{}) {
+			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
+
+			err = apiClient.AddRouteToServer(d.Id(), route)
+			if err != nil {
+				return fmt.Errorf("Error on attaching route from the server: %s", err)
+			}
+		}
+	}
+
+	// Need to start server after a successful creation?
 
 	return nil
 }
@@ -168,13 +195,17 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 
 		oldOrgs, newOrgs := d.GetChange("organizations")
 		for _, v := range oldOrgs.([]interface{}) {
-			err = apiClient.DetachOrganizationFromServer(v.(string), d.Id())
+			organization := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
+
+			err = apiClient.DetachOrganizationFromServer(organization.ID, d.Id())
 			if err != nil {
 				return fmt.Errorf("Error on detaching server to the organization: %s", err)
 			}
 		}
 		for _, v := range newOrgs.([]interface{}) {
-			err = apiClient.AttachOrganizationToServer(v.(string), d.Id())
+			org := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
+
+			err = apiClient.AttachOrganizationToServer(org.ID, d.Id())
 			if err != nil {
 				return fmt.Errorf("Error on attaching server to the organization: %s", err)
 			}
