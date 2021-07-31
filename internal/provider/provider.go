@@ -38,7 +38,6 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-
 	url := d.Get("url").(string)
 	token := d.Get("token").(string)
 	secret := d.Get("secret").(string)

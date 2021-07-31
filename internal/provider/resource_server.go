@@ -84,6 +84,18 @@ func resourceServer() *schema.Resource {
 
 // Uses for importing
 func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	apiClient := meta.(pritunl.Client)
+
+	server, err := apiClient.GetServer(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.Set("name", server.Name)
+	d.Set("protocol", server.Protocol)
+	d.Set("cipher", server.Cipher)
+	d.Set("hash", server.Hash)
+
 	return nil
 }
 
@@ -168,11 +180,6 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	if d.HasChange("organizations") {
-		err = apiClient.StopServer(d.Id())
-		if err != nil {
-			return diag.Errorf("Error on stopping server: %s", err)
-		}
-
 		oldOrgs, newOrgs := d.GetChange("organizations")
 		for _, v := range oldOrgs.([]interface{}) {
 			organization := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
@@ -190,19 +197,9 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 				return diag.Errorf("Error on attaching server to the organization: %s", err)
 			}
 		}
-
-		err = apiClient.StartServer(d.Id())
-		if err != nil {
-			return diag.Errorf("Error on starting server: %s", err)
-		}
 	}
 
 	if d.HasChange("routes") {
-		err = apiClient.StopServer(d.Id())
-		if err != nil {
-			return diag.Errorf("Error on stopping server: %s", err)
-		}
-
 		oldRoutes, newRoutes := d.GetChange("routes")
 
 		newRoutesMap := make(map[string]pritunl.Route, 0)
@@ -241,16 +238,25 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 				}
 			}
 		}
+	}
 
-		err = apiClient.StartServer(d.Id())
-		if err != nil {
-			return diag.Errorf("Error on starting server: %s", err)
-		}
+	// Check if changes require stopping of the server
+	// Check if server is running
+	err = apiClient.StopServer(d.Id())
+	if err != nil {
+		return diag.Errorf("Error on stopping server: %s", err)
 	}
 
 	err = apiClient.UpdateServer(d.Id(), server)
 	if err != nil {
+		// start server in case of error?
 		return diag.FromErr(err)
+	}
+
+	// Check if server is stopped
+	err = apiClient.StartServer(d.Id())
+	if err != nil {
+		return diag.Errorf("Error on starting server: %s", err)
 	}
 
 	return nil

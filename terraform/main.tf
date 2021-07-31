@@ -42,9 +42,9 @@ resource "pritunl_route" "grafana-route" {
 }
 
 resource "pritunl_server" "main-server" {
-  name     = "My_Main_Server2"
-  protocol = "tcp"
-  port     = 54321
+  name     = "My_Main_Server4"
+  protocol = "udp"
+  port     = 55555
   organizations = [
     pritunl_organization.my-first-org,
     pritunl_organization.my-second-org
@@ -52,6 +52,17 @@ resource "pritunl_server" "main-server" {
   routes = [
     pritunl_route.kibana-route,
     pritunl_route.grafana-route
+  ]
+  cipher = "aes128"
+  hash   = "sha1"
+}
+
+resource "pritunl_server" "default" {
+  name     = "Main"
+  protocol = "tcp"
+  port     = 12445
+  organizations = [
+    pritunl_organization.default
   ]
   cipher = "aes128"
   hash   = "sha1"
