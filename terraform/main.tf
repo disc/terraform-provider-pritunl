@@ -21,6 +21,12 @@ resource "pritunl_organization" "my-second-org" {
   name = "My_Second_Org"
 }
 
+resource "pritunl_route" "kibana-route" {
+  network = "1.1.1.1/32"
+  comment = "Kibana"
+  nat = true
+}
+
 resource "pritunl_server" "main-server" {
   name = "My_Main_Server2"
   protocol = "tcp"
@@ -28,6 +34,9 @@ resource "pritunl_server" "main-server" {
   organizations = [
     pritunl_organization.my-first-org.id,
     pritunl_organization.my-second-org.id,
+  ]
+  routes = [
+    pritunl_route.kibana-route
   ]
 //  cipher = "aes128"
 //  hash = "sha1"

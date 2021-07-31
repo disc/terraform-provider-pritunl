@@ -61,6 +61,16 @@ func resourceServer() *schema.Resource {
 				Description: "The list of attached organizations for the server",
 				ForceNew:    false,
 			},
+			"routes": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeMap,
+				},
+				Required:    false,
+				Optional:    true,
+				Description: "The list of attached routes for the server",
+				ForceNew:    false,
+			},
 		},
 		Create: resourceCreateServer,
 		Read:   resourceReadServer,
@@ -165,6 +175,26 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 			err = apiClient.AttachOrganizationToServer(v.(string), d.Id())
 			if err != nil {
 				return fmt.Errorf("Error on attaching server to the organization: %s", err)
+			}
+		}
+	}
+
+	if d.HasChange("routes") {
+		oldRoutes, newRoutes := d.GetChange("routes")
+		for _, v := range oldRoutes.([]interface{}) {
+			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
+
+			err = apiClient.DeleteRouteFromServer(d.Id(), route)
+			if err != nil {
+				return fmt.Errorf("Error on detaching route from the server: %s", err)
+			}
+		}
+		for _, v := range newRoutes.([]interface{}) {
+			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
+
+			err = apiClient.AddRouteToServer(d.Id(), route)
+			if err != nil {
+				return fmt.Errorf("Error on attaching route to the server: %s", err)
 			}
 		}
 	}

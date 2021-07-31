@@ -28,7 +28,9 @@ type Client interface {
 	//RestartServer(serverId string) error
 	//DeleteServer(serverId string) error
 
-	AddRouteToServer(serverId string, network string) error
+	AddRouteToServer(serverId string, route Route) error
+	DeleteRouteFromServer(serverId string, route Route) error
+	//UpdateRouteOnServer(serverId string, route Route) error
 }
 
 type client struct {
@@ -301,27 +303,22 @@ func (c client) StopServer(serverId string) error {
 	return nil
 }
 
-// POST /server/610332d44bce2ca96a757523/route
-// {"comment": null, "vpc_region": null, "metric": null, "advertise": false, "nat_interface": null, "id": "382e382e382e322f3332", "nat_netmap": null, "network": "8.8.8.2/32", "server": "610332d44bce2ca96a757523", "nat": true, "vpc_id": null, "net_gateway": false}
-func (c client) AddRouteToServer(serverId string, network string) error {
+func (c client) AddRouteToServer(serverId string, route Route) error {
 	err := c.StopServer(serverId)
 	if err != nil {
 		return err
 	}
 
-	var jsonStr = []byte(`{"server": "` + serverId + `", "network": "` + network + `"}`)
+	jsonData, err := json.Marshal(route)
 
 	url := fmt.Sprintf("/server/%s/route", serverId)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("AddRouteToServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 
 	err = c.StartServer(serverId)
 	if err != nil {
@@ -331,15 +328,27 @@ func (c client) AddRouteToServer(serverId string, network string) error {
 	return nil
 }
 
-func NewHttpClient(baseUrl, apiToken, apiSecret string) *http.Client {
-	return &http.Client{
-		Transport: &transport{
-			baseUrl:             baseUrl,
-			apiToken:            apiToken,
-			apiSecret:           apiSecret,
-			underlyingTransport: http.DefaultTransport,
-		},
+func (c client) DeleteRouteFromServer(serverId string, route Route) error {
+	err := c.StopServer(serverId)
+	if err != nil {
+		return fmt.Errorf("DeleteRouteFromServer: Error on stopping the server reqeust: %s", err)
 	}
+
+	url := fmt.Sprintf("/server/%s/route/%s", serverId, route.ID)
+	req, err := http.NewRequest("DELETE", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("DeleteRouteFromServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	err = c.StartServer(serverId)
+	if err != nil {
+		return fmt.Errorf("DeleteRouteFromServer: Error on starting the server reqeust: %s", err)
+	}
+
+	return nil
 }
 
 func NewClient(baseUrl, apiToken, apiSecret string) Client {
