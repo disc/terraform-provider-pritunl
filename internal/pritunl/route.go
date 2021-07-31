@@ -1,13 +1,14 @@
 package pritunl
 
-import "strconv"
+import (
+	"encoding/hex"
+	"strconv"
+)
 
 type Route struct {
-	ID             string `json:"id,omitempty"`
 	Network        string `json:"network"`
 	Nat            bool   `json:"nat"`
 	Comment        string `json:"comment,omitempty"`
-	Server         string `json:"server,omitempty"`
 	VirtualNetwork bool   `json:"virtual_network,omitempty"`
 	WgNetwork      string `json:"wg_network,omitempty"`
 	NetworkLink    bool   `json:"network_link,omitempty"`
@@ -21,11 +22,17 @@ type Route struct {
 	NatNetmap      string `json:"nat_netmap,omitempty"`
 }
 
+func (r Route) GetID() string {
+	if len(r.Network) > 0 {
+		return hex.EncodeToString([]byte(r.Network))
+	}
+
+	return ""
+}
+
 func ConvertMapToRoute(data map[string]interface{}) Route {
 	var route Route
-	if v, ok := data["id"]; ok {
-		route.ID = v.(string)
-	}
+
 	if v, ok := data["network"]; ok {
 		route.Network = v.(string)
 	}

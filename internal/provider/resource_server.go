@@ -6,9 +6,6 @@ import (
 	"terraform-pritunl/internal/pritunl"
 )
 
-/*
- {"port_wg": null, "dns_servers": ["8.8.8.8"], "protocol": "tcp", "max_devices": 0, "max_clients": 2000, "link_ping_timeout": 5, "ping_timeout": 60, "ipv6": false, "vxlan": true, "network_mode": "tunnel", "bind_address": "", "block_outside_dns": false, "network_start": "", "name": "Alice-TCPnoTLS", "ping_interval": 10, "allowed_devices": null, "users_online": 1, "ipv6_firewall": true, "session_timeout": null, "otp_auth": false, "multi_device": false, "search_domain": null, "lzo_compression": "adaptive", "pre_connect_msg": null, "inactive_timeout": null, "link_ping_interval": 1, "id": "60d06624c36cc9d1d673304b", "ping_timeout_wg": 360, "uptime": 1295821, "network_end": "", "network": "192.168.249.0/24", "dh_param_bits": 2048, "wg": false, "port": 17490, "devices_online": 1, "network_wg": null, "status": "online", "dns_mapping": false, "hash": "sha1", "debug": false, "restrict_routes": true, "user_count": 1, "groups": [], "inter_client": true, "replica_count": 1, "cipher": "aes128", "mss_fix": null, "jumbo_frames": false}
-*/
 func resourceServer() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -180,22 +177,53 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("routes") {
-		oldRoutes, newRoutes := d.GetChange("routes")
-		for _, v := range oldRoutes.([]interface{}) {
-			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
-
-			err = apiClient.DeleteRouteFromServer(d.Id(), route)
-			if err != nil {
-				return fmt.Errorf("Error on detaching route from the server: %s", err)
-			}
+		err = apiClient.StopServer(d.Id())
+		if err != nil {
+			return fmt.Errorf("Error on stopping server: %s", err)
 		}
+
+		oldRoutes, newRoutes := d.GetChange("routes")
+
+		newRoutesMap := make(map[string]pritunl.Route, 0)
 		for _, v := range newRoutes.([]interface{}) {
 			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
+			newRoutesMap[route.GetID()] = route
+		}
+		oldRoutesMap := make(map[string]pritunl.Route, 0)
+		for _, v := range oldRoutes.([]interface{}) {
+			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
+			oldRoutesMap[route.GetID()] = route
+		}
 
-			err = apiClient.AddRouteToServer(d.Id(), route)
-			if err != nil {
-				return fmt.Errorf("Error on attaching route to the server: %s", err)
+		for _, route := range newRoutesMap {
+			if _, found := oldRoutesMap[route.GetID()]; found {
+				// update or skip
+				err = apiClient.UpdateRouteOnServer(d.Id(), route)
+				if err != nil {
+					return fmt.Errorf("Error on updating route on the server: %s", err)
+				}
+			} else {
+				// add route
+				err = apiClient.AddRouteToServer(d.Id(), route)
+				if err != nil {
+					return fmt.Errorf("Error on attaching route from the server: %s", err)
+				}
 			}
+		}
+
+		for _, route := range oldRoutesMap {
+			if _, found := newRoutesMap[route.GetID()]; !found {
+				// delete route
+				err = apiClient.DeleteRouteFromServer(d.Id(), route)
+				if err != nil {
+					return fmt.Errorf("Error on detaching route from the server: %s", err)
+				}
+			}
+		}
+
+		err = apiClient.StartServer(d.Id())
+		if err != nil {
+			return fmt.Errorf("Error on starting server: %s", err)
 		}
 	}
 

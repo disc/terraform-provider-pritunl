@@ -30,7 +30,7 @@ type Client interface {
 
 	AddRouteToServer(serverId string, route Route) error
 	DeleteRouteFromServer(serverId string, route Route) error
-	//UpdateRouteOnServer(serverId string, route Route) error
+	UpdateRouteOnServer(serverId string, route Route) error
 }
 
 type client struct {
@@ -304,11 +304,6 @@ func (c client) StopServer(serverId string) error {
 }
 
 func (c client) AddRouteToServer(serverId string, route Route) error {
-	err := c.StopServer(serverId)
-	if err != nil {
-		return err
-	}
-
 	jsonData, err := json.Marshal(route)
 
 	url := fmt.Sprintf("/server/%s/route", serverId)
@@ -320,21 +315,26 @@ func (c client) AddRouteToServer(serverId string, route Route) error {
 	}
 	defer resp.Body.Close()
 
-	err = c.StartServer(serverId)
+	return nil
+}
+
+func (c client) UpdateRouteOnServer(serverId string, route Route) error {
+	jsonData, err := json.Marshal(route)
+
+	url := fmt.Sprintf("/server/%s/route/%s", serverId, route.GetID())
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateRouteOnServer: Error on HTTP request: %s", err)
 	}
+	defer resp.Body.Close()
 
 	return nil
 }
 
 func (c client) DeleteRouteFromServer(serverId string, route Route) error {
-	err := c.StopServer(serverId)
-	if err != nil {
-		return fmt.Errorf("DeleteRouteFromServer: Error on stopping the server reqeust: %s", err)
-	}
-
-	url := fmt.Sprintf("/server/%s/route/%s", serverId, route.ID)
+	url := fmt.Sprintf("/server/%s/route/%s", serverId, route.GetID())
 	req, err := http.NewRequest("DELETE", url, nil)
 
 	resp, err := c.httpClient.Do(req)
@@ -342,11 +342,6 @@ func (c client) DeleteRouteFromServer(serverId string, route Route) error {
 		return fmt.Errorf("DeleteRouteFromServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
-
-	err = c.StartServer(serverId)
-	if err != nil {
-		return fmt.Errorf("DeleteRouteFromServer: Error on starting the server reqeust: %s", err)
-	}
 
 	return nil
 }

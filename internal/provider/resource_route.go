@@ -1,8 +1,9 @@
 package provider
 
 import (
-	"encoding/hex"
+	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
+	"time"
 )
 
 func resourceRoute() *schema.Resource {
@@ -59,24 +60,16 @@ func resourceCreateRoute(d *schema.ResourceData, meta interface{}) error {
 	d.Set("comment", d.Get("comment").(string))
 	d.Set("nat", d.Get("nat").(bool))
 
-	// calculate id
-	id := hex.EncodeToString([]byte(network))
-
+	id := fmt.Sprintf("pritunl-route-%d", time.Now().Unix())
 	d.SetId(id)
 
 	return nil
 }
 
 func resourceUpdateRoute(d *schema.ResourceData, meta interface{}) error {
-	network := d.Get("network").(string)
-	d.Set("network", network)
+	d.Set("network", d.Get("network").(string))
 	d.Set("comment", d.Get("comment").(string))
 	d.Set("nat", d.Get("nat").(bool))
-
-	// calculate id
-	id := hex.EncodeToString([]byte(network))
-
-	d.SetId(id)
 
 	return nil
 }

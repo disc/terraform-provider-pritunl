@@ -22,9 +22,15 @@ resource "pritunl_organization" "my-second-org" {
 }
 
 resource "pritunl_route" "kibana-route" {
-  network = "1.1.1.1/32"
-  comment = "Kibana"
+  network = "1.1.1.3/32"
+  comment = "Kibana4"
   nat = true
+}
+
+resource "pritunl_route" "grafana-route" {
+  network = "1.2.3.4/32"
+  comment = "Grafana2"
+  nat = false
 }
 
 resource "pritunl_server" "main-server" {
@@ -36,8 +42,9 @@ resource "pritunl_server" "main-server" {
     pritunl_organization.my-second-org.id,
   ]
   routes = [
-    pritunl_route.kibana-route
+    pritunl_route.kibana-route,
+    pritunl_route.grafana-route
   ]
-//  cipher = "aes128"
-//  hash = "sha1"
+  cipher = "aes128"
+  hash = "sha1"
 }
