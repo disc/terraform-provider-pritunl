@@ -41,20 +41,6 @@ func resourceExistsOrganization(d *schema.ResourceData, meta interface{}) (bool,
 }
 
 func resourceReadOrganization(d *schema.ResourceData, meta interface{}) error {
-	apiClient := meta.(pritunl.Client)
-
-	organization, err := apiClient.GetOrganization(d.Id())
-	if err != nil {
-		return err
-	}
-
-	id := ""
-	if organization != nil {
-		id = organization.ID
-	}
-
-	d.SetId(id)
-
 	return nil
 }
 

@@ -14,7 +14,7 @@ provider "pritunl" {
 }
 
 resource "pritunl_organization" "my-first-org" {
-  name = "My_First_Org"
+  name = "My_First_Org123"
 }
 
 resource "pritunl_organization" "my-second-org" {

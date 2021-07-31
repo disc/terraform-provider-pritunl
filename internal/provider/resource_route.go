@@ -47,10 +47,6 @@ func resourceExistsRoute(d *schema.ResourceData, meta interface{}) (bool, error)
 }
 
 func resourceReadRoute(d *schema.ResourceData, meta interface{}) error {
-	d.Set("network", d.Get("network").(string))
-	d.Set("comment", d.Get("comment").(string))
-	d.Set("nat", d.Get("nat").(bool))
-
 	return nil
 }
 

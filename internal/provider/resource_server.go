@@ -92,19 +92,6 @@ func resourceExistsServer(d *schema.ResourceData, meta interface{}) (bool, error
 }
 
 func resourceReadServer(d *schema.ResourceData, meta interface{}) error {
-	apiClient := meta.(pritunl.Client)
-
-	_, err := apiClient.GetServer(d.Id())
-	if err != nil {
-		return err
-	}
-
-	// TODO: Could it be removed?
-	d.Set("name", d.Get("name").(string))
-	d.Set("protocol", d.Get("protocol").(string))
-	d.Set("cipher", d.Get("cipher").(string))
-	d.Set("hash", d.Get("hash").(string))
-
 	return nil
 }
 
