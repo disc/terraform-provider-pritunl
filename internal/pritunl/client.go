@@ -23,6 +23,7 @@ type Client interface {
 	DetachOrganizationFromServer(organizationId, serverId string) error
 
 	AddRouteToServer(serverId string, route Route) error
+	AddRoutesToServer(serverId string, route []Route) error
 	DeleteRouteFromServer(serverId string, route Route) error
 	UpdateRouteOnServer(serverId string, route Route) error
 
@@ -293,6 +294,20 @@ func (c client) AddRouteToServer(serverId string, route Route) error {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("AddRouteToServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+func (c client) AddRoutesToServer(serverId string, routes []Route) error {
+	jsonData, err := json.Marshal(routes)
+
+	url := fmt.Sprintf("/server/%s/routes", serverId)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("AddRoutesToServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 

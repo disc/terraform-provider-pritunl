@@ -8,21 +8,21 @@ terraform {
 }
 
 provider "pritunl" {
-  url = var.pritunl_url
-  token = var.pritunl_api_token
+  url    = var.pritunl_url
+  token  = var.pritunl_api_token
   secret = var.pritunl_api_secret
 }
 
-resource "pritunl_organization" "alice" {
-  name = "AliceOrg"
-}
-
-resource "pritunl_organization" "default" {
-  name = "Default"
-}
+//resource "pritunl_organization" "alice" {
+//  name = "AliceOrg"
+//}
+//
+//resource "pritunl_organization" "default" {
+//  name = "Default"
+//}
 
 resource "pritunl_organization" "my-first-org" {
-  name = "My_First_Org123"
+  name = "My_First_Org"
 }
 
 resource "pritunl_organization" "my-second-org" {
@@ -32,19 +32,19 @@ resource "pritunl_organization" "my-second-org" {
 resource "pritunl_route" "kibana-route" {
   network = "1.1.1.3/32"
   comment = "Kibana"
-  nat = true
+  nat     = true
 }
 
 resource "pritunl_route" "grafana-route" {
   network = "1.2.3.4/32"
   comment = "Grafana"
-  nat = false
+  nat     = false
 }
 
 resource "pritunl_server" "main-server" {
-  name = "My_Main_Server2"
+  name     = "My_Main_Server2"
   protocol = "tcp"
-  port = 54321
+  port     = 54321
   organizations = [
     pritunl_organization.my-first-org,
     pritunl_organization.my-second-org
@@ -54,5 +54,5 @@ resource "pritunl_server" "main-server" {
     pritunl_route.grafana-route
   ]
   cipher = "aes128"
-  hash = "sha1"
+  hash   = "sha1"
 }

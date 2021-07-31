@@ -1,12 +1,14 @@
 package provider
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
 	"terraform-pritunl/internal/pritunl"
 )
 
-func Provider() terraform.ResourceProvider {
+func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"url": {
@@ -30,11 +32,13 @@ func Provider() terraform.ResourceProvider {
 			"pritunl_server":       resourceServer(),
 			"pritunl_route":        resourceRoute(),
 		},
-		ConfigureFunc: providerConfigure,
+		DataSourcesMap:       map[string]*schema.Resource{},
+		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+
 	url := d.Get("url").(string)
 	token := d.Get("token").(string)
 	secret := d.Get("secret").(string)

@@ -1,8 +1,9 @@
 package provider
 
 import (
-	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-pritunl/internal/pritunl"
 )
 
@@ -10,11 +11,10 @@ func resourceServer() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "The name of the server",
-				ForceNew:     false,
-				ValidateFunc: validateName,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the server",
+				ForceNew:    false,
 			},
 			"protocol": {
 				Type:        schema.TypeString,
@@ -53,6 +53,9 @@ func resourceServer() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeMap,
 				},
+				//Elem: &schema.Resource{
+				//	Schema: resourceOrganization().Schema,
+				//},
 				Required:    false,
 				Optional:    true,
 				Description: "The list of attached organizations for the server",
@@ -69,14 +72,14 @@ func resourceServer() *schema.Resource {
 				ForceNew:    false,
 			},
 		},
-		Create: resourceCreateServer,
-		Read:   resourceReadServer,
-		Update: resourceUpdateServer,
-		Delete: resourceDeleteServer,
-		Exists: resourceExistsServer,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
+		CreateContext: resourceCreateServer,
+		ReadContext:   resourceReadServer,
+		UpdateContext: resourceUpdateServer,
+		DeleteContext: resourceDeleteServer,
+		//Exists: resourceExistsServer,
+		//Importer: &schema.ResourceImporter{
+		//	State: schema.ImportStatePassthrough,
+		//},
 	}
 }
 
@@ -91,11 +94,11 @@ func resourceExistsServer(d *schema.ResourceData, meta interface{}) (bool, error
 	return server != nil, nil
 }
 
-func resourceReadServer(d *schema.ResourceData, meta interface{}) error {
+func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
 }
 
-func resourceCreateServer(d *schema.ResourceData, meta interface{}) error {
+func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
 	var port int
@@ -111,7 +114,7 @@ func resourceCreateServer(d *schema.ResourceData, meta interface{}) error {
 		&port,
 	)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(server.ID)
@@ -124,20 +127,21 @@ func resourceCreateServer(d *schema.ResourceData, meta interface{}) error {
 
 			err = apiClient.AttachOrganizationToServer(org.ID, d.Id())
 			if err != nil {
-				return fmt.Errorf("Error on attaching server to the organization: %s", err)
+				return diag.Errorf("Error on attaching server to the organization: %s", err)
 			}
 		}
 	}
 
 	if d.HasChange("routes") {
 		_, newRoutes := d.GetChange("routes")
+		routes := make([]pritunl.Route, 0)
 		for _, v := range newRoutes.([]interface{}) {
-			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
+			routes = append(routes, pritunl.ConvertMapToRoute(v.(map[string]interface{})))
+		}
 
-			err = apiClient.AddRouteToServer(d.Id(), route)
-			if err != nil {
-				return fmt.Errorf("Error on attaching route from the server: %s", err)
-			}
+		err = apiClient.AddRoutesToServer(d.Id(), routes)
+		if err != nil {
+			return diag.Errorf("Error on attaching route from the server: %s", err)
 		}
 	}
 
@@ -146,12 +150,12 @@ func resourceCreateServer(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
+func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
 	server, err := apiClient.GetServer(d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if v, ok := d.GetOk("name"); ok {
@@ -177,7 +181,7 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("organizations") {
 		err = apiClient.StopServer(d.Id())
 		if err != nil {
-			return fmt.Errorf("Error on stopping server: %s", err)
+			return diag.Errorf("Error on stopping server: %s", err)
 		}
 
 		oldOrgs, newOrgs := d.GetChange("organizations")
@@ -186,7 +190,7 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 
 			err = apiClient.DetachOrganizationFromServer(organization.ID, d.Id())
 			if err != nil {
-				return fmt.Errorf("Error on detaching server to the organization: %s", err)
+				return diag.Errorf("Error on detaching server to the organization: %s", err)
 			}
 		}
 		for _, v := range newOrgs.([]interface{}) {
@@ -194,20 +198,20 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 
 			err = apiClient.AttachOrganizationToServer(org.ID, d.Id())
 			if err != nil {
-				return fmt.Errorf("Error on attaching server to the organization: %s", err)
+				return diag.Errorf("Error on attaching server to the organization: %s", err)
 			}
 		}
 
 		err = apiClient.StartServer(d.Id())
 		if err != nil {
-			return fmt.Errorf("Error on starting server: %s", err)
+			return diag.Errorf("Error on starting server: %s", err)
 		}
 	}
 
 	if d.HasChange("routes") {
 		err = apiClient.StopServer(d.Id())
 		if err != nil {
-			return fmt.Errorf("Error on stopping server: %s", err)
+			return diag.Errorf("Error on stopping server: %s", err)
 		}
 
 		oldRoutes, newRoutes := d.GetChange("routes")
@@ -228,13 +232,13 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 				// update or skip
 				err = apiClient.UpdateRouteOnServer(d.Id(), route)
 				if err != nil {
-					return fmt.Errorf("Error on updating route on the server: %s", err)
+					return diag.Errorf("Error on updating route on the server: %s", err)
 				}
 			} else {
 				// add route
 				err = apiClient.AddRouteToServer(d.Id(), route)
 				if err != nil {
-					return fmt.Errorf("Error on attaching route from the server: %s", err)
+					return diag.Errorf("Error on attaching route from the server: %s", err)
 				}
 			}
 		}
@@ -244,31 +248,31 @@ func resourceUpdateServer(d *schema.ResourceData, meta interface{}) error {
 				// delete route
 				err = apiClient.DeleteRouteFromServer(d.Id(), route)
 				if err != nil {
-					return fmt.Errorf("Error on detaching route from the server: %s", err)
+					return diag.Errorf("Error on detaching route from the server: %s", err)
 				}
 			}
 		}
 
 		err = apiClient.StartServer(d.Id())
 		if err != nil {
-			return fmt.Errorf("Error on starting server: %s", err)
+			return diag.Errorf("Error on starting server: %s", err)
 		}
 	}
 
 	err = apiClient.UpdateServer(d.Id(), server)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	return nil
 }
 
-func resourceDeleteServer(d *schema.ResourceData, meta interface{}) error {
+func resourceDeleteServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
 	err := apiClient.DeleteServer(d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId("")
