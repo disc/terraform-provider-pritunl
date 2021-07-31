@@ -40,7 +40,17 @@ func resourceExistsOrganization(d *schema.ResourceData, meta interface{}) (bool,
 	return organization != nil, nil
 }
 
+// Uses for importing
 func resourceReadOrganization(d *schema.ResourceData, meta interface{}) error {
+	apiClient := meta.(pritunl.Client)
+
+	organization, err := apiClient.GetOrganization(d.Id())
+	if err != nil {
+		return err
+	}
+
+	d.Set("name", organization.Name)
+
 	return nil
 }
 

@@ -13,6 +13,14 @@ provider "pritunl" {
   secret = "Oq3FeJCa7hBSVD13We39GnVEty86toTI"
 }
 
+resource "pritunl_organization" "alice" {
+  name = "AliceOrg"
+}
+
+resource "pritunl_organization" "default" {
+  name = "Default"
+}
+
 resource "pritunl_organization" "my-first-org" {
   name = "My_First_Org123"
 }
