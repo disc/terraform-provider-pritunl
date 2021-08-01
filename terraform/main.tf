@@ -70,11 +70,11 @@ resource "pritunl_server" "test" {
   port     = 55555
   cipher   = "aes128"
   hash     = "sha1"
-  network  = "192.168.14.0"
+  network  = "192.168.14.0/24"
 
   organizations = [
-    pritunl_organization.my-second-org,
     pritunl_organization.my-first-org,
+    pritunl_organization.my-second-org,
   ]
 
   routes = [

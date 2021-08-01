@@ -15,7 +15,7 @@ type Client interface {
 	DeleteOrganization(name string) error
 
 	GetServer(id string) (*Server, error)
-	CreateServer(name, protocol, cipher, hash string, port *int) (*Server, error)
+	CreateServer(serverData map[string]interface{}) (*Server, error)
 	UpdateServer(id string, server *Server) error
 	DeleteServer(id string) error
 
@@ -147,16 +147,26 @@ func (c client) GetServer(id string) (*Server, error) {
 	return &server, nil
 }
 
-func (c client) CreateServer(name, protocol, cipher, hash string, port *int) (*Server, error) {
-	serverStruct := Server{
-		Name:     name,
-		Protocol: protocol,
-		Cipher:   cipher,
-		Hash:     hash,
-	}
+func (c client) CreateServer(serverData map[string]interface{}) (*Server, error) {
+	serverStruct := Server{}
 
-	if port != nil {
-		serverStruct.Port = *port
+	if v, ok := serverData["name"]; ok {
+		serverStruct.Name = v.(string)
+	}
+	if v, ok := serverData["protocol"]; ok {
+		serverStruct.Protocol = v.(string)
+	}
+	if v, ok := serverData["cipher"]; ok {
+		serverStruct.Cipher = v.(string)
+	}
+	if v, ok := serverData["network"]; ok {
+		serverStruct.Network = v.(string)
+	}
+	if v, ok := serverData["hash"]; ok {
+		serverStruct.Hash = v.(string)
+	}
+	if v, ok := serverData["port"]; ok {
+		serverStruct.Port = v.(int)
 	}
 
 	jsonData, err := json.Marshal(serverStruct)

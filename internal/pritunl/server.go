@@ -57,11 +57,11 @@ package pritunl
 type Server struct {
 	ID               string   `json:"id,omitempty"`
 	Name             string   `json:"name"`
-	Protocol         string   `json:"protocol"`
-	Cipher           string   `json:"cipher"`
-	Hash             string   `json:"hash"`
-	Port             int      `json:"port"`
-	Network          string   `json:"network"`
+	Protocol         string   `json:"protocol,omitempty"`
+	Cipher           string   `json:"cipher,omitempty"`
+	Hash             string   `json:"hash,omitempty"`
+	Port             int      `json:"port,omitempty"`
+	Network          string   `json:"network,omitempty"`
 	WG               bool     `json:"wg,omitempty"`
 	PortWG           int      `json:"port_wg,omitempty"`
 	NetworkWG        string   `json:"network_wg,omitempty"`

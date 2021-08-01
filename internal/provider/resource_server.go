@@ -129,26 +129,21 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
-	var port int
-	if v, ok := d.GetOk("port"); ok {
-		port = v.(int)
+	serverData := map[string]interface{}{
+		"name":     d.Get("name"),
+		"protocol": d.Get("protocol"),
+		"port":     d.Get("port"),
+		"network":  d.Get("network"),
+		"cipher":   d.Get("cipher"),
+		"hash":     d.Get("hash"),
 	}
 
-	// Pass object instead of atributes
-	server, err := apiClient.CreateServer(
-		d.Get("name").(string),
-		d.Get("protocol").(string),
-		d.Get("cipher").(string),
-		d.Get("hash").(string),
-		&port,
-	)
+	server, err := apiClient.CreateServer(serverData)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(server.ID)
-	d.Set("port", server.Port)
-	d.Set("network", server.Network)
 
 	if d.HasChange("organizations") {
 		_, newOrgs := d.GetChange("organizations")
@@ -177,7 +172,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	// Need to start server after a successful creation?
 
-	return nil
+	return resourceReadServer(ctx, d, meta)
 }
 
 func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
