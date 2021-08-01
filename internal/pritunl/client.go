@@ -19,10 +19,11 @@ type Client interface {
 	UpdateServer(id string, server *Server) error
 	DeleteServer(id string) error
 
-	GetAttachedOrganizationsOnServer(serverId string) ([]Organization, error)
+	GetOrganizationsByServer(serverId string) ([]Organization, error)
 	AttachOrganizationToServer(organizationId, serverId string) error
 	DetachOrganizationFromServer(organizationId, serverId string) error
 
+	GetRoutesByServer(serverId string) ([]Route, error)
 	AddRouteToServer(serverId string, route Route) error
 	AddRoutesToServer(serverId string, route []Route) error
 	DeleteRouteFromServer(serverId string, route Route) error
@@ -219,7 +220,7 @@ func (c client) DeleteServer(id string) error {
 	return nil
 }
 
-func (c client) GetAttachedOrganizationsOnServer(serverId string) ([]Organization, error) {
+func (c client) GetOrganizationsByServer(serverId string) ([]Organization, error) {
 	url := fmt.Sprintf("/server/%s/organization", serverId)
 	req, err := http.NewRequest("GET", url, nil)
 
@@ -295,6 +296,24 @@ func (c client) StopServer(serverId string) error {
 	return nil
 }
 
+func (c client) GetRoutesByServer(serverId string) ([]Route, error) {
+	url := fmt.Sprintf("/server/%s/route", serverId)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var routes []Route
+	json.Unmarshal(body, &routes)
+
+	return routes, nil
+}
+
 func (c client) AddRouteToServer(serverId string, route Route) error {
 	jsonData, err := json.Marshal(route)
 
@@ -309,6 +328,7 @@ func (c client) AddRouteToServer(serverId string, route Route) error {
 
 	return nil
 }
+
 func (c client) AddRoutesToServer(serverId string, routes []Route) error {
 	jsonData, err := json.Marshal(routes)
 

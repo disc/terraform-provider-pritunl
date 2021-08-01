@@ -41,18 +41,36 @@ data "pritunl_route" "grafana-route" {
   nat     = false
 }
 
-data "pritunl_route" "global-route" {
-  network = "0.0.0.0"
-  comment = "internet"
+data "pritunl_route" "default" {
+  network = "0.0.0.0/0"
   nat     = true
 }
 
-resource "pritunl_server" "main-server" {
-  name     = "My_Main_Server4"
+resource "pritunl_server" "main" {
+  name     = "Main"
+  protocol = "tcp"
+  port     = 12444
+  cipher   = "aes128"
+  hash     = "sha1"
+  network  = "192.168.218.0/24"
+
+  organizations = [
+    pritunl_organization.default,
+    pritunl_organization.alice,
+  ]
+
+  routes = [
+    data.pritunl_route.default,
+  ]
+}
+
+resource "pritunl_server" "test" {
+  name     = "test"
   protocol = "udp"
   port     = 55555
   cipher   = "aes128"
   hash     = "sha1"
+  network  = "192.168.14.0"
 
   organizations = [
     pritunl_organization.my-second-org,
@@ -63,21 +81,4 @@ resource "pritunl_server" "main-server" {
     data.pritunl_route.kibana-route,
     data.pritunl_route.grafana-route,
   ]
-}
-
-resource "pritunl_server" "default" {
-  name     = "Main"
-  protocol = "tcp"
-  port     = 12444
-  cipher   = "aes128"
-  hash     = "sha1"
-
-  organizations = [
-    pritunl_organization.default,
-  ]
-
-  //  routes = [
-  //    pritunl_route.global-route,
-  //  ]
-
 }

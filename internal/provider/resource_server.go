@@ -48,6 +48,14 @@ func resourceServer() *schema.Resource {
 				Description: "The port for the server",
 				ForceNew:    false,
 			},
+			"network": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Computed:    true,
+				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
+				ForceNew:    false,
+			},
 			"organizations": {
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
@@ -89,7 +97,13 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	// get organizations
-	organizations, err := apiClient.GetAttachedOrganizationsOnServer(d.Id())
+	organizations, err := apiClient.GetOrganizationsByServer(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// get routes
+	routes, err := apiClient.GetRoutesByServer(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -99,12 +113,15 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("port", server.Port)
 	d.Set("cipher", server.Cipher)
 	d.Set("hash", server.Hash)
+	d.Set("network", server.Network)
 
 	if len(organizations) > 0 {
 		d.Set("organizations", flattenOrganizationsData(organizations))
 	}
 
-	// get routes
+	if len(routes) > 0 {
+		d.Set("routes", flattenRoutesData(routes))
+	}
 
 	return nil
 }
@@ -117,6 +134,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		port = v.(int)
 	}
 
+	// Pass object instead of atributes
 	server, err := apiClient.CreateServer(
 		d.Get("name").(string),
 		d.Get("protocol").(string),
@@ -130,6 +148,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.SetId(server.ID)
 	d.Set("port", server.Port)
+	d.Set("network", server.Network)
 
 	if d.HasChange("organizations") {
 		_, newOrgs := d.GetChange("organizations")
@@ -187,6 +206,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if v, ok := d.GetOk("port"); ok {
 		server.Port = v.(int)
+	}
+
+	if v, ok := d.GetOk("network"); ok {
+		server.Network = v.(string)
 	}
 
 	// Check if changes require stopping of the server
@@ -285,21 +308,46 @@ func resourceDeleteServer(ctx context.Context, d *schema.ResourceData, meta inte
 	return nil
 }
 
-func flattenOrganizationsData(organizations []pritunl.Organization) []interface{} {
-	if organizations != nil {
-		orgs := make([]interface{}, len(organizations), len(organizations))
+func flattenOrganizationsData(organizationsList []pritunl.Organization) []interface{} {
+	organizations := make([]interface{}, 0)
 
-		for i, organization := range organizations {
-			oi := make(map[string]interface{})
+	if organizationsList != nil {
+		for _, organization := range organizationsList {
+			orgMap := make(map[string]interface{})
 
-			oi["id"] = organization.ID
-			oi["name"] = organization.Name
+			orgMap["id"] = organization.ID
+			orgMap["name"] = organization.Name
 
-			orgs[i] = oi
+			organizations = append(organizations, orgMap)
 		}
-
-		return orgs
 	}
 
-	return make([]interface{}, 0)
+	return organizations
+}
+
+func flattenRoutesData(routesList []pritunl.Route) []interface{} {
+	routes := make([]interface{}, 0)
+
+	if routesList != nil {
+		for _, route := range routesList {
+			if route.VirtualNetwork {
+				// skip virtual network route
+				continue
+			}
+
+			routeMap := make(map[string]interface{})
+
+			routeMap["id"] = route.GetID()
+			routeMap["network"] = route.Network
+			//routeMap["nat"] = strconv.FormatBool(route.Nat)
+			routeMap["nat"] = route.Nat
+			if route.Comment != "" {
+				routeMap["comment"] = route.Comment
+			}
+
+			routes = append(routes, routeMap)
+		}
+	}
+
+	return routes
 }

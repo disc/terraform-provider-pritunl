@@ -60,8 +60,8 @@ type Server struct {
 	Protocol         string   `json:"protocol"`
 	Cipher           string   `json:"cipher"`
 	Hash             string   `json:"hash"`
-	Port             int      `json:"port,omitempty"`
-	Network          string   `json:"network,omitempty"`
+	Port             int      `json:"port"`
+	Network          string   `json:"network"`
 	WG               bool     `json:"wg,omitempty"`
 	PortWG           int      `json:"port_wg,omitempty"`
 	NetworkWG        string   `json:"network_wg,omitempty"`
