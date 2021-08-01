@@ -53,9 +53,6 @@ func resourceServer() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeMap,
 				},
-				//Elem: &schema.Resource{
-				//	Schema: resourceOrganization().Schema,
-				//},
 				Required:    false,
 				Optional:    true,
 				Description: "The list of attached organizations for the server",
@@ -91,10 +88,23 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
+	// get organizations
+	organizations, err := apiClient.GetAttachedOrganizationsOnServer(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.Set("name", server.Name)
 	d.Set("protocol", server.Protocol)
+	d.Set("port", server.Port)
 	d.Set("cipher", server.Cipher)
 	d.Set("hash", server.Hash)
+
+	if len(organizations) > 0 {
+		d.Set("organizations", flattenOrganizationsData(organizations))
+	}
+
+	// get routes
 
 	return nil
 }
@@ -179,6 +189,13 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		server.Port = v.(int)
 	}
 
+	// Check if changes require stopping of the server
+	// Check if server is running
+	err = apiClient.StopServer(d.Id())
+	if err != nil {
+		return diag.Errorf("Error on stopping server: %s", err)
+	}
+
 	if d.HasChange("organizations") {
 		oldOrgs, newOrgs := d.GetChange("organizations")
 		for _, v := range oldOrgs.([]interface{}) {
@@ -240,13 +257,6 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	// Check if changes require stopping of the server
-	// Check if server is running
-	err = apiClient.StopServer(d.Id())
-	if err != nil {
-		return diag.Errorf("Error on stopping server: %s", err)
-	}
-
 	err = apiClient.UpdateServer(d.Id(), server)
 	if err != nil {
 		// start server in case of error?
@@ -273,4 +283,23 @@ func resourceDeleteServer(ctx context.Context, d *schema.ResourceData, meta inte
 	d.SetId("")
 
 	return nil
+}
+
+func flattenOrganizationsData(organizations []pritunl.Organization) []interface{} {
+	if organizations != nil {
+		orgs := make([]interface{}, len(organizations), len(organizations))
+
+		for i, organization := range organizations {
+			oi := make(map[string]interface{})
+
+			oi["id"] = organization.ID
+			oi["name"] = organization.Name
+
+			orgs[i] = oi
+		}
+
+		return orgs
+	}
+
+	return make([]interface{}, 0)
 }

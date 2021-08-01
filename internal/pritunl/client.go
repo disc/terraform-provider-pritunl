@@ -19,6 +19,7 @@ type Client interface {
 	UpdateServer(id string, server *Server) error
 	DeleteServer(id string) error
 
+	GetAttachedOrganizationsOnServer(serverId string) ([]Organization, error)
 	AttachOrganizationToServer(organizationId, serverId string) error
 	DetachOrganizationFromServer(organizationId, serverId string) error
 
@@ -74,7 +75,6 @@ func (c client) CreateOrganization(name string) (*Organization, error) {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 
 	var organization Organization
 	err = json.Unmarshal(body, &organization)
@@ -114,7 +114,6 @@ func (c client) DeleteOrganization(id string) error {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 
 	var organization Organization
 	err = json.Unmarshal(body, &organization)
@@ -171,7 +170,6 @@ func (c client) CreateServer(name, protocol, cipher, hash string, port *int) (*S
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 
 	var server Server
 	err = json.Unmarshal(body, &server)
@@ -221,6 +219,24 @@ func (c client) DeleteServer(id string) error {
 	return nil
 }
 
+func (c client) GetAttachedOrganizationsOnServer(serverId string) ([]Organization, error) {
+	url := fmt.Sprintf("/server/%s/organization", serverId)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var organizations []Organization
+	json.Unmarshal(body, &organizations)
+
+	return organizations, nil
+}
+
 func (c client) AttachOrganizationToServer(organizationId, serverId string) error {
 	url := fmt.Sprintf("/server/%s/organization/%s", serverId, organizationId)
 	req, err := http.NewRequest("PUT", url, nil)
@@ -230,9 +246,6 @@ func (c client) AttachOrganizationToServer(organizationId, serverId string) erro
 		return err
 	}
 	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 
 	return nil
 }
@@ -248,7 +261,10 @@ func (c client) DetachOrganizationFromServer(organizationId, serverId string) er
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on detaching the organization from the server\nbody=%s", body)
+	}
 
 	return nil
 }
@@ -263,9 +279,6 @@ func (c client) StartServer(serverId string) error {
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
-
 	return nil
 }
 
@@ -278,9 +291,6 @@ func (c client) StopServer(serverId string) error {
 		return err
 	}
 	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 
 	return nil
 }
