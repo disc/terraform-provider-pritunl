@@ -65,18 +65,19 @@ resource "pritunl_server" "main" {
 }
 
 resource "pritunl_server" "test" {
-  name     = "test"
-  protocol = "udp"
-  port     = 55555
-  cipher   = "aes128"
-  hash     = "sha1"
-  network  = "192.168.14.0/24"
+  name = "test"
+  //  protocol = "udp"
+  //  port     = 55555
+  //  cipher   = "aes128"
+  //  hash     = "sha1"
+  //  network  = "192.168.14.0/24"
 
-  organizations = [
-    pritunl_organization.my-first-org,
-    pritunl_organization.my-second-org,
-  ]
+  //  organizations = [
+  //    pritunl_organization.my-first-org,
+  //    pritunl_organization.my-second-org,
+  //  ]
 
+  //  addDefaultRoute = false
   routes = [
     data.pritunl_route.kibana-route,
     data.pritunl_route.grafana-route,

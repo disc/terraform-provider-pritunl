@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"strconv"
 	"terraform-pritunl/internal/pritunl"
 )
 
@@ -73,6 +74,7 @@ func resourceServer() *schema.Resource {
 				},
 				Required:    false,
 				Optional:    true,
+				Computed:    true,
 				Description: "The list of attached routes for the server",
 				ForceNew:    false,
 			},
@@ -334,8 +336,7 @@ func flattenRoutesData(routesList []pritunl.Route) []interface{} {
 
 			routeMap["id"] = route.GetID()
 			routeMap["network"] = route.Network
-			//routeMap["nat"] = strconv.FormatBool(route.Nat)
-			routeMap["nat"] = route.Nat
+			routeMap["nat"] = strconv.FormatBool(route.Nat)
 			if route.Comment != "" {
 				routeMap["comment"] = route.Comment
 			}
