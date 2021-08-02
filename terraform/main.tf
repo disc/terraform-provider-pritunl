@@ -47,12 +47,12 @@ data "pritunl_route" "default" {
 }
 
 resource "pritunl_server" "main" {
-  name     = "Main"
-  protocol = "tcp"
-  port     = 12444
-  cipher   = "aes128"
-  hash     = "sha1"
-  network  = "192.168.218.0/24"
+  name = "Main"
+  //  protocol = "tcp"
+  //  port     = 12444
+  //  cipher   = "aes128"
+  //  hash     = "sha1"
+  //  network  = "192.168.218.0/24"
 
   organizations = [
     pritunl_organization.default,
@@ -66,20 +66,21 @@ resource "pritunl_server" "main" {
 
 resource "pritunl_server" "test" {
   name = "test"
-  //  protocol = "udp"
+  //  protocol = "tcp"
   //  port     = 55555
   //  cipher   = "aes128"
   //  hash     = "sha1"
-  //  network  = "192.168.14.0/24"
+  //  network = "192.168.14.0/24"
 
-  //  organizations = [
-  //    pritunl_organization.my-first-org,
-  //    pritunl_organization.my-second-org,
-  //  ]
+  status = "offline"
 
-  //  addDefaultRoute = false
+  organizations = [
+    pritunl_organization.my-first-org,
+    //    pritunl_organization.my-second-org,
+  ]
+
   routes = [
-    data.pritunl_route.kibana-route,
+    //    data.pritunl_route.kibana-route,
     data.pritunl_route.grafana-route,
   ]
 }

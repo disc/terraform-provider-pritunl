@@ -2,9 +2,12 @@ package provider
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"strconv"
+	"strings"
 	"terraform-pritunl/internal/pritunl"
 )
 
@@ -77,6 +80,39 @@ func resourceServer() *schema.Resource {
 				Computed:    true,
 				Description: "The list of attached routes for the server",
 				ForceNew:    false,
+			},
+			"status": {
+				Type:         schema.TypeString,
+				Required:     false,
+				Optional:     true,
+				Description:  "The status of the server",
+				ForceNew:     false,
+				Default:      "offline",
+				RequiredWith: []string{"organizations"},
+				ValidateDiagFunc: func(v interface{}, path cty.Path) diag.Diagnostics {
+					allowedStatusesMap := map[string]struct{}{
+						pritunl.ServerStatusOffline: {},
+						pritunl.ServerStatusOnline:  {},
+					}
+
+					allowedStatusesList := make([]string, 0)
+					for status := range allowedStatusesMap {
+						allowedStatusesList = append(allowedStatusesList, status)
+					}
+
+					if _, ok := allowedStatusesMap[strings.ToLower(v.(string))]; !ok {
+						return diag.Diagnostics{
+							{
+								Severity:      diag.Error,
+								Summary:       "Unsupported value for the `status` attribute",
+								Detail:        fmt.Sprintf("Supported values are: %s", strings.Join(allowedStatusesList, ", ")),
+								AttributePath: cty.Path{cty.GetAttrStep{Name: "status"}},
+							},
+						}
+					}
+
+					return nil
+				},
 			},
 		},
 		CreateContext: resourceCreateServer,
@@ -182,7 +218,12 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	// Need to start server after a successful creation?
+	if d.Get("status").(string) == pritunl.ServerStatusOnline {
+		err = apiClient.StartServer(d.Id())
+		if err != nil {
+			return diag.Errorf("Error on starting server: %s", err)
+		}
+	}
 
 	return resourceReadServer(ctx, d, meta)
 }
@@ -219,11 +260,26 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		server.Network = v.(string)
 	}
 
-	// Check if changes require stopping of the server
-	// Check if server is running
-	err = apiClient.StopServer(d.Id())
-	if err != nil {
-		return diag.Errorf("Error on stopping server: %s", err)
+	if d.HasChange("status") {
+		newStatus := d.Get("status").(string)
+		if newStatus == pritunl.ServerStatusOnline {
+			err = apiClient.StartServer(d.Id())
+			if err != nil {
+				return diag.Errorf("Error on starting server: %s", err)
+			}
+		} else {
+			err = apiClient.StopServer(d.Id())
+			if err != nil {
+				return diag.Errorf("Error on stopping server: %s", err)
+			}
+		}
+	}
+
+	if d.Get("status").(string) == pritunl.ServerStatusOnline {
+		err = apiClient.StopServer(d.Id())
+		if err != nil {
+			return diag.Errorf("Error on stopping server: %s", err)
+		}
 	}
 
 	if d.HasChange("organizations") {
@@ -293,10 +349,11 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	// Check if server is stopped
-	err = apiClient.StartServer(d.Id())
-	if err != nil {
-		return diag.Errorf("Error on starting server: %s", err)
+	if d.Get("status").(string) == pritunl.ServerStatusOnline {
+		err = apiClient.StartServer(d.Id())
+		if err != nil {
+			return diag.Errorf("Error on starting server: %s", err)
+		}
 	}
 
 	return nil
