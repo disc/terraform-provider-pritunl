@@ -60,6 +60,14 @@ func resourceServer() *schema.Resource {
 				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
 				ForceNew:    false,
 			},
+			"bind_address": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
+				Default:     "",
+				ForceNew:    false,
+			},
 			"organizations": {
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
@@ -152,6 +160,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("cipher", server.Cipher)
 	d.Set("hash", server.Hash)
 	d.Set("network", server.Network)
+	d.Set("bind_address", server.BindAddress)
 
 	if len(organizations) > 0 {
 		d.Set("organizations", flattenOrganizationsData(organizations))
@@ -168,12 +177,13 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	apiClient := meta.(pritunl.Client)
 
 	serverData := map[string]interface{}{
-		"name":     d.Get("name"),
-		"protocol": d.Get("protocol"),
-		"port":     d.Get("port"),
-		"network":  d.Get("network"),
-		"cipher":   d.Get("cipher"),
-		"hash":     d.Get("hash"),
+		"name":         d.Get("name"),
+		"protocol":     d.Get("protocol"),
+		"port":         d.Get("port"),
+		"network":      d.Get("network"),
+		"cipher":       d.Get("cipher"),
+		"hash":         d.Get("hash"),
+		"bind_address": d.Get("bind_address"),
 	}
 
 	server, err := apiClient.CreateServer(serverData)
@@ -258,6 +268,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if v, ok := d.GetOk("network"); ok {
 		server.Network = v.(string)
+	}
+
+	if d.HasChange("bind_address") {
+		server.BindAddress = d.Get("bind_address").(string)
 	}
 
 	if d.HasChange("status") {
@@ -356,7 +370,7 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	return nil
+	return resourceReadServer(ctx, d, meta)
 }
 
 func resourceDeleteServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

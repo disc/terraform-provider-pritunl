@@ -168,6 +168,9 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 	if v, ok := serverData["port"]; ok {
 		serverStruct.Port = v.(int)
 	}
+	if v, ok := serverData["bind_address"]; ok {
+		serverStruct.BindAddress = v.(string)
+	}
 
 	jsonData, err := json.Marshal(serverStruct)
 

@@ -70,9 +70,10 @@ resource "pritunl_server" "test" {
   //  port     = 55555
   //  cipher   = "aes128"
   //  hash     = "sha1"
-  //  network = "192.168.14.0/24"
+  //  network      = "192.168.111.0/24"
+  //  bind_address = "192.168.2.3"
 
-  status = "offline"
+  //  status = "online"
 
   organizations = [
     pritunl_organization.my-first-org,
