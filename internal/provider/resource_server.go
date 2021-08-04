@@ -78,10 +78,32 @@ func resourceServer() *schema.Resource {
 				Description: "The list of attached organizations for the server",
 				ForceNew:    false,
 			},
-			"routes": {
-				Type: schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeMap,
+			"route": {
+				Type: schema.TypeSet,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"network": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "Network address with subnet to route",
+							ForceNew:    false,
+						},
+						"comment": {
+							Type:        schema.TypeString,
+							Required:    false,
+							Optional:    true,
+							Description: "Comment for route",
+							ForceNew:    false,
+						},
+						"nat": {
+							Type:        schema.TypeBool,
+							Required:    false,
+							Optional:    true,
+							Description: "NAT vpn traffic destined to this network",
+							Default:     true,
+							ForceNew:    false,
+						},
+					},
 				},
 				Required:    false,
 				Optional:    true,
@@ -167,7 +189,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	if len(routes) > 0 {
-		d.Set("routes", flattenRoutesData(routes))
+		d.Set("route", flattenRoutesData(routes))
 	}
 
 	return nil
@@ -215,10 +237,11 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Error on attaching server to the organization: %s", err)
 	}
 
-	if d.HasChange("routes") {
-		_, newRoutes := d.GetChange("routes")
+	if d.HasChange("route") {
+		_, newRoutes := d.GetChange("route")
 		routes := make([]pritunl.Route, 0)
-		for _, v := range newRoutes.([]interface{}) {
+
+		for _, v := range newRoutes.(*schema.Set).List() {
 			routes = append(routes, pritunl.ConvertMapToRoute(v.(map[string]interface{})))
 		}
 
@@ -316,16 +339,16 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	if d.HasChange("routes") {
-		oldRoutes, newRoutes := d.GetChange("routes")
+	if d.HasChange("route") {
+		oldRoutes, newRoutes := d.GetChange("route")
 
 		newRoutesMap := make(map[string]pritunl.Route, 0)
-		for _, v := range newRoutes.([]interface{}) {
+		for _, v := range newRoutes.(*schema.Set).List() {
 			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
 			newRoutesMap[route.GetID()] = route
 		}
 		oldRoutesMap := make(map[string]pritunl.Route, 0)
-		for _, v := range oldRoutes.([]interface{}) {
+		for _, v := range oldRoutes.(*schema.Set).List() {
 			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
 			oldRoutesMap[route.GetID()] = route
 		}

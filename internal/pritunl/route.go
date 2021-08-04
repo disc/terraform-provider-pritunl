@@ -2,7 +2,6 @@ package pritunl
 
 import (
 	"encoding/hex"
-	"strconv"
 )
 
 type Route struct {
@@ -40,8 +39,7 @@ func ConvertMapToRoute(data map[string]interface{}) Route {
 		route.Comment = v.(string)
 	}
 	if v, ok := data["nat"]; ok {
-		boolVal, _ := strconv.ParseBool(v.(string))
-		route.Nat = boolVal
+		route.Nat = v.(bool)
 	}
 
 	return route
