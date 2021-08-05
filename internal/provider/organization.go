@@ -1,4 +1,4 @@
-package pritunl
+package provider
 
 type Organization struct {
 	ID   string `json:"id,omitempty"`

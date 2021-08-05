@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	"terraform-pritunl/internal/pritunl"
 )
 
 func Provider() *schema.Provider {
@@ -40,5 +38,5 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	token := d.Get("token").(string)
 	secret := d.Get("secret").(string)
 
-	return pritunl.NewClient(url, token, secret), nil
+	return NewClient(url, token, secret), nil
 }

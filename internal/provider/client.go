@@ -1,4 +1,4 @@
-package pritunl
+package provider
 
 import (
 	"bytes"
