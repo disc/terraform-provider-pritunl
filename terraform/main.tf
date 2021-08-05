@@ -13,14 +13,6 @@ provider "pritunl" {
   secret = var.pritunl_api_secret
 }
 
-resource "pritunl_organization" "alice" {
-  name = "AliceOrg"
-}
-
-resource "pritunl_organization" "default" {
-  name = "Default"
-}
-
 resource "pritunl_organization" "my-first-org" {
   name = "My_First_Org"
 }
@@ -28,24 +20,6 @@ resource "pritunl_organization" "my-first-org" {
 resource "pritunl_organization" "my-second-org" {
   name = "My_Second_Org"
 }
-
-//resource "pritunl_server" "main" {
-//  name     = "Main"
-//  protocol = "tcp"
-//  port     = 12444
-//  network  = "192.168.218.0/24"
-//  status   = "online"
-//
-//  organizations = [
-//    pritunl_organization.default,
-//    pritunl_organization.alice,
-//  ]
-//
-//  //  route {
-//  //    network = "0.0.0.0/0"
-//  //    nat     = true
-//  //  }
-//}
 
 resource "pritunl_server" "test" {
   name = "test"
