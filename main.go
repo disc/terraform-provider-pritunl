@@ -9,8 +9,11 @@ import (
 	"terraform-pritunl/internal/provider"
 )
 
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+
 func main() {
 	var debugMode bool
+
 	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
@@ -21,7 +24,7 @@ func main() {
 	}
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "localhost/disc/pritunl", opts)
+		err := plugin.Debug(context.Background(), "registry.terraform.io/disc/pritunl", opts)
 		if err != nil {
 			log.Fatal(err.Error())
 		}

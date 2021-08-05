@@ -2,7 +2,7 @@ terraform {
   required_providers {
     pritunl = {
       version = "~> 0.0.1"
-      source  = "localhost/disc/pritunl"
+      source  = "disc/pritunl"
     }
   }
 }
