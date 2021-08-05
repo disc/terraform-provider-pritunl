@@ -22,7 +22,9 @@ resource "pritunl_organization" "my-second-org" {
 }
 
 resource "pritunl_server" "test" {
-  name = "test"
+  name    = "test"
+  port    = 65500
+  network = "192.168.1.0/24"
 
   organizations = [
     pritunl_organization.my-first-org,

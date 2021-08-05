@@ -185,6 +185,10 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 
 	body, _ := ioutil.ReadAll(resp.Body)
 
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on creating the server\nbody=%s", body)
+	}
+
 	var server Server
 	err = json.Unmarshal(body, &server)
 	if err != nil {

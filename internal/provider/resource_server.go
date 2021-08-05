@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"strconv"
 	"strings"
 )
@@ -20,36 +21,37 @@ func resourceServer() *schema.Resource {
 				ForceNew:    false,
 			},
 			"protocol": {
-				Type:        schema.TypeString,
-				Required:    false,
-				Optional:    true,
-				Description: "The protocol for the server",
-				Default:     "udp",
-				ForceNew:    false,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "The protocol for the server",
+				Default:      "udp",
+				ForceNew:     false,
+				ValidateFunc: validation.StringInSlice([]string{"udp", "tcp"}, true),
 			},
 			"cipher": {
-				Type:        schema.TypeString,
-				Required:    false,
-				Optional:    true,
-				Description: "The cipher for the server",
-				Default:     "aes128",
-				ForceNew:    false,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "The cipher for the server",
+				Default:      "aes128",
+				ForceNew:     false,
+				ValidateFunc: validation.StringInSlice([]string{"none", "bf128", "bf256", "aes128", "aes192", "aes256"}, true),
 			},
 			"hash": {
-				Type:        schema.TypeString,
-				Required:    false,
-				Optional:    true,
-				Description: "The hash for the server",
-				Default:     "sha1",
-				ForceNew:    false,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "The hash for the server",
+				Default:      "sha1",
+				ForceNew:     false,
+				ValidateFunc: validation.StringInSlice([]string{"none", "md5", "sha1", "sha256", "sha512"}, true),
 			},
 			"port": {
-				Type:        schema.TypeInt,
-				Required:    false,
-				Optional:    true,
-				Computed:    true,
-				Description: "The port for the server",
-				ForceNew:    false,
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Computed:     true,
+				Description:  "The port for the server",
+				ForceNew:     false,
+				ValidateFunc: validation.IntBetween(1, 65535),
 			},
 			"network": {
 				Type:        schema.TypeString,
@@ -58,13 +60,25 @@ func resourceServer() *schema.Resource {
 				Computed:    true,
 				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
 				ForceNew:    false,
+				//ValidateFunc: validation.Any(
+				//	// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
+				//	func(i interface{}, s string) ([]string, []error) {
+				//		return validation.IsIPv4Address(i.(string), "10.0.0.0/8")
+				//	},
+				//	func(i interface{}, s string) ([]string, []error) {
+				//		return validation.IsIPv4Address(i.(string), "172.16.0.0/11")
+				//	},
+				//	func(i interface{}, s string) ([]string, []error) {
+				//		return validation.IsIPv4Address(i.(string), "192.168.0.0/16")
+				//	},
+				//),
 			},
 			"bind_address": {
 				Type:        schema.TypeString,
 				Required:    false,
 				Optional:    true,
 				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
-				Default:     "",
+				Computed:    true,
 				ForceNew:    false,
 			},
 			"organizations": {
@@ -99,7 +113,7 @@ func resourceServer() *schema.Resource {
 							Required:    false,
 							Optional:    true,
 							Description: "NAT vpn traffic destined to this network",
-							Default:     true,
+							Computed:    true,
 							ForceNew:    false,
 						},
 					},
@@ -116,7 +130,7 @@ func resourceServer() *schema.Resource {
 				Optional:     true,
 				Description:  "The status of the server",
 				ForceNew:     false,
-				Default:      "offline",
+				Computed:     true,
 				RequiredWith: []string{"organizations"},
 				ValidateDiagFunc: func(v interface{}, path cty.Path) diag.Diagnostics {
 					allowedStatusesMap := map[string]struct{}{
