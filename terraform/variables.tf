@@ -12,3 +12,8 @@ variable "pritunl_api_secret" {
   type    = string
   default = "secret"
 }
+
+variable "common_routes" {
+  type    = list(map(any))
+  default = []
+}

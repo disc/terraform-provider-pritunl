@@ -71,18 +71,12 @@ resource "pritunl_server" "test" {
     pritunl_organization.my-first-org,
   ]
 
-  //  route {
-  //    network = "1.2.3.4/32"
-  //    comment = "Grafana"
-  //    nat     = false
-  //  }
-
-  // TODO: read the article
-  // https://faultbucket.ca/2020/07/terraform-handling-list-of-maps/
-
-  route {
-    network = "1.1.1.3/32"
-    comment = "Kibana"
-    nat     = true
+  dynamic "route" {
+    for_each = var.common_routes
+    content {
+      network = route.value["network"]
+      comment = route.value["comment"]
+      nat     = route.value["nat"]
+    }
   }
 }
