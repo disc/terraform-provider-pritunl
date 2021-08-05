@@ -31,9 +31,6 @@ func Provider() *schema.Provider {
 			"pritunl_organization": resourceOrganization(),
 			"pritunl_server":       resourceServer(),
 		},
-		DataSourcesMap: map[string]*schema.Resource{
-			"pritunl_route": datasourceRoute(),
-		},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
