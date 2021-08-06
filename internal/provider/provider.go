@@ -38,5 +38,13 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	token := d.Get("token").(string)
 	secret := d.Get("secret").(string)
 
-	return NewClient(url, token, secret), nil
+	apiClient := NewClient(url, token, secret)
+
+	// execute test api call to ensure that provided credentials are valid and pritunl api works
+	err := apiClient.TestApiCall()
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
+
+	return apiClient, nil
 }

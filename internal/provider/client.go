@@ -9,6 +9,7 @@ import (
 )
 
 type Client interface {
+	TestApiCall() error
 	GetOrganization(id string) (*Organization, error)
 	CreateOrganization(name string) (*Organization, error)
 	UpdateOrganization(id string, organization *Organization) error
@@ -51,6 +52,9 @@ func (c client) GetOrganization(id string) (*Organization, error) {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting the organization\nbody=%s", body)
+	}
 
 	// iterate over all pages
 	var organization Organization
@@ -61,6 +65,31 @@ func (c client) GetOrganization(id string) (*Organization, error) {
 	}
 
 	return &organization, nil
+}
+
+func (c client) TestApiCall() error {
+	url := fmt.Sprintf("/organization")
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	// TODO: Much such checks into the http client's middleware
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on the tests api call\nbody=%s", body)
+	}
+
+	// 401 - invalid credentials
+	if resp.StatusCode == 401 {
+		return fmt.Errorf("unauthorized: Invalid token or secret")
+	}
+
+	// not suitable license, has no api access?
+
+	return nil
 }
 
 func (c client) CreateOrganization(name string) (*Organization, error) {
@@ -76,6 +105,9 @@ func (c client) CreateOrganization(name string) (*Organization, error) {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on creating the organization\nbody=%s", body)
+	}
 
 	var organization Organization
 	err = json.Unmarshal(body, &organization)
@@ -101,6 +133,11 @@ func (c client) UpdateOrganization(id string, organization *Organization) error 
 	}
 	defer resp.Body.Close()
 
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on updating the organization\nbody=%s", body)
+	}
+
 	return nil
 }
 
@@ -115,6 +152,9 @@ func (c client) DeleteOrganization(id string) error {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on deleting the organization\nbody=%s", body)
+	}
 
 	var organization Organization
 	err = json.Unmarshal(body, &organization)
@@ -136,6 +176,9 @@ func (c client) GetServer(id string) (*Server, error) {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting the server\nbody=%s", body)
+	}
 
 	var server Server
 	err = json.Unmarshal(body, &server)
@@ -184,7 +227,6 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("Non-200 response on creating the server\nbody=%s", body)
 	}
@@ -213,6 +255,11 @@ func (c client) UpdateServer(id string, server *Server) error {
 	}
 	defer resp.Body.Close()
 
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on updating the server\nbody=%s", body)
+	}
+
 	return nil
 }
 
@@ -227,6 +274,9 @@ func (c client) DeleteServer(id string) error {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on deleting the server\nbody=%s", body)
+	}
 
 	var server Server
 	err = json.Unmarshal(body, &server)
@@ -248,6 +298,9 @@ func (c client) GetOrganizationsByServer(serverId string) ([]Organization, error
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting organizations on the server\nbody=%s", body)
+	}
 
 	var organizations []Organization
 	json.Unmarshal(body, &organizations)
@@ -265,6 +318,11 @@ func (c client) AttachOrganizationToServer(organizationId, serverId string) erro
 	}
 	defer resp.Body.Close()
 
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on arrachhing an organization the server\nbody=%s", body)
+	}
+
 	return nil
 }
 
@@ -279,7 +337,6 @@ func (c client) DetachOrganizationFromServer(organizationId, serverId string) er
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Non-200 response on detaching the organization from the server\nbody=%s", body)
 	}
@@ -297,6 +354,11 @@ func (c client) StartServer(serverId string) error {
 	}
 	defer resp.Body.Close()
 
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on starting the server\nbody=%s", body)
+	}
+
 	return nil
 }
 
@@ -309,6 +371,11 @@ func (c client) StopServer(serverId string) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on stopping the server\nbody=%s", body)
+	}
 
 	return nil
 }
@@ -324,6 +391,9 @@ func (c client) GetRoutesByServer(serverId string) ([]Route, error) {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting routes on the server\nbody=%s", body)
+	}
 
 	var routes []Route
 	json.Unmarshal(body, &routes)
@@ -343,6 +413,11 @@ func (c client) AddRouteToServer(serverId string, route Route) error {
 	}
 	defer resp.Body.Close()
 
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on adding a route to the server\nbody=%s", body)
+	}
+
 	return nil
 }
 
@@ -357,6 +432,11 @@ func (c client) AddRoutesToServer(serverId string, routes []Route) error {
 		return fmt.Errorf("AddRoutesToServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on adding routes to the server\nbody=%s", body)
+	}
 
 	return nil
 }
@@ -373,6 +453,11 @@ func (c client) UpdateRouteOnServer(serverId string, route Route) error {
 	}
 	defer resp.Body.Close()
 
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on updating a route on the server\nbody=%s", body)
+	}
+
 	return nil
 }
 
@@ -385,6 +470,11 @@ func (c client) DeleteRouteFromServer(serverId string, route Route) error {
 		return fmt.Errorf("DeleteRouteFromServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on deleting a route on the server\nbody=%s", body)
+	}
 
 	return nil
 }
