@@ -1,4 +1,4 @@
-module terraform-pritunl
+module github.com/disc/terraform-provider-pritunl
 
 go 1.16
 

@@ -1,8 +1,16 @@
 package provider
 
+import (
+	"encoding/json"
+	"strconv"
+)
+
 const (
 	ServerStatusOnline  = "online"
 	ServerStatusOffline = "offline"
+
+	ServerNetworkModeTunnel = "tunnel"
+	ServerNetworkModeBridge = "bridge"
 )
 
 type Server struct {
@@ -47,4 +55,17 @@ type Server struct {
 	LzoCompression   bool     `json:"lzo_compression,omitempty"`
 	BlockOutsideDns  bool     `json:"block_outside_dns,omitempty"`
 	JumboFrames      bool     `json:"jumbo_frames,omitempty"`
+	Debug            bool     `json:"debug,omitempty"`
+}
+
+func (s *Server) MarshalJSON() ([]byte, error) {
+	type Alias Server
+	return json.Marshal(&struct {
+		// Pritunl API expects input mss_fix value as a string, but returns as an int
+		MssFix string `json:"mss_fix"`
+		*Alias
+	}{
+		MssFix: strconv.Itoa(s.MssFix),
+		Alias:  (*Alias)(s),
+	})
 }

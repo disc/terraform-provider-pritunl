@@ -214,8 +214,135 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 	if v, ok := serverData["bind_address"]; ok {
 		serverStruct.BindAddress = v.(string)
 	}
+	if v, ok := serverData["groups"]; ok {
+		groups := make([]string, 0)
+		for _, group := range v.([]interface{}) {
+			groups = append(groups, group.(string))
+		}
+		serverStruct.Groups = groups
+	}
+	if v, ok := serverData["dns_servers"]; ok {
+		dnsServers := make([]string, 0)
+		for _, dns := range v.([]interface{}) {
+			dnsServers = append(dnsServers, dns.(string))
+		}
+		serverStruct.DnsServers = dnsServers
+	}
+	if v, ok := serverData["network_wg"]; ok {
+		serverStruct.NetworkWG = v.(string)
+	}
+	if v, ok := serverData["port_wg"]; ok {
+		serverStruct.PortWG = v.(int)
+	}
 
-	jsonData, err := json.Marshal(serverStruct)
+	isWgEnabled := serverStruct.NetworkWG != "" && serverStruct.PortWG > 0
+	serverStruct.WG = isWgEnabled
+
+	if v, ok := serverData["otp_auth"]; ok {
+		serverStruct.OtpAuth = v.(bool)
+	}
+
+	if v, ok := serverData["ipv6"]; ok {
+		serverStruct.IPv6 = v.(bool)
+	}
+
+	if v, ok := serverData["dh_param_bits"]; ok {
+		serverStruct.DhParamBits = v.(int)
+	}
+
+	if v, ok := serverData["ping_interval"]; ok {
+		serverStruct.PingInterval = v.(int)
+	}
+
+	if v, ok := serverData["ping_timeout"]; ok {
+		serverStruct.PingTimeout = v.(int)
+	}
+
+	if v, ok := serverData["link_ping_interval"]; ok {
+		serverStruct.LinkPingInterval = v.(int)
+	}
+
+	if v, ok := serverData["link_ping_timeout"]; ok {
+		serverStruct.LinkPingTimeout = v.(int)
+	}
+
+	if v, ok := serverData["inactive_timeout"]; ok {
+		serverStruct.InactiveTimeout = v.(int)
+	}
+
+	if v, ok := serverData["max_clients"]; ok {
+		serverStruct.MaxClients = v.(int)
+	}
+
+	if v, ok := serverData["network_mode"]; ok {
+		serverStruct.NetworkMode = v.(string)
+	}
+
+	if v, ok := serverData["network_start"]; ok {
+		serverStruct.NetworkStart = v.(string)
+	}
+
+	if v, ok := serverData["network_end"]; ok {
+		serverStruct.NetworkEnd = v.(string)
+	}
+
+	if serverStruct.NetworkMode == ServerNetworkModeBridge && (serverStruct.NetworkStart == "" || serverStruct.NetworkEnd == "") {
+		return nil, fmt.Errorf("the attribute network_mode = %s requires network_start and network_end attributes", ServerNetworkModeBridge)
+	}
+
+	if v, ok := serverData["mss_fix"]; ok {
+		serverStruct.MssFix = v.(int)
+	}
+
+	if v, ok := serverData["max_devices"]; ok {
+		serverStruct.MaxDevices = v.(int)
+	}
+
+	if v, ok := serverData["pre_connect_msg"]; ok {
+		serverStruct.PreConnectMsg = v.(string)
+	}
+
+	if v, ok := serverData["allowed_devices"]; ok {
+		serverStruct.AllowedDevices = v.(string)
+	}
+
+	if v, ok := serverData["search_domain"]; ok {
+		serverStruct.SearchDomain = v.(string)
+	}
+
+	if v, ok := serverData["replica_count"]; ok {
+		serverStruct.ReplicaCount = v.(int)
+	}
+
+	if v, ok := serverData["multi_device"]; ok {
+		serverStruct.MultiDevice = v.(bool)
+	}
+
+	if v, ok := serverData["debug"]; ok {
+		serverStruct.Debug = v.(bool)
+	}
+
+	if v, ok := serverData["restrict_routes"]; ok {
+		serverStruct.RestrictRoutes = v.(bool)
+	}
+
+	if v, ok := serverData["block_outside_dns"]; ok {
+		serverStruct.BlockOutsideDns = v.(bool)
+	}
+
+	if v, ok := serverData["dns_mapping"]; ok {
+		serverStruct.DnsMapping = v.(bool)
+	}
+
+	if v, ok := serverData["inter_client"]; ok {
+		serverStruct.InterClient = v.(bool)
+	}
+
+	if v, ok := serverData["vxlan"]; ok {
+		serverStruct.VxLan = v.(bool)
+	}
+
+	jsonData, err := serverStruct.MarshalJSON()
 
 	url := "/server"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
@@ -228,7 +355,7 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Non-200 response on creating the server\nbody=%s", body)
+		return nil, fmt.Errorf("Non-200 response on creating the server\ncode=%d\nbody=%s", resp.StatusCode, body)
 	}
 
 	var server Server
@@ -241,7 +368,7 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 }
 
 func (c client) UpdateServer(id string, server *Server) error {
-	jsonData, err := json.Marshal(server)
+	jsonData, err := server.MarshalJSON()
 	if err != nil {
 		return fmt.Errorf("UpdateServer: Error on marshalling data: %s", err)
 	}

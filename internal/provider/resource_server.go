@@ -18,31 +18,27 @@ func resourceServer() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The name of the server",
-				ForceNew:    false,
 			},
 			"protocol": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Description:  "The protocol for the server",
 				Default:      "udp",
-				ForceNew:     false,
-				ValidateFunc: validation.StringInSlice([]string{"udp", "tcp"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"udp", "tcp"}, false),
 			},
 			"cipher": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Description:  "The cipher for the server",
 				Default:      "aes128",
-				ForceNew:     false,
-				ValidateFunc: validation.StringInSlice([]string{"none", "bf128", "bf256", "aes128", "aes192", "aes256"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"none", "bf128", "bf256", "aes128", "aes192", "aes256"}, false),
 			},
 			"hash": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Description:  "The hash for the server",
 				Default:      "sha1",
-				ForceNew:     false,
-				ValidateFunc: validation.StringInSlice([]string{"none", "md5", "sha1", "sha256", "sha512"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"none", "md5", "sha1", "sha256", "sha512"}, false),
 			},
 			"port": {
 				Type:         schema.TypeInt,
@@ -50,7 +46,6 @@ func resourceServer() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				Description:  "The port for the server",
-				ForceNew:     false,
 				ValidateFunc: validation.IntBetween(1, 65535),
 			},
 			"network": {
@@ -59,7 +54,7 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
-				ForceNew:    false,
+
 				//ValidateFunc: validation.Any(
 				//	// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
 				//	func(i interface{}, s string) ([]string, []error) {
@@ -78,8 +73,226 @@ func resourceServer() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
+				// TODO: Add validation
+			},
+			"network_wg": {
+				Type:         schema.TypeString,
+				Required:     false,
+				Optional:     true,
+				Description:  "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
+				RequiredWith: []string{"port_wg"},
+				// TODO: Add validation
+				// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
+			},
+			"port_wg": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Description:  "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
+				RequiredWith: []string{"network_wg"},
+				ValidateFunc: validation.IntBetween(1, 65535),
+				// TODO: Add validation
+			},
+			"groups": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Required:    false,
+				Optional:    true,
+				Description: "Enter list of groups to allow connections from. Names are case sensitive. If empty all groups will able to connect",
+				// Add validation after fix https://github.com/hashicorp/terraform-plugin-sdk/issues/156
+				// ValidateFunc and ValidateDiagFunc are not yet supported on lists or sets.
+			},
+			"dns_servers": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+						return validation.IsIPAddress(i, s)
+					},
+				},
+				Required:    false,
+				Optional:    true,
+				Description: "Enter list of groups to allow connections from. Names are case sensitive. If empty all groups will able to connect",
+			},
+			"otp_auth": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Enables two-step authentication using Google Authenticator. Verification code is entered as the user password when connecting",
+			},
+			"ipv6": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Enables IPv6 on server, requires IPv6 network interface",
+			},
+			"dh_param_bits": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Description:  "Size of DH parameters",
+				ValidateFunc: validation.IntInSlice([]int{1024, 1536, 2048, 2048, 3072, 4096}),
+				// TODO: Cover the case " Generating DH parameters, please wait..." before start the server
+			},
+			"ping_interval": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Description:  "Interval to ping client",
+				ValidateFunc: validation.IntAtLeast(1),
+			},
+			"ping_timeout": {
+				Type:        schema.TypeInt,
+				Required:    false,
+				Optional:    true,
 				Computed:    true,
-				ForceNew:    false,
+				Description: "Timeout for client ping. Must be greater then ping interval",
+				ValidateFunc: validation.All(
+					validation.IntAtLeast(1),
+					//func(i interface{}, s string) ([]string, []error) {
+					//	TODO: Implement "Must be greater then ping interval" rule
+					//},
+				),
+			},
+			"link_ping_interval": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Description:  "Time in between pings used when multiple users have the same network link to failover to another user when one network link fails.",
+				ValidateFunc: validation.IntAtLeast(1),
+			},
+			"link_ping_timeout": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Computed:     true,
+				Description:  "Optional, ping timeout used when multiple users have the same network link to failover to another user when one network link fails..",
+				ValidateFunc: validation.IntAtLeast(0),
+			},
+			"inactive_timeout": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Description:  "Disconnects users after the specified number of seconds of inactivity..",
+				ValidateFunc: validation.IntAtLeast(1),
+			},
+			"max_clients": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Description:  "Maximum number of clients connected to a server or to each server replica.",
+				ValidateFunc: validation.IntAtLeast(1),
+			},
+			"network_mode": {
+				Type:         schema.TypeString,
+				Required:     false,
+				Optional:     true,
+				Description:  "Maximum number of clients connected to a server or to each server replica.",
+				ValidateFunc: validation.StringInSlice([]string{"tunnel", "bridge"}, false),
+			},
+			"network_start": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Starting network address for the bridged VPN client IP addresses. Must be in the subnet of the server network.",
+				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+					return validation.IsIPAddress(i, s)
+				},
+				RequiredWith: []string{"network_mode", "network_end"},
+			},
+			"network_end": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Ending network address for the bridged VPN client IP addresses. Must be in the subnet of the server network.",
+				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+					return validation.IsIPAddress(i, s)
+				},
+				RequiredWith: []string{"network_mode", "network_start"},
+			},
+			"mss_fix": {
+				Type:        schema.TypeInt,
+				Required:    false,
+				Optional:    true,
+				Description: "MSS fix value",
+			},
+			"max_devices": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Description:  "Maximum number of devices per client connected to a server.",
+				ValidateFunc: validation.IntAtLeast(0),
+			},
+			"pre_connect_msg": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Messages that will be shown after connect to the server",
+			},
+			"allowed_devices": {
+				Type:         schema.TypeString,
+				Required:     false,
+				Optional:     true,
+				Description:  "Device types permitted to connect to server.",
+				ValidateFunc: validation.StringInSlice([]string{"mobile", "desktop"}, false),
+			},
+			"search_domain": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "DNS search domain for clients. Separate multiple search domains by a comma.",
+				// TODO: Add validation
+			},
+			"replica_count": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Description:  "Replicate server across multiple hosts.",
+				ValidateFunc: validation.IntAtLeast(1),
+			},
+			"multi_device": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Allow users to connect with multiple devices concurrently.",
+			},
+			"debug": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Show server debugging information in output.",
+			},
+			"restrict_routes": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Prevent traffic from networks not specified in the servers routes from being tunneled over the vpn.",
+			},
+			"block_outside_dns": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Block outside DNS on Windows clients.",
+			},
+			"dns_mapping": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Map the vpn clients ip address to the .vpn domain such as example_user.example_org.vpn This will conflict with the DNS port if systemd-resolve is running.",
+			},
+			"inter_client": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Enable inter-client routing across hosts.",
+			},
+			"vxlan": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Use VXLan for routing client-to-client traffic with replicated servers.",
 			},
 			"organizations": {
 				Type: schema.TypeList,
@@ -89,7 +302,6 @@ func resourceServer() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "The list of attached organizations for the server",
-				ForceNew:    false,
 			},
 			"route": {
 				Type: schema.TypeSet,
@@ -99,14 +311,12 @@ func resourceServer() *schema.Resource {
 							Type:        schema.TypeString,
 							Required:    true,
 							Description: "Network address with subnet to route",
-							ForceNew:    false,
 						},
 						"comment": {
 							Type:        schema.TypeString,
 							Required:    false,
 							Optional:    true,
 							Description: "Comment for route",
-							ForceNew:    false,
 						},
 						"nat": {
 							Type:        schema.TypeBool,
@@ -114,7 +324,6 @@ func resourceServer() *schema.Resource {
 							Optional:    true,
 							Description: "NAT vpn traffic destined to this network",
 							Computed:    true,
-							ForceNew:    false,
 						},
 					},
 				},
@@ -122,15 +331,12 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Description: "The list of attached routes for the server",
-				ForceNew:    false,
 			},
 			"status": {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
 				Description:  "The status of the server",
-				ForceNew:     false,
-				Computed:     true,
 				RequiredWith: []string{"organizations"},
 				ValidateDiagFunc: func(v interface{}, path cty.Path) diag.Diagnostics {
 					allowedStatusesMap := map[string]struct{}{
@@ -196,6 +402,35 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("hash", server.Hash)
 	d.Set("network", server.Network)
 	d.Set("bind_address", server.BindAddress)
+	d.Set("groups", server.Groups)
+	d.Set("dns_servers", server.DnsServers)
+	d.Set("network_wg", server.NetworkWG)
+	d.Set("port_wg", server.PortWG)
+	d.Set("otp_auth", server.OtpAuth)
+	d.Set("ipv6", server.IPv6)
+	d.Set("dh_param_bits", server.DhParamBits)
+	d.Set("ping_interval", server.PingInterval)
+	d.Set("ping_timeout", server.PingTimeout)
+	d.Set("link_ping_interval", server.LinkPingInterval)
+	d.Set("link_ping_timeout", server.LinkPingTimeout)
+	d.Set("inactive_timeout", server.InactiveTimeout)
+	d.Set("max_clients", server.MaxClients)
+	d.Set("network_mode", server.NetworkMode)
+	d.Set("network_start", server.NetworkStart)
+	d.Set("network_end", server.NetworkEnd)
+	d.Set("mss_fix", server.MssFix)
+	d.Set("max_devices", server.MaxDevices)
+	d.Set("pre_connect_msg", server.PreConnectMsg)
+	d.Set("allowed_devices", server.AllowedDevices)
+	d.Set("search_domain", server.SearchDomain)
+	d.Set("replica_count", server.ReplicaCount)
+	d.Set("multi_device", server.MultiDevice)
+	d.Set("debug", server.Debug)
+	d.Set("restrict_routes", server.RestrictRoutes)
+	d.Set("block_outside_dns", server.BlockOutsideDns)
+	d.Set("dns_mapping", server.DnsMapping)
+	d.Set("inter_client", server.InterClient)
+	d.Set("vxlan", server.VxLan)
 
 	if len(organizations) > 0 {
 		d.Set("organizations", flattenOrganizationsData(organizations))
@@ -212,13 +447,42 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	apiClient := meta.(Client)
 
 	serverData := map[string]interface{}{
-		"name":         d.Get("name"),
-		"protocol":     d.Get("protocol"),
-		"port":         d.Get("port"),
-		"network":      d.Get("network"),
-		"cipher":       d.Get("cipher"),
-		"hash":         d.Get("hash"),
-		"bind_address": d.Get("bind_address"),
+		"name":               d.Get("name"),
+		"protocol":           d.Get("protocol"),
+		"port":               d.Get("port"),
+		"network":            d.Get("network"),
+		"cipher":             d.Get("cipher"),
+		"hash":               d.Get("hash"),
+		"bind_address":       d.Get("bind_address"),
+		"groups":             d.Get("groups"),
+		"dns_servers":        d.Get("dns_servers"),
+		"network_wg":         d.Get("network_wg"),
+		"port_wg":            d.Get("port_wg"),
+		"otp_auth":           d.Get("otp_auth"),
+		"ipv6":               d.Get("ipv6"),
+		"dh_param_bits":      d.Get("dh_param_bits"),
+		"ping_interval":      d.Get("ping_interval"),
+		"ping_timeout":       d.Get("ping_timeout"),
+		"link_ping_interval": d.Get("link_ping_interval"),
+		"link_ping_timeout":  d.Get("link_ping_timeout"),
+		"inactive_timeout":   d.Get("inactive_timeout"),
+		"max_clients":        d.Get("max_clients"),
+		"network_mode":       d.Get("network_mode"),
+		"network_start":      d.Get("network_start"),
+		"network_end":        d.Get("network_end"),
+		"mss_fix":            d.Get("mss_fix"),
+		"max_devices":        d.Get("max_devices"),
+		"pre_connect_msg":    d.Get("pre_connect_msg"),
+		"allowed_devices":    d.Get("allowed_devices"),
+		"search_domain":      d.Get("search_domain"),
+		"replica_count":      d.Get("replica_count"),
+		"multi_device":       d.Get("multi_device"),
+		"debug":              d.Get("debug"),
+		"restrict_routes":    d.Get("restrict_routes"),
+		"block_outside_dns":  d.Get("block_outside_dns"),
+		"dns_mapping":        d.Get("dns_mapping"),
+		"inter_client":       d.Get("inter_client"),
+		"vxlan":              d.Get("vxlan"),
 	}
 
 	server, err := apiClient.CreateServer(serverData)
@@ -308,6 +572,133 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("bind_address") {
 		server.BindAddress = d.Get("bind_address").(string)
+	}
+
+	if d.HasChange("network_wg") {
+		server.NetworkWG = d.Get("network_wg").(string)
+	}
+
+	if d.HasChange("port_wg") {
+		server.PortWG = d.Get("port_wg").(int)
+	}
+
+	isWgEnabled := server.NetworkWG != "" && server.PortWG > 0
+	server.WG = isWgEnabled
+
+	if d.HasChange("otp_auth") {
+		server.OtpAuth = d.Get("otp_auth").(bool)
+	}
+
+	if d.HasChange("ipv6") {
+		server.IPv6 = d.Get("ipv6").(bool)
+	}
+
+	if d.HasChange("dh_param_bits") {
+		server.DhParamBits = d.Get("dh_param_bits").(int)
+	}
+
+	if d.HasChange("ping_interval") {
+		server.PingInterval = d.Get("ping_interval").(int)
+	}
+
+	if d.HasChange("ping_timeout") {
+		server.PingTimeout = d.Get("ping_timeout").(int)
+	}
+
+	if d.HasChange("link_ping_interval") {
+		server.LinkPingInterval = d.Get("link_ping_interval").(int)
+	}
+
+	if d.HasChange("link_ping_timeout") {
+		server.LinkPingTimeout = d.Get("link_ping_timeout").(int)
+	}
+
+	if d.HasChange("inactive_timeout") {
+		server.InactiveTimeout = d.Get("inactive_timeout").(int)
+	}
+
+	if d.HasChange("max_clients") {
+		server.MaxClients = d.Get("max_clients").(int)
+	}
+
+	if d.HasChange("network_mode") {
+		server.NetworkMode = d.Get("network_mode").(string)
+	}
+
+	if d.HasChange("network_start") {
+		server.NetworkStart = d.Get("network_start").(string)
+	}
+
+	if d.HasChange("network_end") {
+		server.NetworkEnd = d.Get("network_end").(string)
+	}
+
+	if server.NetworkMode == ServerNetworkModeBridge && (server.NetworkStart == "" || server.NetworkEnd == "") {
+		return diag.Errorf("the attribute network_mode = %s requires network_start and network_end attributes", ServerNetworkModeBridge)
+	}
+
+	if d.HasChange("mss_fix") {
+		server.MssFix = d.Get("mss_fix").(int)
+	}
+
+	if d.HasChange("max_devices") {
+		server.MaxDevices = d.Get("max_devices").(int)
+	}
+
+	if d.HasChange("pre_connect_msg") {
+		server.PreConnectMsg = d.Get("pre_connect_msg").(string)
+	}
+
+	if d.HasChange("allowed_devices") {
+		server.AllowedDevices = d.Get("allowed_devices").(string)
+	}
+
+	if d.HasChange("search_domain") {
+		server.SearchDomain = d.Get("search_domain").(string)
+	}
+
+	if d.HasChange("replica_count") {
+		server.ReplicaCount = d.Get("replica_count").(int)
+	}
+
+	if d.HasChange("multi_device") {
+		server.MultiDevice = d.Get("multi_device").(bool)
+	}
+
+	if d.HasChange("debug") {
+		server.Debug = d.Get("debug").(bool)
+	}
+
+	if d.HasChange("restrict_routes") {
+		server.RestrictRoutes = d.Get("restrict_routes").(bool)
+	}
+
+	if d.HasChange("block_outside_dns") {
+		server.BlockOutsideDns = d.Get("block_outside_dns").(bool)
+	}
+
+	if d.HasChange("dns_mapping") {
+		server.DnsMapping = d.Get("dns_mapping").(bool)
+	}
+
+	if d.HasChange("vxlan") {
+		server.VxLan = d.Get("vxlan").(bool)
+	}
+
+	if d.HasChange("groups") {
+		groups := make([]string, 0)
+		for _, v := range d.Get("groups").([]interface{}) {
+			groups = append(groups, v.(string))
+		}
+		server.Groups = groups
+	}
+
+	if d.HasChange("dns_servers") {
+		dnsServers := make([]string, 0)
+		for _, v := range d.Get("dns_servers").([]interface{}) {
+			dnsServers = append(dnsServers, v.(string))
+		}
+		server.DnsServers = dnsServers
 	}
 
 	if d.HasChange("status") {

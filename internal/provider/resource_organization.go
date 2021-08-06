@@ -13,7 +13,6 @@ func resourceOrganization() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The name of the resource, also acts as it's unique ID",
-				ForceNew:    false,
 			},
 		},
 		CreateContext: resourceCreateOrganization,
