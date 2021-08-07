@@ -12,6 +12,7 @@ import (
 type Client interface {
 	TestApiCall() error
 
+	GetOrganizations() ([]Organization, error)
 	GetOrganization(id string) (*Organization, error)
 	CreateOrganization(name string) (*Organization, error)
 	UpdateOrganization(id string, organization *Organization) error
@@ -94,6 +95,31 @@ func (c client) GetOrganization(id string) (*Organization, error) {
 	}
 
 	return &organization, nil
+}
+
+func (c client) GetOrganizations() ([]Organization, error) {
+	url := fmt.Sprintf("/organization")
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetOrganization: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting the organization\nbody=%s", body)
+	}
+
+	var organizations []Organization
+
+	err = json.Unmarshal(body, &organizations)
+	if err != nil {
+		return nil, fmt.Errorf("GetOrganization: %s: %+v, body=%s", err, organizations, body)
+	}
+
+	return organizations, nil
 }
 
 func (c client) CreateOrganization(name string) (*Organization, error) {

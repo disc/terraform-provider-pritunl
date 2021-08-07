@@ -36,3 +36,32 @@ func TestMain(m *testing.M) {
 
 	resource.TestMain(m)
 }
+
+func preCheck(t *testing.T) {
+	variables := []string{
+		"PRITUNL_URL",
+		"PRITUNL_TOKEN",
+		"PRITUNL_SECRET",
+	}
+
+	for _, variable := range variables {
+		value := os.Getenv(variable)
+		if value == "" {
+			t.Fatalf("`%s` must be set for acceptance tests!", variable)
+		}
+	}
+}
+
+func importStep(name string, ignore ...string) resource.TestStep {
+	step := resource.TestStep{
+		ResourceName:      name,
+		ImportState:       true,
+		ImportStateVerify: true,
+	}
+
+	if len(ignore) > 0 {
+		step.ImportStateVerifyIgnore = ignore
+	}
+
+	return step
+}
