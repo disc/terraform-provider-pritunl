@@ -10,10 +10,16 @@ import (
 
 type Client interface {
 	TestApiCall() error
+
 	GetOrganization(id string) (*Organization, error)
 	CreateOrganization(name string) (*Organization, error)
 	UpdateOrganization(id string, organization *Organization) error
 	DeleteOrganization(name string) error
+
+	GetUser(id string, orgId string) (*User, error)
+	CreateUser(user User) error
+	UpdateUser(id string, user *User) error
+	DeleteUser(name string) error
 
 	GetServer(id string) (*Server, error)
 	CreateServer(serverData map[string]interface{}) (*Server, error)
@@ -41,6 +47,31 @@ type client struct {
 	baseUrl    string
 }
 
+func (c client) TestApiCall() error {
+	url := fmt.Sprintf("/organization")
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	// TODO: Much such checks into the http client's middleware
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on the tests api call\nbody=%s", body)
+	}
+
+	// 401 - invalid credentials
+	if resp.StatusCode == 401 {
+		return fmt.Errorf("unauthorized: Invalid token or secret")
+	}
+
+	// not suitable license, has no api access?
+
+	return nil
+}
+
 func (c client) GetOrganization(id string) (*Organization, error) {
 	url := fmt.Sprintf("/organization/%s", id)
 	req, err := http.NewRequest("GET", url, nil)
@@ -65,31 +96,6 @@ func (c client) GetOrganization(id string) (*Organization, error) {
 	}
 
 	return &organization, nil
-}
-
-func (c client) TestApiCall() error {
-	url := fmt.Sprintf("/organization")
-	req, err := http.NewRequest("GET", url, nil)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-	// TODO: Much such checks into the http client's middleware
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Non-200 response on the tests api call\nbody=%s", body)
-	}
-
-	// 401 - invalid credentials
-	if resp.StatusCode == 401 {
-		return fmt.Errorf("unauthorized: Invalid token or secret")
-	}
-
-	// not suitable license, has no api access?
-
-	return nil
 }
 
 func (c client) CreateOrganization(name string) (*Organization, error) {
@@ -604,6 +610,42 @@ func (c client) DeleteRouteFromServer(serverId string, route Route) error {
 	}
 
 	return nil
+}
+
+func (c client) GetUser(id string, orgId string) (*User, error) {
+	url := fmt.Sprintf("/user/%s/%s", orgId, id)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting the user\nbody=%s", body)
+	}
+
+	var user User
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		return nil, fmt.Errorf("GetUser: %s: %+v, id=%s, body=%s", err, user, id, body)
+	}
+
+	return &user, nil
+}
+
+func (c client) CreateUser(user User) error {
+	panic("implement me")
+}
+
+func (c client) UpdateUser(id string, user *User) error {
+	panic("implement me")
+}
+
+func (c client) DeleteUser(name string) error {
+	panic("implement me")
 }
 
 func NewClient(baseUrl, apiToken, apiSecret string) Client {

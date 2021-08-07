@@ -101,8 +101,6 @@ func resourceServer() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Enter list of groups to allow connections from. Names are case sensitive. If empty all groups will able to connect",
-				// Add validation after fix https://github.com/hashicorp/terraform-plugin-sdk/issues/156
-				// ValidateFunc and ValidateDiagFunc are not yet supported on lists or sets.
 			},
 			"dns_servers": {
 				Type: schema.TypeList,
