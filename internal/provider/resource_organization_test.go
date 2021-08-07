@@ -57,14 +57,14 @@ resource "pritunl_organization" "test" {
 `, name)
 }
 
-func testAccOrganizationDestroy(s *terraform.State) error {
+func testAccOrganizationDestroy(_ *terraform.State) error {
 	organizations, err := testClient.GetOrganizations()
 	if err != nil {
 		return err
 	}
 	for _, org := range organizations {
 		if strings.HasPrefix(org.Name, "tfacc-") {
-			return fmt.Errorf("organization is not destroyed")
+			return fmt.Errorf("an organization is not destroyed")
 		}
 	}
 	return nil

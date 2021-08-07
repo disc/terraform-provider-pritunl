@@ -11,6 +11,7 @@ test:
 	@chmod +x ./tools/wait-for-it.sh
 	./tools/wait-for-it.sh localhost:27017 -- echo "mongodb is up"
 
+	# enables an api access for the pritunl user, updates an api token and secret
 	@docker exec -i tf_pritunl_acc_test mongo < ./tools/mongo.js
 
 	TF_ACC=1 \

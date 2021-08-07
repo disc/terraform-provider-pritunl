@@ -23,6 +23,7 @@ type Client interface {
 	UpdateUser(id string, user *User) error
 	DeleteUser(id string, orgId string) error
 
+	GetServers() ([]Server, error)
 	GetServer(id string) (*Server, error)
 	CreateServer(serverData map[string]interface{}) (*Server, error)
 	UpdateServer(id string, server *Server) error
@@ -212,6 +213,31 @@ func (c client) GetServer(id string) (*Server, error) {
 	}
 
 	return &server, nil
+}
+
+func (c client) GetServers() ([]Server, error) {
+	url := fmt.Sprintf("/server")
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetServers: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting servers\nbody=%s", body)
+	}
+
+	var servers []Server
+	err = json.Unmarshal(body, &servers)
+
+	if err != nil {
+		return nil, fmt.Errorf("GetServers: %s: %+v, body=%s", err, servers, body)
+	}
+
+	return servers, nil
 }
 
 func (c client) CreateServer(serverData map[string]interface{}) (*Server, error) {
