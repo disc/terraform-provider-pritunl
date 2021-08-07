@@ -1,7 +1,8 @@
-package provider
+package pritunl
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -66,8 +67,6 @@ func (c client) TestApiCall() error {
 	if resp.StatusCode == 401 {
 		return fmt.Errorf("unauthorized: Invalid token or secret")
 	}
-
-	// not suitable license, has no api access?
 
 	return nil
 }
@@ -697,13 +696,16 @@ func (c client) DeleteUser(id string, orgId string) error {
 	return nil
 }
 
-func NewClient(baseUrl, apiToken, apiSecret string) Client {
+func NewClient(baseUrl, apiToken, apiSecret string, insecure bool) Client {
+	underlyingTransport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
+	}
 	httpClient := &http.Client{
 		Transport: &transport{
 			baseUrl:             baseUrl,
 			apiToken:            apiToken,
 			apiSecret:           apiSecret,
-			underlyingTransport: http.DefaultTransport,
+			underlyingTransport: underlyingTransport,
 		},
 	}
 

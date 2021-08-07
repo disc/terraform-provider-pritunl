@@ -1,4 +1,4 @@
-package provider
+package pritunl
 
 import (
 	"encoding/json"

@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -113,7 +114,7 @@ func resourceUser() *schema.Resource {
 }
 
 func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	user, err := apiClient.GetUser(d.Id(), d.Get("organization").(string))
 	if err != nil {
@@ -139,7 +140,7 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 }
 
 func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	err := apiClient.DeleteUser(d.Id(), d.Get("organization").(string))
 	if err != nil {
@@ -152,7 +153,7 @@ func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interfac
 }
 
 func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	user, err := apiClient.GetUser(d.Id(), d.Get("organization").(string))
 	if err != nil {
@@ -241,7 +242,7 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	dnsServers := make([]string, 0)
 	for _, v := range d.Get("dns_servers").([]interface{}) {
@@ -268,7 +269,7 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 		groups = append(groups, v.(string))
 	}
 
-	userData := User{
+	userData := pritunl.User{
 		Name:            d.Get("name").(string),
 		Organization:    d.Get("organization").(string),
 		AuthType:        d.Get("auth_type").(string),
@@ -295,7 +296,7 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 }
 
 func resourceUserImport(_ context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	attributes := strings.Split(d.Id(), "-")
 	if len(attributes) < 2 {

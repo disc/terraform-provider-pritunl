@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -27,7 +28,7 @@ func resourceOrganization() *schema.Resource {
 
 // Uses for importing
 func resourceReadOrganization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	organization, err := apiClient.GetOrganization(d.Id())
 	if err != nil {
@@ -40,7 +41,7 @@ func resourceReadOrganization(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceDeleteOrganization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	err := apiClient.DeleteOrganization(d.Id())
 	if err != nil {
@@ -53,7 +54,7 @@ func resourceDeleteOrganization(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceUpdateOrganization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	organization, err := apiClient.GetOrganization(d.Id())
 	if err != nil {
@@ -73,7 +74,7 @@ func resourceUpdateOrganization(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceCreateOrganization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	organization, err := apiClient.CreateOrganization(d.Get("name").(string))
 	if err != nil {

@@ -1,4 +1,4 @@
-package provider
+package pritunl
 
 import (
 	"crypto/hmac"
@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -21,14 +22,15 @@ type transport struct {
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	u, err := url.Parse(t.baseUrl + req.URL.String())
-	if err != nil {
-		return nil, err
+	if req.URL.Host == "" {
+		u, err := url.Parse(t.baseUrl)
+		if err != nil {
+			return nil, err
+		}
+
+		u.Path = path.Join(u.Path, req.URL.Path)
+		req.URL = u
 	}
-
-	fmt.Println(u)
-
-	req.URL = u
 
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	timestampNano := strconv.FormatInt(time.Now().UnixNano(), 10)

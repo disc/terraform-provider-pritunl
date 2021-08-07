@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -339,8 +340,8 @@ func resourceServer() *schema.Resource {
 				RequiredWith: []string{"organizations"},
 				ValidateDiagFunc: func(v interface{}, path cty.Path) diag.Diagnostics {
 					allowedStatusesMap := map[string]struct{}{
-						ServerStatusOffline: {},
-						ServerStatusOnline:  {},
+						pritunl.ServerStatusOffline: {},
+						pritunl.ServerStatusOnline:  {},
 					}
 
 					allowedStatusesList := make([]string, 0)
@@ -375,7 +376,7 @@ func resourceServer() *schema.Resource {
 
 // Uses for importing
 func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	server, err := apiClient.GetServer(d.Id())
 	if err != nil {
@@ -444,7 +445,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	serverData := map[string]interface{}{
 		"name":               d.Get("name"),
@@ -495,7 +496,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	if d.HasChange("organizations") {
 		_, newOrgs := d.GetChange("organizations")
 		for _, v := range newOrgs.([]interface{}) {
-			org := ConvertMapToOrganization(v.(map[string]interface{}))
+			org := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
 
 			err = apiClient.AttachOrganizationToServer(org.ID, d.Id())
 			if err != nil {
@@ -505,7 +506,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	// Delete default route
-	defaultRoute := Route{
+	defaultRoute := pritunl.Route{
 		Network: "0.0.0.0/0",
 		Nat:     true,
 	}
@@ -516,10 +517,10 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("route") {
 		_, newRoutes := d.GetChange("route")
-		routes := make([]Route, 0)
+		routes := make([]pritunl.Route, 0)
 
 		for _, v := range newRoutes.(*schema.Set).List() {
-			routes = append(routes, ConvertMapToRoute(v.(map[string]interface{})))
+			routes = append(routes, pritunl.ConvertMapToRoute(v.(map[string]interface{})))
 		}
 
 		err = apiClient.AddRoutesToServer(d.Id(), routes)
@@ -528,7 +529,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	if d.Get("status").(string) == ServerStatusOnline {
+	if d.Get("status").(string) == pritunl.ServerStatusOnline {
 		err = apiClient.StartServer(d.Id())
 		if err != nil {
 			return diag.Errorf("Error on starting server: %s", err)
@@ -539,7 +540,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	server, err := apiClient.GetServer(d.Id())
 	if err != nil {
@@ -635,8 +636,8 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		server.NetworkEnd = d.Get("network_end").(string)
 	}
 
-	if server.NetworkMode == ServerNetworkModeBridge && (server.NetworkStart == "" || server.NetworkEnd == "") {
-		return diag.Errorf("the attribute network_mode = %s requires network_start and network_end attributes", ServerNetworkModeBridge)
+	if server.NetworkMode == pritunl.ServerNetworkModeBridge && (server.NetworkStart == "" || server.NetworkEnd == "") {
+		return diag.Errorf("the attribute network_mode = %s requires network_start and network_end attributes", pritunl.ServerNetworkModeBridge)
 	}
 
 	if d.HasChange("mss_fix") {
@@ -705,7 +706,7 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	newStatus := d.Get("status").(string)
 	if d.HasChange("status") {
-		if newStatus == ServerStatusOnline {
+		if newStatus == pritunl.ServerStatusOnline {
 			err = apiClient.StartServer(d.Id())
 			if err != nil {
 				return diag.Errorf("Error on starting server: %s", err)
@@ -718,7 +719,7 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	if d.Get("status").(string) == ServerStatusOnline {
+	if d.Get("status").(string) == pritunl.ServerStatusOnline {
 		err = apiClient.StopServer(d.Id())
 		if err != nil {
 			return diag.Errorf("Error on stopping server: %s", err)
@@ -728,7 +729,7 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	if d.HasChange("organizations") {
 		oldOrgs, newOrgs := d.GetChange("organizations")
 		for _, v := range oldOrgs.([]interface{}) {
-			organization := ConvertMapToOrganization(v.(map[string]interface{}))
+			organization := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
 
 			err = apiClient.DetachOrganizationFromServer(organization.ID, d.Id())
 			if err != nil {
@@ -736,7 +737,7 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 			}
 		}
 		for _, v := range newOrgs.([]interface{}) {
-			org := ConvertMapToOrganization(v.(map[string]interface{}))
+			org := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
 
 			err = apiClient.AttachOrganizationToServer(org.ID, d.Id())
 			if err != nil {
@@ -748,14 +749,14 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	if d.HasChange("route") {
 		oldRoutes, newRoutes := d.GetChange("route")
 
-		newRoutesMap := make(map[string]Route, 0)
+		newRoutesMap := make(map[string]pritunl.Route, 0)
 		for _, v := range newRoutes.(*schema.Set).List() {
-			route := ConvertMapToRoute(v.(map[string]interface{}))
+			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
 			newRoutesMap[route.GetID()] = route
 		}
-		oldRoutesMap := make(map[string]Route, 0)
+		oldRoutesMap := make(map[string]pritunl.Route, 0)
 		for _, v := range oldRoutes.(*schema.Set).List() {
-			route := ConvertMapToRoute(v.(map[string]interface{}))
+			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
 			oldRoutesMap[route.GetID()] = route
 		}
 
@@ -793,7 +794,7 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	// return to prev status after update
-	if prevServerStatus == ServerStatusOnline && newStatus != ServerStatusOffline {
+	if prevServerStatus == pritunl.ServerStatusOnline && newStatus != pritunl.ServerStatusOffline {
 		err = apiClient.StartServer(d.Id())
 		if err != nil {
 			return diag.Errorf("Error on starting server: %s", err)
@@ -804,7 +805,7 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceDeleteServer(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(Client)
+	apiClient := meta.(pritunl.Client)
 
 	err := apiClient.DeleteServer(d.Id())
 	if err != nil {
@@ -816,7 +817,7 @@ func resourceDeleteServer(ctx context.Context, d *schema.ResourceData, meta inte
 	return nil
 }
 
-func flattenOrganizationsData(organizationsList []Organization) []interface{} {
+func flattenOrganizationsData(organizationsList []pritunl.Organization) []interface{} {
 	organizations := make([]interface{}, 0)
 
 	if organizationsList != nil {
@@ -833,7 +834,7 @@ func flattenOrganizationsData(organizationsList []Organization) []interface{} {
 	return organizations
 }
 
-func flattenRoutesData(routesList []Route) []interface{} {
+func flattenRoutesData(routesList []pritunl.Route) []interface{} {
 	routes := make([]interface{}, 0)
 
 	if routesList != nil {
