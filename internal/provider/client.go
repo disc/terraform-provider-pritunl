@@ -19,7 +19,7 @@ type Client interface {
 	GetUser(id string, orgId string) (*User, error)
 	CreateUser(newUser User) (*User, error)
 	UpdateUser(id string, user *User) error
-	DeleteUser(name string) error
+	DeleteUser(id string, orgId string) error
 
 	GetServer(id string) (*Server, error)
 	CreateServer(serverData map[string]interface{}) (*Server, error)
@@ -53,7 +53,7 @@ func (c client) TestApiCall() error {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("TestApiCall: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -78,7 +78,7 @@ func (c client) GetOrganization(id string) (*Organization, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetOrganization: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -87,7 +87,6 @@ func (c client) GetOrganization(id string) (*Organization, error) {
 		return nil, fmt.Errorf("Non-200 response on getting the organization\nbody=%s", body)
 	}
 
-	// iterate over all pages
 	var organization Organization
 
 	err = json.Unmarshal(body, &organization)
@@ -106,7 +105,7 @@ func (c client) CreateOrganization(name string) (*Organization, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateOrganization: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -135,7 +134,7 @@ func (c client) UpdateOrganization(id string, organization *Organization) error 
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("UpdateOrganization: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -153,19 +152,13 @@ func (c client) DeleteOrganization(id string) error {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("DeleteOrganization: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Non-200 response on deleting the organization\nbody=%s", body)
-	}
-
-	var organization Organization
-	err = json.Unmarshal(body, &organization)
-	if err != nil {
-		return fmt.Errorf("DeleteOrganization: %s: %+v, id=%s, body=%s", err, organization, id, body)
 	}
 
 	return nil
@@ -367,7 +360,7 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 	var server Server
 	err = json.Unmarshal(body, &server)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateServer: Error on unmarshalling http response: %s", err)
 	}
 
 	return &server, nil
@@ -411,12 +404,6 @@ func (c client) DeleteServer(id string) error {
 		return fmt.Errorf("Non-200 response on deleting the server\nbody=%s", body)
 	}
 
-	var server Server
-	err = json.Unmarshal(body, &server)
-	if err != nil {
-		return fmt.Errorf("DeleteServer: Error on parsing response: %s (id=%s, body=%s)", err, id, body)
-	}
-
 	return nil
 }
 
@@ -426,7 +413,7 @@ func (c client) GetOrganizationsByServer(serverId string) ([]Organization, error
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GeteOrganizationsByServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -447,7 +434,7 @@ func (c client) AttachOrganizationToServer(organizationId, serverId string) erro
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("AttachOrganizationToServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -465,7 +452,7 @@ func (c client) DetachOrganizationFromServer(organizationId, serverId string) er
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("DetachOrganizationFromServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -483,7 +470,7 @@ func (c client) StartServer(serverId string) error {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("StartServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -501,7 +488,7 @@ func (c client) StopServer(serverId string) error {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("StopServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -519,7 +506,7 @@ func (c client) GetRoutesByServer(serverId string) ([]Route, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetRoutesByServer: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -618,7 +605,7 @@ func (c client) GetUser(id string, orgId string) (*User, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetUser: Error on HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -692,8 +679,22 @@ func (c client) UpdateUser(id string, user *User) error {
 	return nil
 }
 
-func (c client) DeleteUser(name string) error {
-	panic("implement me")
+func (c client) DeleteUser(id string, orgId string) error {
+	url := fmt.Sprintf("/user/%s/%s", orgId, id)
+	req, err := http.NewRequest("DELETE", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("DeleteUser: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on deleting the user\nbody=%s", body)
+	}
+
+	return nil
 }
 
 func NewClient(baseUrl, apiToken, apiSecret string) Client {

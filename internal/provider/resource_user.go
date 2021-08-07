@@ -141,7 +141,7 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(Client)
 
-	err := apiClient.DeleteUser(d.Id())
+	err := apiClient.DeleteUser(d.Id(), d.Get("organization").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -310,7 +310,7 @@ func resourceUserImport(_ context.Context, d *schema.ResourceData, meta interfac
 
 	_, err := apiClient.GetUser(userId, orgId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error on getting user during import: %s", err)
 	}
 
 	return []*schema.ResourceData{d}, nil
