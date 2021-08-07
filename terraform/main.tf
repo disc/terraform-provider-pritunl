@@ -11,6 +11,8 @@ provider "pritunl" {
   url    = var.pritunl_url
   token  = var.pritunl_api_token
   secret = var.pritunl_api_secret
+
+  insecure = var.pritunl_insecure
 }
 
 // terraform import pritunl_user.test 610e42d2a0ed366f41dfe6e8-610e42d6a0ed366f41dfe72b
@@ -99,7 +101,7 @@ resource "pritunl_server" "test" {
   block_outside_dns = true
   dns_mapping       = true
   inter_client      = true
-  vxlan             = true
+  //  vxlan             = true // requires Premium subscription
 
   organizations = [
     pritunl_organization.test,

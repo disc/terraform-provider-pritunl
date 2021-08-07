@@ -13,6 +13,11 @@ variable "pritunl_api_secret" {
   default = "secret"
 }
 
+variable "pritunl_insecure" {
+  type    = bool
+  default = false
+}
+
 variable "common_routes" {
   type    = list(map(any))
   default = []
