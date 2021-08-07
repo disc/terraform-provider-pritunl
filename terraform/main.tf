@@ -19,10 +19,9 @@ provider "pritunl" {
 
 // 610e42d6a0ed366f41dfe72b
 resource "pritunl_user" "test" {
-  name = "test-user"
-  // use resource instead?
-  organization = pritunl_organization.test.id
-  email        = "test@test.com"
+  name            = "test-user"
+  organization_id = pritunl_organization.test.id
+  email           = "test@test.com"
   groups = [
     "admins",
   ]

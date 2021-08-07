@@ -18,7 +18,7 @@ func resourceUser() *schema.Resource {
 				Required:    true,
 				Description: "The name of the user.",
 			},
-			"organization": {
+			"organization_id": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The organizations that user belongs to.",
@@ -116,7 +116,7 @@ func resourceUser() *schema.Resource {
 func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
-	user, err := apiClient.GetUser(d.Id(), d.Get("organization").(string))
+	user, err := apiClient.GetUser(d.Id(), d.Get("organization_id").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -134,7 +134,7 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 	d.Set("mac_addresses", user.MacAddresses)
 	d.Set("bypass_secondary", user.BypassSecondary)
 	d.Set("groups", user.Groups)
-	d.Set("organization", user.Organization)
+	d.Set("organization_id", user.Organization)
 
 	return nil
 }
@@ -142,7 +142,7 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
-	err := apiClient.DeleteUser(d.Id(), d.Get("organization").(string))
+	err := apiClient.DeleteUser(d.Id(), d.Get("organization_id").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -155,7 +155,7 @@ func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interfac
 func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
-	user, err := apiClient.GetUser(d.Id(), d.Get("organization").(string))
+	user, err := apiClient.GetUser(d.Id(), d.Get("organization_id").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -164,7 +164,7 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		user.Name = v.(string)
 	}
 
-	if v, ok := d.GetOk("organization"); ok {
+	if v, ok := d.GetOk("organization_id"); ok {
 		user.Organization = v.(string)
 	}
 
@@ -271,7 +271,7 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 
 	userData := pritunl.User{
 		Name:            d.Get("name").(string),
-		Organization:    d.Get("organization").(string),
+		Organization:    d.Get("organization_id").(string),
 		AuthType:        d.Get("auth_type").(string),
 		DnsServers:      dnsServers,
 		DnsSuffix:       d.Get("dns_suffix").(string),
@@ -307,7 +307,7 @@ func resourceUserImport(_ context.Context, d *schema.ResourceData, meta interfac
 	userId := attributes[1]
 
 	d.SetId(userId)
-	d.Set("organization", orgId)
+	d.Set("organization_id", orgId)
 
 	_, err := apiClient.GetUser(userId, orgId)
 	if err != nil {
