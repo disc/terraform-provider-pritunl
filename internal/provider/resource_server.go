@@ -429,6 +429,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("dns_mapping", server.DnsMapping)
 	d.Set("inter_client", server.InterClient)
 	d.Set("vxlan", server.VxLan)
+	d.Set("status", server.Status)
 
 	if len(organizations) > 0 {
 		d.Set("organizations", flattenOrganizationsData(organizations))
@@ -543,6 +544,8 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	prevServerStatus := server.Status
 
 	if v, ok := d.GetOk("name"); ok {
 		server.Name = v.(string)
@@ -699,8 +702,8 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		server.DnsServers = dnsServers
 	}
 
+	newStatus := d.Get("status").(string)
 	if d.HasChange("status") {
-		newStatus := d.Get("status").(string)
 		if newStatus == ServerStatusOnline {
 			err = apiClient.StartServer(d.Id())
 			if err != nil {
@@ -788,7 +791,8 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	if d.Get("status").(string) == ServerStatusOnline {
+	// return to prev status after update
+	if prevServerStatus == ServerStatusOnline && newStatus != ServerStatusOffline {
 		err = apiClient.StartServer(d.Id())
 		if err != nil {
 			return diag.Errorf("Error on starting server: %s", err)

@@ -60,9 +60,10 @@ resource "pritunl_organization" "test" {
 }
 
 resource "pritunl_server" "test" {
-  name    = "test"
-  port    = 65500
-  network = "192.168.1.0/24"
+  name     = "test"
+  port     = 22222
+  protocol = "tcp"
+  network  = "192.168.1.0/24"
   groups = [
     "admins",
     "users",

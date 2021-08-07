@@ -56,6 +56,7 @@ type Server struct {
 	BlockOutsideDns  bool     `json:"block_outside_dns,omitempty"`
 	JumboFrames      bool     `json:"jumbo_frames,omitempty"`
 	Debug            bool     `json:"debug,omitempty"`
+	Status           string   `json:"status,omitempty"`
 }
 
 func (s *Server) MarshalJSON() ([]byte, error) {
