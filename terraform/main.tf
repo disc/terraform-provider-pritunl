@@ -18,19 +18,45 @@ provider "pritunl" {
 // 610e42d6a0ed366f41dfe72b
 resource "pritunl_user" "test" {
   name = "test-user"
+  // use resource instead?
+  organization = pritunl_organization.test.id
+  email        = "test@test.com"
+  groups = [
+    "admins",
+  ]
+  network_links = [
+    "1.1.1.1/32",
+    "1.1.1.0/24",
+  ]
+  client_to_client = true
+  auth_type        = "local"
+  mac_addresses = [
+    "00:1B:44:11:3A:B6",
+    "00:1B:44:11:3A:B7",
+  ]
+  dns_servers = [
+    "1.1.1.1",
+    "8.8.4.4",
+  ]
+  dns_suffix       = "host.com"
+  bypass_secondary = true
+  port_forwarding = [
+    {
+      dport : 8080,
+      port : 80,
+      protocol : "udp",
+    },
+    {
+      dport : 21,
+      port : 21,
+      protocol : "tcp",
+    },
+  ]
 }
 
 //  610e42d2a0ed366f41dfe6e8
 resource "pritunl_organization" "test" {
   name = "Test"
-}
-
-resource "pritunl_organization" "my-first-org" {
-  name = "My_First_Org"
-}
-
-resource "pritunl_organization" "my-second-org" {
-  name = "My_Second_Org"
 }
 
 resource "pritunl_server" "test" {
@@ -63,7 +89,7 @@ resource "pritunl_server" "test" {
   max_devices     = 5
   pre_connect_msg = "Hello world"
   allowed_devices = "mobile"
-  search_domain   = "abc.org,dot.com"
+  search_domain   = "abc.org, dot.com"
   replica_count   = 3
 
   multi_device      = true
@@ -75,7 +101,7 @@ resource "pritunl_server" "test" {
   vxlan             = true
 
   organizations = [
-    pritunl_organization.my-first-org,
+    pritunl_organization.test,
   ]
 
   dynamic "route" {

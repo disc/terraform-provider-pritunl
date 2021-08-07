@@ -17,7 +17,7 @@ type Client interface {
 	DeleteOrganization(name string) error
 
 	GetUser(id string, orgId string) (*User, error)
-	CreateUser(user User) error
+	CreateUser(newUser User) (*User, error)
 	UpdateUser(id string, user *User) error
 	DeleteUser(name string) error
 
@@ -636,12 +636,60 @@ func (c client) GetUser(id string, orgId string) (*User, error) {
 	return &user, nil
 }
 
-func (c client) CreateUser(user User) error {
-	panic("implement me")
+func (c client) CreateUser(newUser User) (*User, error) {
+	jsonData, err := json.Marshal(newUser)
+	if err != nil {
+		return nil, fmt.Errorf("CreateUser: Error on marshalling data: %s", err)
+	}
+
+	url := fmt.Sprintf("/user/%s", newUser.Organization)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateUser: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on creating the user\ncode=%d\nbody=%s", resp.StatusCode, body)
+	}
+
+	var users []User
+	err = json.Unmarshal(body, &users)
+	if err != nil {
+		return nil, fmt.Errorf("CreateUser: Error on unmarshalling API response %s (body=%+v)", err, string(body))
+	}
+
+	if len(users) > 0 {
+		return &users[0], nil
+	}
+
+	return nil, fmt.Errorf("empty users response")
 }
 
 func (c client) UpdateUser(id string, user *User) error {
-	panic("implement me")
+	jsonData, err := json.Marshal(user)
+	if err != nil {
+		return fmt.Errorf("UpdateUser: Error on marshalling data: %s", err)
+	}
+
+	url := fmt.Sprintf("/user/%s/%s", user.Organization, id)
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("UpdateUser: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on updating the user\nbody=%s", body)
+	}
+
+	return nil
 }
 
 func (c client) DeleteUser(name string) error {

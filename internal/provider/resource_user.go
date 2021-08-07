@@ -43,11 +43,11 @@ func resourceUser() *schema.Resource {
 				Optional:    true,
 				Description: "Shows if user is disabled",
 			},
-			"pin": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "User pin, required when user connects to vpn. When using with two-factor authentication the pin and two-factor authentication code should both be placed in the password field.",
-			},
+			//"pin": {
+			//	Type:        schema.TypeString,
+			//	Optional:    true,
+			//	Description: "User pin, required when user connects to vpn. When using with two-factor authentication the pin and two-factor authentication code should both be placed in the password field.",
+			//},
 			"port_forwarding": {
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
@@ -131,8 +131,6 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 	d.Set("email", user.Email)
 	d.Set("client_to_client", user.ClientToClient)
 	d.Set("mac_addresses", user.MacAddresses)
-	d.Set("yubico_id", user.YubicoID)
-	d.Set("sso", user.SSO)
 	d.Set("bypass_secondary", user.BypassSecondary)
 	d.Set("groups", user.Groups)
 	d.Set("organization", user.Organization)
@@ -153,35 +151,145 @@ func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interfac
 	return nil
 }
 
-func resourceUserUpdate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(Client)
 
-	organization, err := apiClient.GetOrganization(d.Id())
+	user, err := apiClient.GetUser(d.Id(), d.Get("organization").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if d.HasChange("name") {
-		organization.Name = d.Get("name").(string)
-
-		err = apiClient.UpdateOrganization(d.Id(), organization)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	if v, ok := d.GetOk("name"); ok {
+		user.Name = v.(string)
 	}
 
-	return nil
+	if v, ok := d.GetOk("organization"); ok {
+		user.Organization = v.(string)
+	}
+
+	if d.HasChange("groups") {
+		groups := make([]string, 0)
+		for _, v := range d.Get("groups").([]interface{}) {
+			groups = append(groups, v.(string))
+		}
+		user.Groups = groups
+	}
+
+	if v, ok := d.GetOk("email"); ok {
+		user.Email = v.(string)
+	}
+
+	// TODO: Fixme
+	if v, ok := d.GetOk("disabled"); ok {
+		user.Disabled = v.(bool)
+	}
+
+	if d.HasChange("port_forwarding") {
+		portForwarding := make([]map[string]interface{}, 0)
+		for _, v := range d.Get("port_forwarding").([]interface{}) {
+			portForwarding = append(portForwarding, v.(map[string]interface{}))
+		}
+		user.PortForwarding = portForwarding
+	}
+
+	if d.HasChange("network_links") {
+		networkLinks := make([]string, 0)
+		for _, v := range d.Get("network_links").([]interface{}) {
+			networkLinks = append(networkLinks, v.(string))
+		}
+		user.NetworkLinks = networkLinks
+	}
+
+	if v, ok := d.GetOk("client_to_client"); ok {
+		user.ClientToClient = v.(bool)
+	}
+
+	if v, ok := d.GetOk("auth_type"); ok {
+		user.AuthType = v.(string)
+	}
+
+	if d.HasChange("mac_addresses") {
+		macAddresses := make([]string, 0)
+		for _, v := range d.Get("mac_addresses").([]interface{}) {
+			macAddresses = append(macAddresses, v.(string))
+		}
+		user.MacAddresses = macAddresses
+	}
+
+	if d.HasChange("dns_servers") {
+		dnsServers := make([]string, 0)
+		for _, v := range d.Get("dns_servers").([]interface{}) {
+			dnsServers = append(dnsServers, v.(string))
+		}
+		user.DnsServers = dnsServers
+	}
+
+	if v, ok := d.GetOk("dns_suffix"); ok {
+		user.DnsSuffix = v.(string)
+	}
+
+	if v, ok := d.GetOk("bypass_secondary"); ok {
+		user.BypassSecondary = v.(bool)
+	}
+
+	err = apiClient.UpdateUser(d.Id(), user)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return resourceUserRead(ctx, d, meta)
 }
 
 func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(Client)
 
-	organization, err := apiClient.CreateOrganization(d.Get("name").(string))
+	dnsServers := make([]string, 0)
+	for _, v := range d.Get("dns_servers").([]interface{}) {
+		dnsServers = append(dnsServers, v.(string))
+	}
+
+	macAddresses := make([]string, 0)
+	for _, v := range d.Get("mac_addresses").([]interface{}) {
+		macAddresses = append(macAddresses, v.(string))
+	}
+
+	networkLinks := make([]string, 0)
+	for _, v := range d.Get("network_links").([]interface{}) {
+		networkLinks = append(networkLinks, v.(string))
+	}
+
+	portForwarding := make([]map[string]interface{}, 0)
+	for _, v := range d.Get("port_forwarding").([]interface{}) {
+		portForwarding = append(portForwarding, v.(map[string]interface{}))
+	}
+
+	groups := make([]string, 0)
+	for _, v := range d.Get("groups").([]interface{}) {
+		groups = append(groups, v.(string))
+	}
+
+	userData := User{
+		Name:            d.Get("name").(string),
+		Organization:    d.Get("organization").(string),
+		AuthType:        d.Get("auth_type").(string),
+		DnsServers:      dnsServers,
+		DnsSuffix:       d.Get("dns_suffix").(string),
+		Disabled:        d.Get("disabled").(bool),
+		NetworkLinks:    networkLinks,
+		PortForwarding:  portForwarding,
+		Email:           d.Get("email").(string),
+		ClientToClient:  d.Get("client_to_client").(bool),
+		MacAddresses:    macAddresses,
+		BypassSecondary: d.Get("bypass_secondary").(bool),
+		Groups:          groups,
+	}
+
+	user, err := apiClient.CreateUser(userData)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(organization.ID)
+	d.SetId(user.ID)
 
 	return nil
 }
