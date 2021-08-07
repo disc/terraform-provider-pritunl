@@ -298,10 +298,10 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Description: "Use VXLan for routing client-to-client traffic with replicated servers.",
 			},
-			"organizations": {
+			"organization_ids": {
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
-					Type: schema.TypeMap,
+					Type: schema.TypeString,
 				},
 				Required:    false,
 				Optional:    true,
@@ -342,7 +342,7 @@ func resourceServer() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				Description:  "The status of the server",
-				RequiredWith: []string{"organizations"},
+				RequiredWith: []string{"organization_ids"},
 				ValidateDiagFunc: func(v interface{}, path cty.Path) diag.Diagnostics {
 					allowedStatusesMap := map[string]struct{}{
 						pritunl.ServerStatusOffline: {},
@@ -439,7 +439,14 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("status", server.Status)
 
 	if len(organizations) > 0 {
-		d.Set("organizations", flattenOrganizationsData(organizations))
+		organizationsList := make([]string, 0)
+
+		if organizations != nil {
+			for _, organization := range organizations {
+				organizationsList = append(organizationsList, organization.ID)
+			}
+		}
+		d.Set("organization_ids", organizationsList)
 	}
 
 	if len(routes) > 0 {
@@ -498,12 +505,10 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.SetId(server.ID)
 
-	if d.HasChange("organizations") {
-		_, newOrgs := d.GetChange("organizations")
+	if d.HasChange("organization_ids") {
+		_, newOrgs := d.GetChange("organization_ids")
 		for _, v := range newOrgs.([]interface{}) {
-			org := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
-
-			err = apiClient.AttachOrganizationToServer(org.ID, d.Id())
+			err = apiClient.AttachOrganizationToServer(v.(string), d.Id())
 			if err != nil {
 				return diag.Errorf("Error on attaching server to the organization: %s", err)
 			}
@@ -731,20 +736,16 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	if d.HasChange("organizations") {
-		oldOrgs, newOrgs := d.GetChange("organizations")
+	if d.HasChange("organization_ids") {
+		oldOrgs, newOrgs := d.GetChange("organization_ids")
 		for _, v := range oldOrgs.([]interface{}) {
-			organization := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
-
-			err = apiClient.DetachOrganizationFromServer(organization.ID, d.Id())
+			err = apiClient.DetachOrganizationFromServer(v.(string), d.Id())
 			if err != nil {
 				return diag.Errorf("Error on detaching server to the organization: %s", err)
 			}
 		}
 		for _, v := range newOrgs.([]interface{}) {
-			org := pritunl.ConvertMapToOrganization(v.(map[string]interface{}))
-
-			err = apiClient.AttachOrganizationToServer(org.ID, d.Id())
+			err = apiClient.AttachOrganizationToServer(v.(string), d.Id())
 			if err != nil {
 				return diag.Errorf("Error on attaching server to the organization: %s", err)
 			}
@@ -820,23 +821,6 @@ func resourceDeleteServer(ctx context.Context, d *schema.ResourceData, meta inte
 	d.SetId("")
 
 	return nil
-}
-
-func flattenOrganizationsData(organizationsList []pritunl.Organization) []interface{} {
-	organizations := make([]interface{}, 0)
-
-	if organizationsList != nil {
-		for _, organization := range organizationsList {
-			orgMap := make(map[string]interface{})
-
-			orgMap["id"] = organization.ID
-			orgMap["name"] = organization.Name
-
-			organizations = append(organizations, orgMap)
-		}
-	}
-
-	return organizations
 }
 
 func flattenRoutesData(routesList []pritunl.Route) []interface{} {

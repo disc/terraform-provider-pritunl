@@ -55,9 +55,12 @@ resource "pritunl_user" "test" {
   ]
 }
 
-//  610e42d2a0ed366f41dfe6e8
 resource "pritunl_organization" "test" {
   name = "Test"
+}
+
+resource "pritunl_organization" "test2" {
+  name = "Test2"
 }
 
 resource "pritunl_server" "test" {
@@ -102,8 +105,9 @@ resource "pritunl_server" "test" {
   inter_client      = true
   //  vxlan             = true // requires Premium subscription
 
-  organizations = [
-    pritunl_organization.test,
+  organization_ids = [
+    pritunl_organization.test.id,
+    pritunl_organization.test2.id,
   ]
 
   dynamic "route" {
