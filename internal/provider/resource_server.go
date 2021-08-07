@@ -334,6 +334,7 @@ func resourceServer() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
+				Computed:     true,
 				Description:  "The status of the server",
 				RequiredWith: []string{"organizations"},
 				ValidateDiagFunc: func(v interface{}, path cty.Path) diag.Diagnostics {
