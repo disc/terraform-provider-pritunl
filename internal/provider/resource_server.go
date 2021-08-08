@@ -307,7 +307,7 @@ func resourceServer() *schema.Resource {
 				Description: "The list of attached organizations for the server",
 			},
 			"route": {
-				Type: schema.TypeSet,
+				Type: schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"network": {
@@ -332,7 +332,6 @@ func resourceServer() *schema.Resource {
 				},
 				Required:    false,
 				Optional:    true,
-				Computed:    true,
 				Description: "The list of attached routes for the server",
 			},
 			"status": {
@@ -528,7 +527,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		_, newRoutes := d.GetChange("route")
 		routes := make([]pritunl.Route, 0)
 
-		for _, v := range newRoutes.(*schema.Set).List() {
+		for _, v := range newRoutes.([]interface{}) {
 			routes = append(routes, pritunl.ConvertMapToRoute(v.(map[string]interface{})))
 		}
 
@@ -755,12 +754,12 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		oldRoutes, newRoutes := d.GetChange("route")
 
 		newRoutesMap := make(map[string]pritunl.Route, 0)
-		for _, v := range newRoutes.(*schema.Set).List() {
+		for _, v := range newRoutes.([]interface{}) {
 			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
 			newRoutesMap[route.GetID()] = route
 		}
 		oldRoutesMap := make(map[string]pritunl.Route, 0)
-		for _, v := range oldRoutes.(*schema.Set).List() {
+		for _, v := range oldRoutes.([]interface{}) {
 			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
 			oldRoutesMap[route.GetID()] = route
 		}
@@ -834,7 +833,6 @@ func flattenRoutesData(routesList []pritunl.Route) []interface{} {
 
 			routeMap := make(map[string]interface{})
 
-			routeMap["id"] = route.GetID()
 			routeMap["network"] = route.Network
 			routeMap["nat"] = route.Nat
 			if route.Comment != "" {

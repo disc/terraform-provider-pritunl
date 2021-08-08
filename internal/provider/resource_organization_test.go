@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"strings"
 	"testing"
 )
 
@@ -57,13 +56,15 @@ resource "pritunl_organization" "test" {
 `, name)
 }
 
-func testAccOrganizationDestroy(_ *terraform.State) error {
+func testAccOrganizationDestroy(s *terraform.State) error {
+	organizationId := s.RootModule().Resources["pritunl_organization.test"].Primary.Attributes["id"]
+
 	organizations, err := testClient.GetOrganizations()
 	if err != nil {
 		return err
 	}
 	for _, org := range organizations {
-		if strings.HasPrefix(org.Name, "tfacc-") {
+		if org.ID == organizationId {
 			return fmt.Errorf("an organization is not destroyed")
 		}
 	}
