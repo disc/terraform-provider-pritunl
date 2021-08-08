@@ -68,12 +68,9 @@ func resourceUser() *schema.Resource {
 			"auth_type": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				Description:  "User authentication type. This will determine how the user authenticates. This should be set automatically when the user authenticates with single sign-on.",
 				ValidateFunc: validation.StringInSlice([]string{"local", "duo", "yubico", "azure", "azure_duo", "azure_yubico", "google", "google_duo", "google_yubico", "slack", "slack_duo", "slack_yubico", "saml", "saml_duo", "saml_yubico", "saml_okta", "saml_okta_duo", "saml_okta_yubico", "saml_onelogin", "saml_onelogin_duo", "saml_onelogin_yubico", "radius", "radius_duo", "plugin"}, false),
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// suppress any diff by this property
-					return true
-				},
 			},
 			"mac_addresses": {
 				Type: schema.TypeList,
