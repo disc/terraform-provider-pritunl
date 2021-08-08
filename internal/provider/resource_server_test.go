@@ -10,7 +10,7 @@ import (
 func TestGetServer_basic(t *testing.T) {
 	var serverId string
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { preCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      testGetServerDestroy,
@@ -29,10 +29,10 @@ func TestGetServer_basic(t *testing.T) {
 			},
 			importStep("pritunl_server.test"),
 			{
-				Config: testGetServerConfig("tfacc-server2", "10.0.0.0/24", 12345),
+				Config: testGetServerConfig("tfacc-server2", "10.4.0.0/24", 12345),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server2"),
-					resource.TestCheckResourceAttr("pritunl_server.test", "network", "10.0.0.0/24"),
+					resource.TestCheckResourceAttr("pritunl_server.test", "network", "10.4.0.0/24"),
 					resource.TestCheckResourceAttr("pritunl_server.test", "port", "12345"),
 					resource.TestCheckResourceAttr("pritunl_server.test", "protocol", "tcp"),
 				),
@@ -54,7 +54,7 @@ func TestGetServer_basic(t *testing.T) {
 func TestGetServer_with_attached_organization(t *testing.T) {
 	var serverId string
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { preCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      testGetServerDestroy,
@@ -95,13 +95,74 @@ func TestGetServer_with_attached_organization(t *testing.T) {
 	})
 }
 
+func TestGetServer_with_a_fewattached_organizations(t *testing.T) {
+	var serverId string
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { preCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testGetServerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testGetServerSimpleConfigWithAFewAttachedOrganization("tfacc-server1", "tfacc-org1", "tfacc-org2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server1"),
+					resource.TestCheckResourceAttr("pritunl_organization.test", "name", "tfacc-org1"),
+					resource.TestCheckResourceAttr("pritunl_organization.test2", "name", "tfacc-org2"),
+
+					func(s *terraform.State) error {
+						attachedOrganization1Id := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["organization_ids.0"]
+						attachedOrganization2Id := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["organization_ids.1"]
+						organization1Id := s.RootModule().Resources["pritunl_organization.test"].Primary.Attributes["id"]
+						organization2Id := s.RootModule().Resources["pritunl_organization.test2"].Primary.Attributes["id"]
+						expectedOrganizationIds := map[string]struct{}{
+							organization1Id: {},
+							organization2Id: {},
+						}
+
+						if attachedOrganization1Id == attachedOrganization2Id {
+							return fmt.Errorf("first and seconds attached organization_id is the same")
+						}
+
+						if _, ok := expectedOrganizationIds[attachedOrganization1Id]; !ok {
+							return fmt.Errorf("attached organization_id %s doesn't contain in expected organizations list", attachedOrganization1Id)
+						}
+
+						if _, ok := expectedOrganizationIds[attachedOrganization2Id]; !ok {
+							return fmt.Errorf("attached organization_id %s doesn't contain in expected organizations list", attachedOrganization1Id)
+						}
+
+						return nil
+					},
+
+					// extract serverId for future use
+					func(s *terraform.State) error {
+						serverId = s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["id"]
+						return nil
+					},
+				),
+			},
+			importStep("pritunl_server.test"),
+			// test importing
+			{
+				ResourceName: "pritunl_server.test",
+				ImportStateIdFunc: func(*terraform.State) (string, error) {
+					return serverId, nil
+				},
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestGetServer_with_attached_route(t *testing.T) {
 	var serverId string
 
-	expectedRouteNetwork := "10.1.0.0/24"
+	expectedRouteNetwork := "10.5.0.0/24"
 	expectedRouteComment := "tfacc-route"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { preCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      testGetServerDestroy,
@@ -144,14 +205,14 @@ func TestGetServer_with_attached_route(t *testing.T) {
 	})
 }
 
-func TestGetServer_with_a_few_attached_route(t *testing.T) {
+func TestGetServer_with_a_few_attached_routes(t *testing.T) {
 	var serverId string
 
-	expectedRoute1Network := "10.1.0.0/24"
-	expectedRoute2Network := "10.2.0.0/24"
+	expectedRoute1Network := "10.2.0.0/24"
+	expectedRoute2Network := "10.3.0.0/24"
 	expectedRouteComment := "tfacc-route"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { preCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      testGetServerDestroy,
@@ -223,6 +284,26 @@ resource "pritunl_server" "test" {
 	]
 }
 `, name, organizationName)
+}
+
+func testGetServerSimpleConfigWithAFewAttachedOrganization(name, organization1Name, organization2Name string) string {
+	return fmt.Sprintf(`
+resource "pritunl_organization" "test" {
+	name    = "%[2]s"
+}
+
+resource "pritunl_organization" "test2" {
+	name    = "%[3]s"
+}
+
+resource "pritunl_server" "test" {
+	name    = "%[1]s"
+	organization_ids = [
+		pritunl_organization.test.id,
+		pritunl_organization.test2.id
+	]
+}
+`, name, organization1Name, organization2Name)
 }
 
 func testGetServerSimpleConfigWithAttachedRoute(name, route string) string {
