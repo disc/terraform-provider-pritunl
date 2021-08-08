@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"strconv"
 	"strings"
 )
 
@@ -837,7 +836,7 @@ func flattenRoutesData(routesList []pritunl.Route) []interface{} {
 
 			routeMap["id"] = route.GetID()
 			routeMap["network"] = route.Network
-			routeMap["nat"] = strconv.FormatBool(route.Nat)
+			routeMap["nat"] = route.Nat
 			if route.Comment != "" {
 				routeMap["comment"] = route.Comment
 			}

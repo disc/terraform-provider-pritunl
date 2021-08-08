@@ -25,16 +25,16 @@ resource "pritunl_user" "test" {
   groups = [
     "admins",
   ]
-  network_links = [
-    "1.1.1.1/32",
-    "1.1.1.0/24",
-  ]
+  //  network_links = [
+  //    "1.1.1.1/32",
+  //    "1.1.1.0/24",
+  //  ]
   client_to_client = true
   auth_type        = "local"
-  mac_addresses = [
-    "00:1B:44:11:3A:B6",
-    "00:1B:44:11:3A:B7",
-  ]
+  //  mac_addresses = [
+  //    "00:1B:44:11:3A:B6",
+  //    "00:1B:44:11:3A:B7",
+  //  ]
   dns_servers = [
     "1.1.1.1",
     "8.8.4.4",
@@ -76,9 +76,9 @@ resource "pritunl_server" "test" {
     "8.8.8.8",
     "1.1.1.1",
   ]
-  network_wg = "192.168.5.0/24"
-  port_wg    = 44444
-  otp_auth   = true
+  //  network_wg = "192.168.5.0/24"
+  //  port_wg    = 44444
+  otp_auth = true
   //  ipv6               = true
   dh_param_bits      = 1024
   ping_interval      = 15
@@ -90,9 +90,9 @@ resource "pritunl_server" "test" {
   network_mode       = "tunnel" // bridge
   //  network_start = "192.168.1.200" // is required for network_mode = bridge
   //  network_end   = "192.168.1.240" // is required for network_mode = bridge
-  mss_fix         = 1450
-  max_devices     = 5
-  pre_connect_msg = "Hello world"
+  mss_fix = 1450
+  //  max_devices     = 5
+  //  pre_connect_msg = "Hello world"
   allowed_devices = "mobile"
   search_domain   = "abc.org, dot.com"
   replica_count   = 3
@@ -110,12 +110,18 @@ resource "pritunl_server" "test" {
     pritunl_organization.test2.id,
   ]
 
-  dynamic "route" {
-    for_each = var.common_routes
-    content {
-      network = route.value["network"]
-      comment = route.value["comment"]
-      nat     = route.value["nat"]
-    }
+  route {
+    network = "10.0.0.0/24"
+    comment = "abcd"
+    nat     = true
   }
+
+  //  dynamic "route" {
+  //    for_each = var.common_routes
+  //    content {
+  //      network = route.value["network"]
+  //      comment = route.value["comment"]
+  //      nat     = route.value["nat"]
+  //    }
+  //  }
 }
