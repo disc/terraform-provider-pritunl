@@ -1,9 +1,11 @@
 package provider
 
 import (
+	"fmt"
 	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"os"
 	"strconv"
 	"testing"
@@ -61,6 +63,22 @@ func importStep(name string, ignore ...string) resource.TestStep {
 
 	if len(ignore) > 0 {
 		step.ImportStateVerifyIgnore = ignore
+	}
+
+	return step
+}
+
+func userImportStep(name string) resource.TestStep {
+	step := resource.TestStep{
+		ResourceName:      name,
+		ImportState:       true,
+		ImportStateVerify: true,
+		ImportStateIdFunc: func(state *terraform.State) (string, error) {
+			userId := state.RootModule().Resources["pritunl_user.test"].Primary.Attributes["id"]
+			orgId := state.RootModule().Resources["pritunl_organization.test"].Primary.Attributes["id"]
+
+			return fmt.Sprintf("%s-%s", orgId, userId), nil
+		},
 	}
 
 	return step

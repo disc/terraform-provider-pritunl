@@ -44,11 +44,6 @@ func resourceUser() *schema.Resource {
 				Optional:    true,
 				Description: "Shows if user is disabled",
 			},
-			//"pin": {
-			//	Type:        schema.TypeString,
-			//	Optional:    true,
-			//	Description: "User pin, required when user connects to vpn. When using with two-factor authentication the pin and two-factor authentication code should both be placed in the password field.",
-			//},
 			"port_forwarding": {
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
@@ -75,6 +70,10 @@ func resourceUser() *schema.Resource {
 				Optional:     true,
 				Description:  "User authentication type. This will determine how the user authenticates. This should be set automatically when the user authenticates with single sign-on.",
 				ValidateFunc: validation.StringInSlice([]string{"local", "duo", "yubico", "azure", "azure_duo", "azure_yubico", "google", "google_duo", "google_yubico", "slack", "slack_duo", "slack_yubico", "saml", "saml_duo", "saml_yubico", "saml_okta", "saml_okta_duo", "saml_okta_yubico", "saml_onelogin", "saml_onelogin_duo", "saml_onelogin_yubico", "radius", "radius_duo", "plugin"}, false),
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// suppress any diff by this property
+					return true
+				},
 			},
 			"mac_addresses": {
 				Type: schema.TypeList,
@@ -124,7 +123,6 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 	d.Set("name", user.Name)
 	d.Set("auth_type", user.AuthType)
 	d.Set("dns_servers", user.DnsServers)
-	d.Set("pin", user.Pin)
 	d.Set("dns_suffix", user.DnsSuffix)
 	d.Set("disabled", user.Disabled)
 	d.Set("network_links", user.NetworkLinks)
@@ -300,7 +298,7 @@ func resourceUserImport(_ context.Context, d *schema.ResourceData, meta interfac
 
 	attributes := strings.Split(d.Id(), "-")
 	if len(attributes) < 2 {
-		return nil, fmt.Errorf("invalid format: expected ${organizationId}-${userId}, e.g. 60cd0be07723cf3c9114686c-60cd0be17723cf3c91146873")
+		return nil, fmt.Errorf("invalid format: expected ${organizationId}-${userId}, e.g. 60cd0be07723cf3c9114686c-60cd0be17723cf3c91146873, actual id is %s", d.Id())
 	}
 
 	orgId := attributes[0]
