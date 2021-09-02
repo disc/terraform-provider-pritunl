@@ -36,7 +36,7 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	timestampNano := strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	nonceMac := hmac.New(md5.New, []byte(t.apiSecret))
-	nonceMac.Write([]byte(strings.Join([]string{timestampNano, t.apiToken}, "")))
+	nonceMac.Write([]byte(strings.Join([]string{timestampNano, req.URL.Path, t.apiToken}, "")))
 	nonce := fmt.Sprintf("%x", nonceMac.Sum(nil))
 	authString := strings.Join([]string{t.apiToken, timestamp, nonce, strings.ToUpper(req.Method), req.URL.Path}, "&")
 
