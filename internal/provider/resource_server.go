@@ -712,26 +712,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		server.DnsServers = dnsServers
 	}
 
-	newStatus := d.Get("status").(string)
-	if d.HasChange("status") {
-		if newStatus == pritunl.ServerStatusOnline {
-			err = apiClient.StartServer(d.Id())
-			if err != nil {
-				return diag.Errorf("Error on starting server: %s", err)
-			}
-		} else {
-			err = apiClient.StopServer(d.Id())
-			if err != nil {
-				return diag.Errorf("Error on stopping server: %s", err)
-			}
-		}
-	}
-
-	if d.Get("status").(string) == pritunl.ServerStatusOnline {
-		err = apiClient.StopServer(d.Id())
-		if err != nil {
-			return diag.Errorf("Error on stopping server: %s", err)
-		}
+	// Stop server before applying any change
+	err = apiClient.StopServer(d.Id())
+	if err != nil {
+		return diag.Errorf("Error on stopping server: %s", err)
 	}
 
 	if d.HasChange("organization_ids") {
@@ -791,14 +775,16 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
+	// Start server if it was ONLINE before and status wasn't changed OR status was changed to ONLINE
+	shouldServerBeStarted := (prevServerStatus == pritunl.ServerStatusOnline && !d.HasChange("status")) || (d.HasChange("status") && d.Get("status").(string) != pritunl.ServerStatusOffline)
+
 	err = apiClient.UpdateServer(d.Id(), server)
 	if err != nil {
 		// start server in case of error?
 		return diag.FromErr(err)
 	}
 
-	// return to prev status after update
-	if prevServerStatus == pritunl.ServerStatusOnline && newStatus != pritunl.ServerStatusOffline {
+	if shouldServerBeStarted {
 		err = apiClient.StartServer(d.Id())
 		if err != nil {
 			return diag.Errorf("Error on starting server: %s", err)
