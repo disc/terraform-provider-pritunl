@@ -60,7 +60,7 @@ resource "pritunl_organization" "developers" {
 # Create a pritunl user resource 
 resource "pritunl_user" "steve" {
   name            = "steve"
-  organization_id = pritunl_organization.test.id
+  organization_id = pritunl_organization.developers.id
   email           = "steve@developers.com"
   groups = [
     "developers",
@@ -68,8 +68,8 @@ resource "pritunl_user" "steve" {
 }
 
 # Create a pritunl server resource
-resource "pritunl_server" "test" {
-  name      = "test"
+resource "pritunl_server" "example" {
+  name      = "example"
   port      = 15500
   protocol  = "udp"
   network   = "192.168.1.0/24"
@@ -107,6 +107,71 @@ resource "pritunl_server" "test" {
       }
   }
 }
+```
+
+## Importing exist resources
+
+Describe exist resource in the terraform file first and then import them:
+
+```hcl
+# Describe a pritunl organization resource
+resource "pritunl_organization" "developers" {
+  name = "Developers"
+}
+```
+
+Import an organization:
+```sh
+terraform import pritunl_organization.developers ${ORGANIZATION_ID}
+terraform import pritunl_organization.developers 610e42d2a0ed366f41dfe6e8
+```
+The organization ID (as well as other resource IDs) can be found in the Pritunl API responses or in the HTML document response.
+
+```hcl
+# Describe a pritunl user resource
+resource "pritunl_user" "steve" {
+  name            = "steve"
+  organization_id = pritunl_organization.developers.id
+  email           = "steve@developers.com"
+}
+```
+
+Import a user:
+```sh
+terraform import pritunl_user.steve ${ORGANIZATION_ID}-${USER_ID}
+terraform import pritunl_user.steve 610e42d2a0ed366f41dfe6e8-610e42d6a0ed366f41dfe72b
+```
+
+```hcl
+# Describe a pritunl server resource
+resource "pritunl_server" "example" {
+  name      = "example"
+  port      = 15500
+  protocol  = "udp"
+  network   = "192.168.1.0/24"
+  groups    = [
+    "developers",
+  ]
+
+  # Attach the organization to the server
+  organization_ids = [
+    pritunl_organization.developers.id,
+  ]
+
+  # Describe all the routes manually
+  # Default route 0.0.0.0/0 will be deleted on the server creation
+  route {
+    network = "10.0.0.0/24"
+    comment = "Private network #1"
+    nat     = true
+  }
+}
+```
+
+Import a server:
+```sh
+terraform import pritunl_server.example ${SERVER_ID}
+terraform import pritunl_server.example 60cd0bfa7723cf3c911468a8
 ```
 
 ## License
