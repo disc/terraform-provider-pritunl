@@ -113,6 +113,7 @@ resource "pritunl_server" "example" {
 
 Describe exist resource in the terraform file first and then import them:
 
+Import an organization:
 ```hcl
 # Describe a pritunl organization resource
 resource "pritunl_organization" "developers" {
@@ -120,13 +121,14 @@ resource "pritunl_organization" "developers" {
 }
 ```
 
-Import an organization:
+Execute the shell command:
 ```sh
 terraform import pritunl_organization.developers ${ORGANIZATION_ID}
 terraform import pritunl_organization.developers 610e42d2a0ed366f41dfe6e8
 ```
 The organization ID (as well as other resource IDs) can be found in the Pritunl API responses or in the HTML document response.
 
+Import a user:
 ```hcl
 # Describe a pritunl user resource
 resource "pritunl_user" "steve" {
@@ -136,11 +138,13 @@ resource "pritunl_user" "steve" {
 }
 ```
 
-Import a user:
+Execute the shell command:
 ```sh
 terraform import pritunl_user.steve ${ORGANIZATION_ID}-${USER_ID}
 terraform import pritunl_user.steve 610e42d2a0ed366f41dfe6e8-610e42d6a0ed366f41dfe72b
 ```
+
+Import a server:
 
 ```hcl
 # Describe a pritunl server resource
@@ -168,7 +172,7 @@ resource "pritunl_server" "example" {
 }
 ```
 
-Import a server:
+Execute the shell command:
 ```sh
 terraform import pritunl_server.example ${SERVER_ID}
 terraform import pritunl_server.example 60cd0bfa7723cf3c911468a8
