@@ -29,7 +29,7 @@ $ make build
 
 ## Example usage
 
-Take a look at the examples in the [documentation](https://registry.terraform.io/providers/disc/pritunl/0.0.1/docs) of the registry
+Take a look at the examples in the [documentation](https://registry.terraform.io/providers/disc/pritunl/0.0.3/docs) of the registry
 or use the following example:
 
 
@@ -39,12 +39,12 @@ terraform {
   required_providers {
     pritunl = {
       source  = "disc/pritunl"
-      version = "0.0.1"
+      version = "0.0.3"
     }
   }
 }
 
-# Configure the pritunl provider from variables
+# Configure the pritunl provider
 provider "pritunl" {
   url    = "https://vpn.server.com"
   token  = "api-token"
