@@ -9,7 +9,7 @@
 
 [![Release](https://img.shields.io/github/v/release/disc/terraform-provider-pritunl)](https://github.com/disc/terraform-provider-pritunl/releases)
 [![Registry](https://img.shields.io/badge/registry-doc%40latest-lightgrey?logo=terraform)](https://registry.terraform.io/providers/disc/pritunl/latest/docs)
-[![License](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://github.com/disc/terraform-provider-pritunl/blob/main/LICENSE)  
+[![License](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://github.com/disc/terraform-provider-pritunl/blob/master/LICENSE)  
 [![Go Report Card](https://goreportcard.com/badge/github.com/disc/terraform-provider-pritunl)](https://goreportcard.com/report/github.com/disc/terraform-provider-pritunl)
 
 - Website: https://www.terraform.io
@@ -46,11 +46,10 @@ terraform {
 
 # Configure the pritunl provider from variables
 provider "pritunl" {
-  url    = var.pritunl_url
-  token  = var.pritunl_api_token
-  secret = var.pritunl_api_secret
-
-  insecure = var.pritunl_insecure
+  url    = "https://vpn.server.com"
+  token  = "api-token"
+  secret = "api-secret"
+  insecure = false
 }
 
 # Create a pritunl organization resource
