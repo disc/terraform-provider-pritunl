@@ -444,11 +444,20 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 				organizationsList = append(organizationsList, organization.ID)
 			}
 		}
-		d.Set("organization_ids", organizationsList)
+
+		declaredOrganizations, ok := d.Get("organization_ids").([]interface{})
+		if !ok {
+			return diag.Errorf("failed to parse organization_ids for the server: %d", server.Name)
+		}
+		d.Set("organization_ids", matchOrganizationWithSchema(organizationsList, declaredOrganizations))
 	}
 
 	if len(routes) > 0 {
-		d.Set("route", flattenRoutesData(routes))
+		declaredRoutes, ok := d.Get("route").([]interface{})
+		if !ok {
+			return diag.Errorf("failed to parse routes for the server: %d", server.Name)
+		}
+		d.Set("route", flattenRoutesData(matchRoutesWithSchema(routes, declaredRoutes)))
 	}
 
 	return nil
@@ -830,4 +839,54 @@ func flattenRoutesData(routesList []pritunl.Route) []interface{} {
 	}
 
 	return routes
+}
+
+// This cannot currently be handled efficiently by a DiffSuppressFunc
+// See: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
+func matchRoutesWithSchema(routes []pritunl.Route, declaredRoutes []interface{}) []pritunl.Route {
+	result := make([]pritunl.Route, len(declaredRoutes))
+
+	routesMap := make(map[string]pritunl.Route, len(declaredRoutes))
+	for _, route := range routes {
+		routesMap[route.GetID()] = route
+	}
+
+	for i, declaredRoute := range declaredRoutes {
+		declaredRouteMap := declaredRoute.(map[string]interface{})
+
+		for key, route := range routesMap {
+			if route.Network != declaredRouteMap["network"] || route.Nat != declaredRouteMap["nat"] {
+				continue
+			}
+
+			result[i] = route
+			delete(routesMap, key)
+			break
+		}
+	}
+
+	for _, route := range routesMap {
+		result = append(result, route)
+	}
+
+	return result
+}
+
+// This cannot currently be handled efficiently by a DiffSuppressFunc
+// See: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
+func matchOrganizationWithSchema(orgs []string, declaredOrgs []interface{}) []string {
+	result := make([]string, len(declaredOrgs))
+
+	for i, declaredOrg := range declaredOrgs {
+		for _, org := range orgs {
+			if org != declaredOrg.(string) {
+				continue
+			}
+
+			result[i] = org
+			break
+		}
+	}
+
+	return result
 }
