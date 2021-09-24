@@ -29,7 +29,7 @@ $ make build
 
 ## Example usage
 
-Take a look at the examples in the [documentation](https://registry.terraform.io/providers/disc/pritunl/0.0.4/docs) of the registry
+Take a look at the examples in the [documentation](https://registry.terraform.io/providers/disc/pritunl/latest/docs) of the registry
 or use the following example:
 
 
@@ -39,7 +39,7 @@ terraform {
   required_providers {
     pritunl = {
       source  = "disc/pritunl"
-      version = "0.0.4"
+      version = "0.0.7"
     }
   }
 }
