@@ -405,7 +405,6 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("hash", server.Hash)
 	d.Set("network", server.Network)
 	d.Set("bind_address", server.BindAddress)
-	d.Set("groups", server.Groups)
 	d.Set("dns_servers", server.DnsServers)
 	d.Set("network_wg", server.NetworkWG)
 	d.Set("port_wg", server.PortWG)
@@ -450,6 +449,20 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 			return diag.Errorf("failed to parse organization_ids for the server: %d", server.Name)
 		}
 		d.Set("organization_ids", matchOrganizationWithSchema(organizationsList, declaredOrganizations))
+	}
+
+	if len(server.Groups) > 0 {
+		groupsList := make([]string, 0)
+
+		for _, group := range server.Groups {
+			groupsList = append(groupsList, group)
+		}
+
+		declaredGroups, ok := d.Get("groups").([]interface{})
+		if !ok {
+			return diag.Errorf("failed to parse groups for the server: %d", server.Name)
+		}
+		d.Set("groups", matchGroupsWithSchema(groupsList, declaredGroups))
 	}
 
 	if len(routes) > 0 {
@@ -880,6 +893,25 @@ func matchOrganizationWithSchema(orgs []string, declaredOrgs []interface{}) []st
 	for i, declaredOrg := range declaredOrgs {
 		for _, org := range orgs {
 			if org != declaredOrg.(string) {
+				continue
+			}
+
+			result[i] = org
+			break
+		}
+	}
+
+	return result
+}
+
+// This cannot currently be handled efficiently by a DiffSuppressFunc
+// See: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
+func matchGroupsWithSchema(groups []string, declaredGroups []interface{}) []string {
+	result := make([]string, len(declaredGroups))
+
+	for i, declaredGroup := range declaredGroups {
+		for _, org := range groups {
+			if org != declaredGroup.(string) {
 				continue
 			}
 

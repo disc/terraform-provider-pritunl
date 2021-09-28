@@ -128,8 +128,21 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 	d.Set("client_to_client", user.ClientToClient)
 	d.Set("mac_addresses", user.MacAddresses)
 	d.Set("bypass_secondary", user.BypassSecondary)
-	d.Set("groups", user.Groups)
 	d.Set("organization_id", user.Organization)
+
+	if len(user.Groups) > 0 {
+		groupsList := make([]string, 0)
+
+		for _, group := range user.Groups {
+			groupsList = append(groupsList, group)
+		}
+
+		declaredGroups, ok := d.Get("groups").([]interface{})
+		if !ok {
+			return diag.Errorf("failed to parse groups for the user: %d", user.Name)
+		}
+		d.Set("groups", matchGroupsWithSchema(groupsList, declaredGroups))
+	}
 
 	return nil
 }
