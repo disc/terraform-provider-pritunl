@@ -191,7 +191,7 @@ func resourceServer() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
-				Description:  "Maximum number of clients connected to a server or to each server replica.",
+				Description:  "Sets network mode. Bridged mode is not recommended using it will impact performance and client support will be limited.",
 				ValidateFunc: validation.StringInSlice([]string{"tunnel", "bridge"}, false),
 			},
 			"network_start": {

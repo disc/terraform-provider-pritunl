@@ -37,7 +37,7 @@ description: |-
 - **multi_device** (Boolean) Allow users to connect with multiple devices concurrently.
 - **network** (String) Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks
 - **network_end** (String) Ending network address for the bridged VPN client IP addresses. Must be in the subnet of the server network.
-- **network_mode** (String) Maximum number of clients connected to a server or to each server replica.
+- **network_mode** (String) Sets network mode. Bridged mode is not recommended using it will impact performance and client support will be limited.
 - **network_start** (String) Starting network address for the bridged VPN client IP addresses. Must be in the subnet of the server network.
 - **network_wg** (String) Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks
 - **organization_ids** (List of String) The list of attached organizations for the server
