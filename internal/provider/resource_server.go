@@ -98,7 +98,9 @@ func resourceServer() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
-				// TODO: Add validation
+				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+					return validation.IsIPAddress(i, s)
+				},
 			},
 			"network_wg": {
 				Type:         schema.TypeString,
@@ -106,8 +108,42 @@ func resourceServer() *schema.Resource {
 				Optional:     true,
 				Description:  "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
 				RequiredWith: []string{"port_wg"},
-				// TODO: Add validation
-				// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
+				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+					// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
+					// 10.0.0.0/8
+					// 172.16.0.0/12
+					// 192.168.0.0/16
+					warnings := make([]string, 0)
+					errors := make([]error, 0)
+
+					_, actualIpNet, err := net.ParseCIDR(i.(string))
+					if err != nil {
+						errors = append(errors, err)
+
+						return warnings, errors
+					}
+
+					expectedIpNets := []string{
+						"10.0.0.0/8",
+						"172.16.0.0/12",
+						"192.168.0.0/16",
+					}
+
+					found := false
+					for _, v := range expectedIpNets {
+						_, expectedIpNet, _ := net.ParseCIDR(v)
+						if actualIpNet.Contains(expectedIpNet.IP) || expectedIpNet.Contains(actualIpNet.IP) {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						errors = append(errors, fmt.Errorf("provided subnet %s does not belong to expected subnets %s", actualIpNet.String(), strings.Join(expectedIpNets, ", ")))
+					}
+
+					return warnings, errors
+				},
 			},
 			"port_wg": {
 				Type:         schema.TypeInt,
