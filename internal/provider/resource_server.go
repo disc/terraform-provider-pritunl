@@ -339,6 +339,9 @@ func resourceServer() *schema.Resource {
 							Type:        schema.TypeString,
 							Required:    true,
 							Description: "Network address with subnet to route",
+							ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+								return validation.IsCIDR(i, s)
+							},
 						},
 						"comment": {
 							Type:        schema.TypeString,
