@@ -29,7 +29,13 @@ type Client interface {
 	UpdateServer(id string, server *Server) error
 	DeleteServer(id string) error
 
+	GetHostsByServer(serverId string) ([]Host, error)
+
+	AttachHostToServer(hostId, serverId string) error
+	DetachHostFromServer(hostId, serverId string) error
+
 	GetOrganizationsByServer(serverId string) ([]Organization, error)
+
 	AttachOrganizationToServer(organizationId, serverId string) error
 	DetachOrganizationFromServer(organizationId, serverId string) error
 
@@ -453,6 +459,63 @@ func (c client) DeleteServer(id string) error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Non-200 response on deleting the server\nbody=%s", body)
+	}
+
+	return nil
+}
+
+func (c client) GetHostsByServer(serverId string) ([]Host, error) {
+	url := fmt.Sprintf("/server/%s/host", serverId)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetHostsByServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting hosts on the server\nbody=%s", body)
+	}
+
+	var hosts []Host
+	json.Unmarshal(body, &hosts)
+
+	return hosts, nil
+}
+
+func (c client) AttachHostToServer(hostId, serverId string) error {
+	url := fmt.Sprintf("/server/%s/host/%s", serverId, hostId)
+	req, err := http.NewRequest("PUT", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("AttachHostToServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on attaching a host to the server\nbody=%s", body)
+	}
+
+	return nil
+}
+
+func (c client) DetachHostFromServer(hostId, serverId string) error {
+	url := fmt.Sprintf("/server/%s/host/%s", serverId, hostId)
+	req, err := http.NewRequest("DELETE", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("DetachHostFromServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on detaching the host from the server\nbody=%s", body)
 	}
 
 	return nil

@@ -306,6 +306,15 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Description: "The list of attached organizations for the server",
 			},
+			"host_ids": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Required:    false,
+				Optional:    true,
+				Description: "The list of attached hosts for the server",
+			},
 			"route": {
 				Type: schema.TypeList,
 				Elem: &schema.Resource{
@@ -392,6 +401,12 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
+	// get hosts
+	hosts, err := apiClient.GetHostsByServer(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	// get routes
 	routes, err := apiClient.GetRoutesByServer(d.Id())
 	if err != nil {
@@ -435,6 +450,22 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("inter_client", server.InterClient)
 	d.Set("vxlan", server.VxLan)
 	d.Set("status", server.Status)
+
+	if len(hosts) > 0 {
+		hostsList := make([]string, 0)
+
+		if hosts != nil {
+			for _, host := range hosts {
+				hostsList = append(hostsList, host.ID)
+			}
+		}
+
+		declaredHosts, ok := d.Get("host_ids").([]interface{})
+		if !ok {
+			return diag.Errorf("failed to parse host_ids for the server: %d", server.Name)
+		}
+		d.Set("host_ids", matchHostWithSchema(hostsList, declaredHosts))
+	}
 
 	if len(organizations) > 0 {
 		organizationsList := make([]string, 0)
@@ -511,6 +542,35 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	d.SetId(server.ID)
+
+
+	// delete any default hosts attached
+	hosts, err := apiClient.GetHostsByServer(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if len(hosts) > 0 {
+		if hosts != nil {
+			for _, host := range hosts {
+				err = apiClient.DetachHostFromServer(host.ID, d.Id())
+				if err != nil {
+					return diag.Errorf("Error on detaching default server from the host: %s", err)
+				}
+			}
+		}
+	}
+
+	// set new hosts
+	if d.HasChange("host_ids") {
+		_, newOrgs := d.GetChange("host_ids")
+		for _, v := range newOrgs.([]interface{}) {
+			err = apiClient.AttachHostToServer(v.(string), d.Id())
+			if err != nil {
+				return diag.Errorf("Error on attaching server to the host: %s", err)
+			}
+		}
+	}
 
 	if d.HasChange("organization_ids") {
 		_, newOrgs := d.GetChange("organization_ids")
@@ -727,18 +787,34 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Error on stopping server: %s", err)
 	}
 
+	if d.HasChange("host_ids") {
+		oldHosts, newHosts := d.GetChange("host_ids")
+		for _, v := range oldHosts.([]interface{}) {
+			err = apiClient.DetachHostFromServer(v.(string), d.Id())
+			if err != nil {
+				return diag.Errorf("Error on detaching server from the host: %s", err)
+			}
+		}
+		for _, v := range newHosts.([]interface{}) {
+			err = apiClient.AttachHostToServer(v.(string), d.Id())
+			if err != nil {
+				return diag.Errorf("Error on attaching server to the host: %s", err)
+			}
+		}
+	}
+
 	if d.HasChange("organization_ids") {
 		oldOrgs, newOrgs := d.GetChange("organization_ids")
 		for _, v := range oldOrgs.([]interface{}) {
 			err = apiClient.DetachOrganizationFromServer(v.(string), d.Id())
 			if err != nil {
-				return diag.Errorf("Error on detaching server to the organization: %s", err)
+				return diag.Errorf("Error on detaching server from the organization: %s", err)
 			}
 		}
 		for _, v := range newOrgs.([]interface{}) {
 			err = apiClient.AttachOrganizationToServer(v.(string), d.Id())
 			if err != nil {
-				return diag.Errorf("Error on attaching server to the organization: %s", err)
+				return diag.Errorf("Error on attaching server from the organization: %s", err)
 			}
 		}
 	}
@@ -867,6 +943,25 @@ func matchRoutesWithSchema(routes []pritunl.Route, declaredRoutes []interface{})
 
 	for _, route := range routesMap {
 		result = append(result, route)
+	}
+
+	return result
+}
+
+// This cannot currently be handled efficiently by a DiffSuppressFunc
+// See: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
+func matchHostWithSchema(hosts []string, declaredHosts []interface{}) []string {
+	result := make([]string, len(declaredHosts))
+
+	for i, declaredHost := range declaredHosts {
+		for _, host := range hosts {
+			if host != declaredHost.(string) {
+				continue
+			}
+
+			result[i] = host
+			break
+		}
 	}
 
 	return result
