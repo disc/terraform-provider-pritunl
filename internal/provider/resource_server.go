@@ -510,7 +510,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 
 		declaredOrganizations, ok := d.Get("organization_ids").([]interface{})
 		if !ok {
-			return diag.Errorf("failed to parse organization_ids for the server: %d", server.Name)
+			return diag.Errorf("failed to parse organization_ids for the server: %s", server.Name)
 		}
 		d.Set("organization_ids", matchOrganizationWithSchema(organizationsList, declaredOrganizations))
 	}
@@ -524,7 +524,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 
 		declaredGroups, ok := d.Get("groups").([]interface{})
 		if !ok {
-			return diag.Errorf("failed to parse groups for the server: %d", server.Name)
+			return diag.Errorf("failed to parse groups for the server: %s", server.Name)
 		}
 		d.Set("groups", matchGroupsWithSchema(groupsList, declaredGroups))
 	}
@@ -532,7 +532,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	if len(routes) > 0 {
 		declaredRoutes, ok := d.Get("route").([]interface{})
 		if !ok {
-			return diag.Errorf("failed to parse routes for the server: %d", server.Name)
+			return diag.Errorf("failed to parse routes for the server: %s", server.Name)
 		}
 		d.Set("route", flattenRoutesData(matchRoutesWithSchema(routes, declaredRoutes)))
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"regexp"
 	"testing"
 )
 
@@ -162,6 +163,8 @@ func TestGetServer_with_attached_route(t *testing.T) {
 	expectedRouteNetwork := "10.5.0.0/24"
 	expectedRouteComment := "tfacc-route"
 
+	// TODO: Add test case with an invalid route
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { preCheck(t) },
 		ProviderFactories: providerFactories,
@@ -263,6 +266,91 @@ func TestGetServer_with_a_few_attached_routes(t *testing.T) {
 	})
 }
 
+func TestGetServer_with_invalid_route(t *testing.T) {
+	invalidRouteNetwork := "10.100.0.2"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { preCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testGetServerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testGetServerSimpleConfigWithAttachedRoute("tfacc-server1", invalidRouteNetwork),
+				ExpectError: regexp.MustCompile(fmt.Sprintf("invalid CIDR address: %s", invalidRouteNetwork)),
+			},
+		},
+	})
+}
+
+func TestCreateServer_with_invalid_network(t *testing.T) {
+	missedSubnetNetwork := "10.100.0.2"
+	invalidNetwork := "10.100.0"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { preCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testGetServerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testGetServerConfig("tfacc-server1", missedSubnetNetwork, 11111),
+				ExpectError: regexp.MustCompile(fmt.Sprintf("invalid CIDR address: %s", missedSubnetNetwork)),
+			},
+			{
+				Config:      testGetServerConfig("tfacc-server2", invalidNetwork, 22222),
+				ExpectError: regexp.MustCompile(fmt.Sprintf("invalid CIDR address: %s", invalidNetwork)),
+			},
+		},
+	})
+}
+
+func TestCreateServer_with_unsupported_network(t *testing.T) {
+	unsupportedNetwork := "172.14.68.0/24"
+	supportedNetwork := "172.16.68.0/24"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { preCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testGetServerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testGetServerConfig("tfacc-server1", unsupportedNetwork, 11111),
+				ExpectError: regexp.MustCompile(fmt.Sprintf("provided subnet %s does not belong to expected subnets 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16", unsupportedNetwork)),
+			},
+			{
+				Config: testGetServerConfig("tfacc-server2", supportedNetwork, 22222),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server2"),
+					resource.TestCheckResourceAttr("pritunl_server.test", "network", supportedNetwork),
+				),
+			},
+		},
+	})
+}
+
+func TestCreateServer_with_invalid_bind_address(t *testing.T) {
+	invalidBindAddress := "10.100.0.1/24"
+	correctBindAddress := "10.100.0.1"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { preCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testGetServerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testGetServerConfigWithBindAddress("tfacc-server1", "172.16.68.0/24", invalidBindAddress, 11111),
+				ExpectError: regexp.MustCompile(fmt.Sprintf("expected bind_address to contain a valid IP, got: %s", invalidBindAddress)),
+			},
+			{
+				Config: testGetServerConfigWithBindAddress("tfacc-server2", "172.16.68.0/24", correctBindAddress, 22222),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server2"),
+					resource.TestCheckResourceAttr("pritunl_server.test", "bind_address", correctBindAddress),
+				),
+			},
+		},
+	})
+}
+
 func testGetServerSimpleConfig(name string) string {
 	return fmt.Sprintf(`
 resource "pritunl_server" "test" {
@@ -345,6 +433,18 @@ resource "pritunl_server" "test" {
     protocol = "tcp"
 }
 `, name, network, port)
+}
+
+func testGetServerConfigWithBindAddress(name, network, bindAddress string, port int) string {
+	return fmt.Sprintf(`
+resource "pritunl_server" "test" {
+	name    		= "%[1]s"
+    network  		= "%[2]s"
+    bind_address  	= "%[3]s"
+    port     		= %[4]d
+    protocol 		= "tcp"
+}
+`, name, network, bindAddress, port)
 }
 
 func testGetServerDestroy(s *terraform.State) error {
