@@ -163,8 +163,6 @@ func TestGetServer_with_attached_route(t *testing.T) {
 	expectedRouteNetwork := "10.5.0.0/24"
 	expectedRouteComment := "tfacc-route"
 
-	// TODO: Add test case with an invalid route
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { preCheck(t) },
 		ProviderFactories: providerFactories,
