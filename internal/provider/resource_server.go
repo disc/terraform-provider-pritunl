@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"net"
 	"strings"
 )
 
@@ -55,25 +56,51 @@ func resourceServer() *schema.Resource {
 				Computed:    true,
 				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
 
-				//ValidateFunc: validation.Any(
-				//	// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
-				//	func(i interface{}, s string) ([]string, []error) {
-				//		return validation.IsIPv4Address(i.(string), "10.0.0.0/8")
-				//	},
-				//	func(i interface{}, s string) ([]string, []error) {
-				//		return validation.IsIPv4Address(i.(string), "172.16.0.0/11")
-				//	},
-				//	func(i interface{}, s string) ([]string, []error) {
-				//		return validation.IsIPv4Address(i.(string), "192.168.0.0/16")
-				//	},
-				//),
+				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+					// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
+					// 10.0.0.0/8
+					// 172.16.0.0/12
+					// 192.168.0.0/16
+					warnings := make([]string, 0)
+					errors := make([]error, 0)
+
+					_, actualIpNet, err := net.ParseCIDR(i.(string))
+					if err != nil {
+						errors = append(errors, err)
+
+						return warnings, errors
+					}
+
+					expectedIpNets := []string{
+						"10.0.0.0/8",
+						"172.16.0.0/12",
+						"192.168.0.0/16",
+					}
+
+					found := false
+					for _, v := range expectedIpNets {
+						_, expectedIpNet, _ := net.ParseCIDR(v)
+						if actualIpNet.Contains(expectedIpNet.IP) || expectedIpNet.Contains(actualIpNet.IP) {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						errors = append(errors, fmt.Errorf("provided subnet %s does not belong to expected subnets %s", actualIpNet.String(), strings.Join(expectedIpNets, ", ")))
+					}
+
+					return warnings, errors
+				},
 			},
 			"bind_address": {
 				Type:        schema.TypeString,
 				Required:    false,
 				Optional:    true,
 				Description: "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
-				// TODO: Add validation
+				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+					return validation.IsIPAddress(i, s)
+				},
 			},
 			"network_wg": {
 				Type:         schema.TypeString,
@@ -81,8 +108,42 @@ func resourceServer() *schema.Resource {
 				Optional:     true,
 				Description:  "Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks",
 				RequiredWith: []string{"port_wg"},
-				// TODO: Add validation
-				// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
+				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+					// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
+					// 10.0.0.0/8
+					// 172.16.0.0/12
+					// 192.168.0.0/16
+					warnings := make([]string, 0)
+					errors := make([]error, 0)
+
+					_, actualIpNet, err := net.ParseCIDR(i.(string))
+					if err != nil {
+						errors = append(errors, err)
+
+						return warnings, errors
+					}
+
+					expectedIpNets := []string{
+						"10.0.0.0/8",
+						"172.16.0.0/12",
+						"192.168.0.0/16",
+					}
+
+					found := false
+					for _, v := range expectedIpNets {
+						_, expectedIpNet, _ := net.ParseCIDR(v)
+						if actualIpNet.Contains(expectedIpNet.IP) || expectedIpNet.Contains(actualIpNet.IP) {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						errors = append(errors, fmt.Errorf("provided subnet %s does not belong to expected subnets %s", actualIpNet.String(), strings.Join(expectedIpNets, ", ")))
+					}
+
+					return warnings, errors
+				},
 			},
 			"port_wg": {
 				Type:         schema.TypeInt,
@@ -314,6 +375,9 @@ func resourceServer() *schema.Resource {
 							Type:        schema.TypeString,
 							Required:    true,
 							Description: "Network address with subnet to route",
+							ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+								return validation.IsCIDR(i, s)
+							},
 						},
 						"comment": {
 							Type:        schema.TypeString,
@@ -446,7 +510,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 
 		declaredOrganizations, ok := d.Get("organization_ids").([]interface{})
 		if !ok {
-			return diag.Errorf("failed to parse organization_ids for the server: %d", server.Name)
+			return diag.Errorf("failed to parse organization_ids for the server: %s", server.Name)
 		}
 		d.Set("organization_ids", matchOrganizationWithSchema(organizationsList, declaredOrganizations))
 	}
@@ -460,7 +524,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 
 		declaredGroups, ok := d.Get("groups").([]interface{})
 		if !ok {
-			return diag.Errorf("failed to parse groups for the server: %d", server.Name)
+			return diag.Errorf("failed to parse groups for the server: %s", server.Name)
 		}
 		d.Set("groups", matchGroupsWithSchema(groupsList, declaredGroups))
 	}
@@ -468,7 +532,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	if len(routes) > 0 {
 		declaredRoutes, ok := d.Get("route").([]interface{})
 		if !ok {
-			return diag.Errorf("failed to parse routes for the server: %d", server.Name)
+			return diag.Errorf("failed to parse routes for the server: %s", server.Name)
 		}
 		d.Set("route", flattenRoutesData(matchRoutesWithSchema(routes, declaredRoutes)))
 	}

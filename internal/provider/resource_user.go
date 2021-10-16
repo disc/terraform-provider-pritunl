@@ -139,7 +139,7 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 
 		declaredGroups, ok := d.Get("groups").([]interface{})
 		if !ok {
-			return diag.Errorf("failed to parse groups for the user: %d", user.Name)
+			return diag.Errorf("failed to parse groups for the user: %s", user.Name)
 		}
 		d.Set("groups", matchGroupsWithSchema(groupsList, declaredGroups))
 	}
