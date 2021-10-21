@@ -1,10 +1,9 @@
 build:
 	go build -gcflags="all=-N -l" -o ~/.terraform.d/plugins/registry.terraform.io/disc/pritunl/0.0.1/darwin_amd64/terraform-provider-pritunl_v0.0.1 main.go
-	rm -rf terraform/.terraform/ terraform/.terraform.lock.hcl
 
 test:
 	@docker rm tf_pritunl_acc_test -f || true
-	@docker run --name tf_pritunl_acc_test --rm -d --privileged -p 1194:1194/udp -p 1194:1194/tcp -p 80:80/tcp -p 443:443/tcp -p 27017:27017/tcp jippi/pritunl
+	@docker run --name tf_pritunl_acc_test --hostname pritunl.local --rm -d --privileged -p 1194:1194/udp -p 1194:1194/tcp -p 80:80/tcp -p 443:443/tcp -p 27017:27017/tcp jippi/pritunl
 
 	sleep 10
 

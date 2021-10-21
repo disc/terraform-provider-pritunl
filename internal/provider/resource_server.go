@@ -365,7 +365,17 @@ func resourceServer() *schema.Resource {
 				},
 				Required:    false,
 				Optional:    true,
-				Description: "The list of attached organizations for the server",
+				Description: "The list of attached organizations to the server.",
+			},
+			"host_ids": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Required:    false,
+				Optional:    true,
+				Computed:    true,
+				Description: "The list of attached hosts to the server",
 			},
 			"route": {
 				Type: schema.TypeList,
@@ -396,7 +406,7 @@ func resourceServer() *schema.Resource {
 				},
 				Required:    false,
 				Optional:    true,
-				Description: "The list of attached routes for the server",
+				Description: "The list of attached routes to the server",
 			},
 			"status": {
 				Type:         schema.TypeString,
@@ -462,6 +472,12 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
+	// get hosts
+	hosts, err := apiClient.GetHostsByServer(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.Set("name", server.Name)
 	d.Set("protocol", server.Protocol)
 	d.Set("port", server.Port)
@@ -512,7 +528,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 		if !ok {
 			return diag.Errorf("failed to parse organization_ids for the server: %s", server.Name)
 		}
-		d.Set("organization_ids", matchOrganizationWithSchema(organizationsList, declaredOrganizations))
+		d.Set("organization_ids", matchStringEntitiesWithSchema(organizationsList, declaredOrganizations))
 	}
 
 	if len(server.Groups) > 0 {
@@ -526,7 +542,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 		if !ok {
 			return diag.Errorf("failed to parse groups for the server: %s", server.Name)
 		}
-		d.Set("groups", matchGroupsWithSchema(groupsList, declaredGroups))
+		d.Set("groups", matchStringEntitiesWithSchema(groupsList, declaredGroups))
 	}
 
 	if len(routes) > 0 {
@@ -535,6 +551,27 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 			return diag.Errorf("failed to parse routes for the server: %s", server.Name)
 		}
 		d.Set("route", flattenRoutesData(matchRoutesWithSchema(routes, declaredRoutes)))
+	}
+
+	if len(hosts) > 0 {
+		hostsList := make([]string, 0)
+
+		if hosts != nil {
+			for _, host := range hosts {
+				hostsList = append(hostsList, host.ID)
+			}
+		}
+
+		declaredHosts, ok := d.Get("host_ids").([]interface{})
+		if !ok {
+			return diag.Errorf("failed to parse host_ids for the server: %s", server.Name)
+		}
+
+		if len(declaredHosts) > 0 {
+			hostsList = matchStringEntitiesWithSchema(hostsList, declaredHosts)
+		}
+
+		d.Set("host_ids", hostsList)
 	}
 
 	return nil
@@ -620,6 +657,29 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		err = apiClient.AddRoutesToServer(d.Id(), routes)
 		if err != nil {
 			return diag.Errorf("Error on attaching route from the server: %s", err)
+		}
+	}
+
+	if d.HasChange("host_ids") {
+		// delete default host(s) only when host_ids aren't empty
+
+		hosts, err := apiClient.GetHostsByServer(d.Id())
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		for _, host := range hosts {
+			err = apiClient.DetachHostFromServer(host.ID, d.Id())
+			if err != nil {
+				return diag.Errorf("Error on detaching a host from the server: %s", err)
+			}
+		}
+
+		_, newHosts := d.GetChange("host_ids")
+		for _, v := range newHosts.([]interface{}) {
+			err = apiClient.AttachHostToServer(v.(string), d.Id())
+			if err != nil {
+				return diag.Errorf("Error on attaching a host to the server: %s", err)
+			}
 		}
 	}
 
@@ -861,6 +921,22 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
+	if d.HasChange("host_ids") {
+		oldHosts, newHosts := d.GetChange("host_ids")
+		for _, v := range oldHosts.([]interface{}) {
+			err = apiClient.DetachHostFromServer(v.(string), d.Id())
+			if err != nil {
+				return diag.Errorf("Error on detaching server to the organization: %s", err)
+			}
+		}
+		for _, v := range newHosts.([]interface{}) {
+			err = apiClient.AttachHostToServer(v.(string), d.Id())
+			if err != nil {
+				return diag.Errorf("Error on attaching server to the organization: %s", err)
+			}
+		}
+	}
+
 	// Start server if it was ONLINE before and status wasn't changed OR status was changed to ONLINE
 	shouldServerBeStarted := (prevServerStatus == pritunl.ServerStatusOnline && !d.HasChange("status")) || (d.HasChange("status") && d.Get("status").(string) != pritunl.ServerStatusOffline)
 
@@ -951,35 +1027,20 @@ func matchRoutesWithSchema(routes []pritunl.Route, declaredRoutes []interface{})
 
 // This cannot currently be handled efficiently by a DiffSuppressFunc
 // See: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
-func matchOrganizationWithSchema(orgs []string, declaredOrgs []interface{}) []string {
-	result := make([]string, len(declaredOrgs))
-
-	for i, declaredOrg := range declaredOrgs {
-		for _, org := range orgs {
-			if org != declaredOrg.(string) {
-				continue
-			}
-
-			result[i] = org
-			break
-		}
+func matchStringEntitiesWithSchema(entities []string, declaredEntities []interface{}) []string {
+	if len(declaredEntities) == 0 {
+		return entities
 	}
 
-	return result
-}
+	result := make([]string, len(declaredEntities))
 
-// This cannot currently be handled efficiently by a DiffSuppressFunc
-// See: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
-func matchGroupsWithSchema(groups []string, declaredGroups []interface{}) []string {
-	result := make([]string, len(declaredGroups))
-
-	for i, declaredGroup := range declaredGroups {
-		for _, org := range groups {
-			if org != declaredGroup.(string) {
+	for i, declaredEntity := range declaredEntities {
+		for _, entity := range entities {
+			if entity != declaredEntity.(string) {
 				continue
 			}
 
-			result[i] = org
+			result[i] = entity
 			break
 		}
 	}

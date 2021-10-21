@@ -39,7 +39,7 @@ terraform {
   required_providers {
     pritunl = {
       source  = "disc/pritunl"
-      version = "0.0.7"
+      version = "0.1.0"
     }
   }
 }
@@ -106,6 +106,28 @@ resource "pritunl_server" "example" {
         nat     = route.value["nat"]
       }
   }
+}
+```
+### Multiple hosts per server (Replicated servers feature)
+It also supports multiple host server's configuration with host datasource which can be matched by a hostname.
+```hcl
+data "pritunl_host" "main" {
+  hostname = "nyc1.vpn.host"
+}
+
+data "pritunl_host" "reserve" {
+  hostname = "nyc3.vpn.host"
+}
+
+resource "pritunl_server" "test" {
+  name    = "some-server"
+  network = "192.168.250.0/24"
+  port    = 15500
+
+  host_ids = [
+    data.pritunl_host.main.id,
+    data.pritunl_host.reserve.id,
+  ]
 }
 ```
 

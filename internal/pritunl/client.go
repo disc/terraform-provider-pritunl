@@ -39,10 +39,13 @@ type Client interface {
 	DeleteRouteFromServer(serverId string, route Route) error
 	UpdateRouteOnServer(serverId string, route Route) error
 
+	GetHosts() ([]Host, error)
+	GetHostsByServer(serverId string) ([]Host, error)
+	AttachHostToServer(hostId, serverId string) error
+	DetachHostFromServer(hostId, serverId string) error
+
 	StartServer(serverId string) error
 	StopServer(serverId string) error
-	//RestartServer(serverId string) error
-	//DeleteServer(serverId string) error
 }
 
 type client struct {
@@ -491,7 +494,7 @@ func (c client) AttachOrganizationToServer(organizationId, serverId string) erro
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Non-200 response on arrachhing an organization the server\nbody=%s", body)
+		return fmt.Errorf("Non-200 response on attaching an organization the server\nbody=%s", body)
 	}
 
 	return nil
@@ -743,6 +746,92 @@ func (c client) DeleteUser(id string, orgId string) error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Non-200 response on deleting the user\nbody=%s", body)
+	}
+
+	return nil
+}
+
+func (c client) GetHosts() ([]Host, error) {
+	url := fmt.Sprintf("/host")
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetHosts: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting the hosts\nbody=%s", body)
+	}
+
+	var hosts []Host
+
+	err = json.Unmarshal(body, &hosts)
+	if err != nil {
+		return nil, fmt.Errorf("GetHosts: %s: %+v, body=%s", err, hosts, body)
+	}
+
+	return hosts, nil
+}
+
+func (c client) GetHostsByServer(serverId string) ([]Host, error) {
+	url := fmt.Sprintf("/server/%s/host", serverId)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetHostsByServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting hosts by the server\nbody=%s", body)
+	}
+
+	var hosts []Host
+
+	err = json.Unmarshal(body, &hosts)
+	if err != nil {
+		return nil, fmt.Errorf("GetHostsByServer: %s: %+v, body=%s", err, hosts, body)
+	}
+
+	return hosts, nil
+}
+
+func (c client) AttachHostToServer(hostId, serverId string) error {
+	url := fmt.Sprintf("/server/%s/host/%s", serverId, hostId)
+	req, err := http.NewRequest("PUT", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("AttachHostToServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on attachhing the host the server\nbody=%s", body)
+	}
+
+	return nil
+}
+
+func (c client) DetachHostFromServer(hostId, serverId string) error {
+	url := fmt.Sprintf("/server/%s/host/%s", serverId, hostId)
+	req, err := http.NewRequest("DELETE", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("DetachHostFromServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on detaching the host from the server\nbody=%s", body)
 	}
 
 	return nil

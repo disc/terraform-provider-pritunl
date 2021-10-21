@@ -96,7 +96,7 @@ func TestGetServer_with_attached_organization(t *testing.T) {
 	})
 }
 
-func TestGetServer_with_a_fewattached_organizations(t *testing.T) {
+func TestGetServer_with_a_few_attached_organizations(t *testing.T) {
 	var serverId string
 
 	resource.Test(t, resource.TestCase{
@@ -349,6 +349,67 @@ func TestCreateServer_with_invalid_bind_address(t *testing.T) {
 	})
 }
 
+func TestGetServer_with_default_host(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { preCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testGetServerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testGetServerSimpleConfig("tfacc-server1"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server1"),
+
+					func(s *terraform.State) error {
+						attachedHostId := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["host_ids.0"]
+						if attachedHostId == "" {
+							return fmt.Errorf("attached host is empty")
+						}
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+func TestGetServer_without_hosts(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { preCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testGetServerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testGetServerSimpleConfig("tfacc-server1"),
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						attachedHost := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["host_ids.0"]
+						if attachedHost == "" {
+							return fmt.Errorf("attached hosts must not be empty")
+						}
+						return nil
+					},
+				),
+			},
+			{
+				Config: testGetServerSimpleConfigWithoutHosts("tfacc-server1"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server1"),
+
+					func(s *terraform.State) error {
+						attachedHost := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["host_ids.0"]
+						if attachedHost != "" {
+							return fmt.Errorf("attached hosts must be empty")
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testGetServerSimpleConfig(name string) string {
 	return fmt.Sprintf(`
 resource "pritunl_server" "test" {
@@ -443,6 +504,16 @@ resource "pritunl_server" "test" {
     protocol 		= "tcp"
 }
 `, name, network, bindAddress, port)
+}
+
+func testGetServerSimpleConfigWithoutHosts(name string) string {
+	return fmt.Sprintf(`
+resource "pritunl_server" "test" {
+	name    = "%[1]s"
+
+	host_ids = []
+}
+`, name)
 }
 
 func testGetServerDestroy(s *terraform.State) error {
