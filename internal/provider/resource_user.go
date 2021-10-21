@@ -141,7 +141,7 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 		if !ok {
 			return diag.Errorf("failed to parse groups for the user: %s", user.Name)
 		}
-		d.Set("groups", matchGroupsWithSchema(groupsList, declaredGroups))
+		d.Set("groups", matchStringEntitiesWithSchema(groupsList, declaredGroups))
 	}
 
 	return nil
