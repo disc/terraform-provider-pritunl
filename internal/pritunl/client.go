@@ -54,7 +54,7 @@ type client struct {
 }
 
 func (c client) TestApiCall() error {
-	url := fmt.Sprintf("/organization")
+	url := fmt.Sprintf("/state")
 	req, err := http.NewRequest("GET", url, nil)
 
 	resp, err := c.httpClient.Do(req)
@@ -63,7 +63,7 @@ func (c client) TestApiCall() error {
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	// TODO: Much such checks into the http client's middleware
+
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Non-200 response on the tests api call\nbody=%s", body)
 	}
