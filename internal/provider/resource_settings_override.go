@@ -84,6 +84,27 @@ func resourceSettingsOverride() *schema.Resource {
 				Sensitive:   true,
 				Description: "Yubico Secret Key",
 			},
+			"sso_cache": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Enable an 8 hour secondary authentication cache using client ID, IP address and MAC address. This will allow clients to reconnect without secondary authentication. Works with Duo push, Okta push, OneLogin push, Duo passcodes and YubiKeys. Supported by all OpenVPN clients",
+			},
+			"sso_client_cache": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Enable a two day secondary authentication cache using a token stored on the client. This will allow clients to reconnect without secondary authentication. Works with Duo push, Okta push, OneLogin push, Duo passcodes and YubiKeys. Only supported by Pritunl client",
+			},
+			"restrict_import": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Require users to use Pritunl URI when importing profiles",
+			},
+			"client_reconnect": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Enable auto reconnecting on Pritunl client",
+			},
 		},
 		CreateContext: resourceCreateSettingsOverride,
 		ReadContext:   resourceReadSettingsOverride,
@@ -114,6 +135,10 @@ func resourceReadSettingsOverride(ctx context.Context, d *schema.ResourceData, m
 	d.Set("reverse_proxy", settings.ReverseProxy)
 	d.Set("sso_yubico_client", settings.SSOYubicoClient)
 	d.Set("sso_yubico_secret", settings.SSOYubicoSecret)
+	d.Set("sso_cache", settings.SSOCache)
+	d.Set("sso_client_cache", settings.SSOClientCache)
+	d.Set("restrict_import", settings.RestrictImport)
+	d.Set("client_reconnect", settings.ClientReconnect)
 
 	return nil
 }
@@ -162,6 +187,22 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 	if v, ok := d.GetOk("sso_yubico_secret"); ok {
 		settings.SSOYubicoSecret = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_cache"); ok {
+		settings.SSOCache = v.(bool)
+	}
+
+	if v, ok := d.GetOk("sso_client_cache"); ok {
+		settings.SSOClientCache = v.(bool)
+	}
+
+	if v, ok := d.GetOk("restrict_import"); ok {
+		settings.RestrictImport = v.(bool)
+	}
+
+	if v, ok := d.GetOk("client_reconnect"); ok {
+		settings.ClientReconnect = v.(bool)
 	}
 
 	err = apiClient.UpdateSettings(settings)
@@ -214,6 +255,22 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 	if d.HasChange("sso_yubico_secret") {
 		settings.SSOYubicoSecret = d.Get("sso_yubico_secret").(string)
+	}
+
+	if d.HasChange("sso_cache") {
+		settings.SSOCache = d.Get("sso_cache").(bool)
+	}
+
+	if d.HasChange("sso_client_cache") {
+		settings.SSOClientCache = d.Get("sso_client_cache").(bool)
+	}
+
+	if d.HasChange("restrict_import") {
+		settings.RestrictImport = d.Get("restrict_import").(bool)
+	}
+
+	if d.HasChange("client_reconnect") {
+		settings.ClientReconnect = d.Get("client_reconnect").(bool)
 	}
 
 	err = apiClient.UpdateSettings(settings)
