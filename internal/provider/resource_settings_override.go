@@ -111,374 +111,24 @@ func resourceSettingsOverride() *schema.Resource {
 				Description:  "Cloud Provider",
 				ValidateFunc: validation.StringInSlice([]string{"aws", "oracle"}, false),
 			},
-			"route53_region": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Route 53 region: This will automatically create and update DNS records for each host in the selected region",
-				ValidateFunc: validation.StringInSlice([]string{
-					"us-east-1",
-					"us-east-2",
-					"us-west-1",
-					"us-west-2",
-					"us-gov-east-1",
-					"us-gov-west-1",
-					"eu-north-1",
-					"eu-west-1",
-					"eu-west-2",
-					"eu-west-3",
-					"eu-central-1",
-					"cn-north-1",
-					"cn-northwest-1",
-					"ca-central-1",
-					"ap-northeast-1",
-					"ap-northeast-2",
-					"ap-southeast-1",
-					"ap-southeast-2",
-					"ap-east-1",
-					"ap-south-1",
-					"sa-east-1",
-				}, false),
-			},
-			"route53_zone": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Description:  "Route 53 zone: This will automatically create and update DNS records for each host in the selected zone. The name of the host will be used for the subdomain in the zone. The AWS keys below must be saved before a list of available zones will be shown.",
-				ValidateFunc: validation.StringInSlice([]string{"aws", "oracle"}, false),
-			},
-			"us_east_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US East (N. Virginia) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
+			"cloud_provider_aws": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				Computed:      true,
+				MaxItems:      1,
+				ConflictsWith: []string{"cloud_provider_oracle"},
+				Elem: &schema.Resource{
+					Schema: cloudProviderAwsSchema,
 				},
 			},
-			"us_east_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US East (N. Virginia) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_east_2_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US East (Ohio) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_east_2_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US East (Ohio) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_west_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US West (N. California) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_west_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US West (N. California) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_west_2_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US West (Oregon) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_west_2_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US West (Oregon) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_gov_east_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US GovCloud (East) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_gov_east_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US GovCloud (East) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_gov_west_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US GovCloud (West) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"us_gov_west_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "US GovCloud (West) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_north_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (Stockholm) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_north_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (Stockholm) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_west_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (Ireland) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_west_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (Ireland) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_west_2_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (London) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_west_2_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (London) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_west_3_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (Paris) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_west_3_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (Paris) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_central_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (Frankfurt) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"eu_central_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "EU (Frankfurt) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ca_central_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Canada (Central) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ca_central_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Canada (Central) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"cn_north_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "China (Beijing) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"cn_north_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "China (Beijing) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"cn_northwest_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "China (Ningxia) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"cn_northwest_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "China (Ningxia) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_northeast_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Tokyo) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_northeast_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Tokyo) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_northeast_2_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Seoul) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_northeast_2_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Seoul) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_southeast_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Singapore) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_southeast_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Singapore) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_southeast_2_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Sydney) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_southeast_2_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Sydney) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_east_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Hong Kong) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_east_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Hong Kong) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_south_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Mumbai) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"ap_south_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Asia Pacific (Mumbai) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"sa_east_1_access_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "South America (Sao Paulo) Access Key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
-				},
-			},
-			"sa_east_1_secret_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "South America (Sao Paulo) Secret key or 'role' to use the instance IAM role",
-				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
-					return validation.StringIsNotEmpty(i, s)
+			"cloud_provider_oracle": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				Computed:      true,
+				MaxItems:      1,
+				ConflictsWith: []string{"cloud_provider_aws"},
+				Elem: &schema.Resource{
+					Schema: cloudProviderOracleSchema,
 				},
 			},
 		},
@@ -516,50 +166,60 @@ func resourceReadSettingsOverride(ctx context.Context, d *schema.ResourceData, m
 	d.Set("restrict_import", settings.RestrictImport)
 	d.Set("client_reconnect", settings.ClientReconnect)
 	d.Set("cloud_provider", settings.CloudProvider)
-	d.Set("route53_region", settings.Route53Region)
-	d.Set("route53_zone", settings.Route53Zone)
-	d.Set("us_east_1_access_key", settings.AwsUsEast1AccessKey)
-	d.Set("us_east_1_secret_key", settings.AwsUsEast1SecretKey)
-	d.Set("us_east_2_access_key", settings.AwsUsEast2AccessKey)
-	d.Set("us_east_2_secret_key", settings.AwsUsEast2SecretKey)
-	d.Set("us_west_1_access_key", settings.AwsUsWest1AccessKey)
-	d.Set("us_west_1_secret_key", settings.AwsUsWest1SecretKey)
-	d.Set("us_west_2_access_key", settings.AwsUsWest2AccessKey)
-	d.Set("us_west_2_secret_key", settings.AwsUsWest2SecretKey)
-	d.Set("us_gov_east_1_access_key", settings.AwsUsGovEast1AccessKey)
-	d.Set("us_gov_east_1_secret_key", settings.AwsUsGovEast1SecretKey)
-	d.Set("us_gov_west_1_access_key", settings.AwsUsGovWest1AccessKey)
-	d.Set("us_gov_west_1_secret_key", settings.AwsUsGovWest1SecretKey)
-	d.Set("eu_north_1_access_key", settings.AwsEuNorth1AccessKey)
-	d.Set("eu_north_1_secret_key", settings.AwsEuNorth1SecretKey)
-	d.Set("eu_west_1_access_key", settings.AwsEuWest1AccessKey)
-	d.Set("eu_west_1_secret_key", settings.AwsEuWest1SecretKey)
-	d.Set("eu_west_2_access_key", settings.AwsEuWest2AccessKey)
-	d.Set("eu_west_2_secret_key", settings.AwsEuWest2SecretKey)
-	d.Set("eu_west_3_access_key", settings.AwsEuWest3AccessKey)
-	d.Set("eu_west_3_secret_key", settings.AwsEuWest3SecretKey)
-	d.Set("eu_central_1_access_key", settings.AwsEuCentral1AccessKey)
-	d.Set("eu_central_1_secret_key", settings.AwsEuCentral1SecretKey)
-	d.Set("ca_central_1_access_key", settings.AwsCaCentral1AccessKey)
-	d.Set("ca_central_1_secret_key", settings.AwsCaCentral1SecretKey)
-	d.Set("cn_north_1_access_key", settings.AwsCnNorth1AccessKey)
-	d.Set("cn_north_1_secret_key", settings.AwsCnNorth1SecretKey)
-	d.Set("cn_northwest_1_access_key", settings.AwsCnNorthWest1AccessKey)
-	d.Set("cn_northwest_1_secret_key", settings.AwsCnNorthWest1SecretKey)
-	d.Set("ap_northeast_1_access_key", settings.AwsApNorthEast1AccessKey)
-	d.Set("ap_northeast_1_secret_key", settings.AwsApNorthEast1SecretKey)
-	d.Set("ap_northeast_2_access_key", settings.AwsApNorthEast2AccessKey)
-	d.Set("ap_northeast_2_secret_key", settings.AwsApNorthEast2SecretKey)
-	d.Set("ap_southeast_1_access_key", settings.AwsApSouthEast1AccessKey)
-	d.Set("ap_southeast_1_secret_key", settings.AwsApSouthEast1SecretKey)
-	d.Set("ap_southeast_2_access_key", settings.AwsApSouthEast2AccessKey)
-	d.Set("ap_southeast_2_secret_key", settings.AwsApSouthEast2SecretKey)
-	d.Set("ap_east_1_access_key", settings.AwsApEast1AccessKey)
-	d.Set("ap_east_1_secret_key", settings.AwsApEast1SecretKey)
-	d.Set("ap_south_1_access_key", settings.AwsApSouth1AccessKey)
-	d.Set("ap_south_1_secret_key", settings.AwsApSouth1SecretKey)
-	d.Set("sa_east_1_access_key", settings.AwsSaEast1AccessKey)
-	d.Set("sa_east_1_secret_key", settings.AwsSaEast1SecretKey)
+	d.Set("cloud_provider_aws", []map[string]interface{}{
+		{
+			"route53_region":            settings.Route53Region,
+			"route53_zone":              settings.Route53Zone,
+			"us_east_1_access_key":      settings.AwsUsEast1AccessKey,
+			"us_east_1_secret_key":      settings.AwsUsEast1SecretKey,
+			"us_east_2_access_key":      settings.AwsUsEast2AccessKey,
+			"us_east_2_secret_key":      settings.AwsUsEast2SecretKey,
+			"us_west_1_access_key":      settings.AwsUsWest1AccessKey,
+			"us_west_1_secret_key":      settings.AwsUsWest1SecretKey,
+			"us_west_2_access_key":      settings.AwsUsWest2AccessKey,
+			"us_west_2_secret_key":      settings.AwsUsWest2SecretKey,
+			"us_gov_east_1_access_key":  settings.AwsUsGovEast1AccessKey,
+			"us_gov_east_1_secret_key":  settings.AwsUsGovEast1SecretKey,
+			"us_gov_west_1_access_key":  settings.AwsUsGovWest1AccessKey,
+			"us_gov_west_1_secret_key":  settings.AwsUsGovWest1SecretKey,
+			"eu_north_1_access_key":     settings.AwsEuNorth1AccessKey,
+			"eu_north_1_secret_key":     settings.AwsEuNorth1SecretKey,
+			"eu_west_1_access_key":      settings.AwsEuWest1AccessKey,
+			"eu_west_1_secret_key":      settings.AwsEuWest1SecretKey,
+			"eu_west_2_access_key":      settings.AwsEuWest2AccessKey,
+			"eu_west_2_secret_key":      settings.AwsEuWest2SecretKey,
+			"eu_west_3_access_key":      settings.AwsEuWest3AccessKey,
+			"eu_west_3_secret_key":      settings.AwsEuWest3SecretKey,
+			"eu_central_1_access_key":   settings.AwsEuCentral1AccessKey,
+			"eu_central_1_secret_key":   settings.AwsEuCentral1SecretKey,
+			"ca_central_1_access_key":   settings.AwsCaCentral1AccessKey,
+			"ca_central_1_secret_key":   settings.AwsCaCentral1SecretKey,
+			"cn_north_1_access_key":     settings.AwsCnNorth1AccessKey,
+			"cn_north_1_secret_key":     settings.AwsCnNorth1SecretKey,
+			"cn_northwest_1_access_key": settings.AwsCnNorthWest1AccessKey,
+			"cn_northwest_1_secret_key": settings.AwsCnNorthWest1SecretKey,
+			"ap_northeast_1_access_key": settings.AwsApNorthEast1AccessKey,
+			"ap_northeast_1_secret_key": settings.AwsApNorthEast1SecretKey,
+			"ap_northeast_2_access_key": settings.AwsApNorthEast2AccessKey,
+			"ap_northeast_2_secret_key": settings.AwsApNorthEast2SecretKey,
+			"ap_southeast_1_access_key": settings.AwsApSouthEast1AccessKey,
+			"ap_southeast_1_secret_key": settings.AwsApSouthEast1SecretKey,
+			"ap_southeast_2_access_key": settings.AwsApSouthEast2AccessKey,
+			"ap_southeast_2_secret_key": settings.AwsApSouthEast2SecretKey,
+			"ap_east_1_access_key":      settings.AwsApEast1AccessKey,
+			"ap_east_1_secret_key":      settings.AwsApEast1SecretKey,
+			"ap_south_1_access_key":     settings.AwsApSouth1AccessKey,
+			"ap_south_1_secret_key":     settings.AwsApSouth1SecretKey,
+			"sa_east_1_access_key":      settings.AwsSaEast1AccessKey,
+			"sa_east_1_secret_key":      settings.AwsSaEast1SecretKey,
+		},
+	})
+	d.Set("cloud_provider_oracle", []map[string]interface{}{
+		{
+			"oracle_user_ocid":  settings.OracleUserOcid,
+			"oracle_public_key": settings.OraclePublicKey,
+		},
+	})
 
 	return nil
 }
@@ -630,180 +290,188 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.CloudProvider = v.(string)
 	}
 
-	if v, ok := d.GetOk("route53_region"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.route53_region"); ok {
 		settings.Route53Region = v.(string)
 	}
 
-	if v, ok := d.GetOk("route53_zone"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.route53_zone"); ok {
 		settings.Route53Zone = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_east_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_east_1_access_key"); ok {
 		settings.AwsUsEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_east_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_east_1_secret_key"); ok {
 		settings.AwsUsEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_east_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_east_2_access_key"); ok {
 		settings.AwsUsEast2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_east_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_east_2_secret_key"); ok {
 		settings.AwsUsEast2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_west_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_west_1_access_key"); ok {
 		settings.AwsUsWest1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_west_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_west_1_secret_key"); ok {
 		settings.AwsUsWest1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_west_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_west_2_access_key"); ok {
 		settings.AwsUsWest2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_west_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_west_2_secret_key"); ok {
 		settings.AwsUsWest2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_gov_east_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_gov_east_1_access_key"); ok {
 		settings.AwsUsGovEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_gov_east_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_gov_east_1_secret_key"); ok {
 		settings.AwsUsGovEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_gov_west_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_gov_west_1_access_key"); ok {
 		settings.AwsUsGovWest1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("us_gov_west_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.us_gov_west_1_secret_key"); ok {
 		settings.AwsUsGovWest1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_north_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_north_1_access_key"); ok {
 		settings.AwsEuNorth1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_north_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_north_1_secret_key"); ok {
 		settings.AwsEuNorth1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_west_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_1_access_key"); ok {
 		settings.AwsEuWest1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_west_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_1_secret_key"); ok {
 		settings.AwsEuWest1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_west_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_2_access_key"); ok {
 		settings.AwsEuWest2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_west_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_2_secret_key"); ok {
 		settings.AwsEuWest2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_west_3_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_3_access_key"); ok {
 		settings.AwsEuWest3AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_west_3_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_3_secret_key"); ok {
 		settings.AwsEuWest3SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_central_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_central_1_access_key"); ok {
 		settings.AwsEuCentral1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("eu_central_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.eu_central_1_secret_key"); ok {
 		settings.AwsEuCentral1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ca_central_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ca_central_1_access_key"); ok {
 		settings.AwsCaCentral1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ca_central_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ca_central_1_secret_key"); ok {
 		settings.AwsCaCentral1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cn_north_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.cn_north_1_access_key"); ok {
 		settings.AwsCnNorth1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cn_north_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.cn_north_1_secret_key"); ok {
 		settings.AwsCnNorth1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cn_northwest_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.cn_northwest_1_access_key"); ok {
 		settings.AwsCnNorthWest1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cn_northwest_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.cn_northwest_1_secret_key"); ok {
 		settings.AwsCnNorthWest1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_northeast_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_northeast_1_access_key"); ok {
 		settings.AwsApNorthEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_northeast_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_northeast_1_secret_key"); ok {
 		settings.AwsApNorthEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_northeast_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_northeast_2_access_key"); ok {
 		settings.AwsApNorthEast2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_northeast_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_northeast_2_secret_key"); ok {
 		settings.AwsApNorthEast2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_southeast_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_southeast_1_access_key"); ok {
 		settings.AwsApSouthEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_southeast_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_southeast_1_secret_key"); ok {
 		settings.AwsApSouthEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_southeast_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_southeast_2_access_key"); ok {
 		settings.AwsApSouthEast2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_southeast_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_southeast_2_secret_key"); ok {
 		settings.AwsApSouthEast2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_east_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_east_1_access_key"); ok {
 		settings.AwsApEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_east_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_east_1_secret_key"); ok {
 		settings.AwsApEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_south_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_south_1_access_key"); ok {
 		settings.AwsApSouth1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("ap_south_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.ap_south_1_secret_key"); ok {
 		settings.AwsApSouth1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("sa_east_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.sa_east_1_access_key"); ok {
 		settings.AwsSaEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("sa_east_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws.0.sa_east_1_secret_key"); ok {
 		settings.AwsSaEast1SecretKey = v.(string)
+	}
+
+	if v, ok := d.GetOk("cloud_provider_oracle.0.oracle_user_ocid"); ok {
+		settings.OracleUserOcid = v.(string)
+	}
+
+	if v, ok := d.GetOk("cloud_provider_oracle.0.oracle_public_key"); ok {
+		settings.OraclePublicKey = v.(string)
 	}
 
 	err = apiClient.UpdateSettings(settings)
@@ -878,180 +546,188 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.CloudProvider = d.Get("cloud_provider").(string)
 	}
 
-	if d.HasChange("route53_region") {
-		settings.Route53Region = d.Get("route53_region").(string)
+	if d.HasChange("cloud_provider_aws.0.route53_region") {
+		settings.Route53Region = d.Get("cloud_provider_aws.0.route53_region").(string)
 	}
 
-	if d.HasChange("route53_zone") {
-		settings.Route53Zone = d.Get("route53_zone").(string)
+	if d.HasChange("cloud_provider_aws.0.route53_zone") {
+		settings.Route53Zone = d.Get("cloud_provider_aws.0.route53_zone").(string)
 	}
 
-	if d.HasChange("us_east_1_access_key") {
-		settings.AwsUsEast1AccessKey = d.Get("us_east_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_east_1_access_key") {
+		settings.AwsUsEast1AccessKey = d.Get("cloud_provider_aws.0.us_east_1_access_key").(string)
 	}
 
-	if d.HasChange("us_east_1_secret_key") {
-		settings.AwsUsEast1SecretKey = d.Get("us_east_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_east_1_secret_key") {
+		settings.AwsUsEast1SecretKey = d.Get("cloud_provider_aws.0.us_east_1_secret_key").(string)
 	}
 
-	if d.HasChange("us_east_2_access_key") {
-		settings.AwsUsEast2AccessKey = d.Get("us_east_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_east_2_access_key") {
+		settings.AwsUsEast2AccessKey = d.Get("cloud_provider_aws.0.us_east_2_access_key").(string)
 	}
 
-	if d.HasChange("us_east_2_secret_key") {
-		settings.AwsUsEast2SecretKey = d.Get("us_east_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_east_2_secret_key") {
+		settings.AwsUsEast2SecretKey = d.Get("cloud_provider_aws.0.us_east_2_secret_key").(string)
 	}
 
-	if d.HasChange("us_west_1_access_key") {
-		settings.AwsUsWest1AccessKey = d.Get("us_west_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_west_1_access_key") {
+		settings.AwsUsWest1AccessKey = d.Get("cloud_provider_aws.0.us_west_1_access_key").(string)
 	}
 
-	if d.HasChange("us_west_1_secret_key") {
-		settings.AwsUsWest1SecretKey = d.Get("us_west_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_west_1_secret_key") {
+		settings.AwsUsWest1SecretKey = d.Get("cloud_provider_aws.0.us_west_1_secret_key").(string)
 	}
 
-	if d.HasChange("us_west_2_access_key") {
-		settings.AwsUsWest2AccessKey = d.Get("us_west_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_west_2_access_key") {
+		settings.AwsUsWest2AccessKey = d.Get("cloud_provider_aws.0.us_west_2_access_key").(string)
 	}
 
-	if d.HasChange("us_west_2_secret_key") {
-		settings.AwsUsWest2SecretKey = d.Get("us_west_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_west_2_secret_key") {
+		settings.AwsUsWest2SecretKey = d.Get("cloud_provider_aws.0.us_west_2_secret_key").(string)
 	}
 
-	if d.HasChange("us_gov_east_1_access_key") {
-		settings.AwsUsGovEast1AccessKey = d.Get("us_gov_east_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_gov_east_1_access_key") {
+		settings.AwsUsGovEast1AccessKey = d.Get("cloud_provider_aws.0.us_gov_east_1_access_key").(string)
 	}
 
-	if d.HasChange("us_gov_east_1_secret_key") {
-		settings.AwsUsGovEast1SecretKey = d.Get("us_gov_east_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_gov_east_1_secret_key") {
+		settings.AwsUsGovEast1SecretKey = d.Get("cloud_provider_aws.0.us_gov_east_1_secret_key").(string)
 	}
 
-	if d.HasChange("us_gov_west_1_access_key") {
-		settings.AwsUsGovWest1AccessKey = d.Get("us_gov_west_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_gov_west_1_access_key") {
+		settings.AwsUsGovWest1AccessKey = d.Get("cloud_provider_aws.0.us_gov_west_1_access_key").(string)
 	}
 
-	if d.HasChange("us_gov_west_1_secret_key") {
-		settings.AwsUsGovWest1SecretKey = d.Get("us_gov_west_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.us_gov_west_1_secret_key") {
+		settings.AwsUsGovWest1SecretKey = d.Get("cloud_provider_aws.0.us_gov_west_1_secret_key").(string)
 	}
 
-	if d.HasChange("eu_north_1_access_key") {
-		settings.AwsEuNorth1AccessKey = d.Get("eu_north_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_north_1_access_key") {
+		settings.AwsEuNorth1AccessKey = d.Get("cloud_provider_aws.0.eu_north_1_access_key").(string)
 	}
 
-	if d.HasChange("eu_north_1_secret_key") {
-		settings.AwsEuNorth1SecretKey = d.Get("eu_north_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_north_1_secret_key") {
+		settings.AwsEuNorth1SecretKey = d.Get("cloud_provider_aws.0.eu_north_1_secret_key").(string)
 	}
 
-	if d.HasChange("eu_west_1_access_key") {
-		settings.AwsEuWest1AccessKey = d.Get("eu_west_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_west_1_access_key") {
+		settings.AwsEuWest1AccessKey = d.Get("cloud_provider_aws.0.eu_west_1_access_key").(string)
 	}
 
-	if d.HasChange("eu_west_1_secret_key") {
-		settings.AwsEuWest1SecretKey = d.Get("eu_west_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_west_1_secret_key") {
+		settings.AwsEuWest1SecretKey = d.Get("cloud_provider_aws.0.eu_west_1_secret_key").(string)
 	}
 
-	if d.HasChange("eu_west_2_access_key") {
-		settings.AwsEuWest2AccessKey = d.Get("eu_west_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_west_2_access_key") {
+		settings.AwsEuWest2AccessKey = d.Get("cloud_provider_aws.0.eu_west_2_access_key").(string)
 	}
 
-	if d.HasChange("eu_west_2_secret_key") {
-		settings.AwsEuWest2SecretKey = d.Get("eu_west_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_west_2_secret_key") {
+		settings.AwsEuWest2SecretKey = d.Get("cloud_provider_aws.0.eu_west_2_secret_key").(string)
 	}
 
-	if d.HasChange("eu_west_3_access_key") {
-		settings.AwsEuWest3AccessKey = d.Get("eu_west_3_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_west_3_access_key") {
+		settings.AwsEuWest3AccessKey = d.Get("cloud_provider_aws.0.eu_west_3_access_key").(string)
 	}
 
-	if d.HasChange("eu_west_3_secret_key") {
-		settings.AwsEuWest3SecretKey = d.Get("eu_west_3_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_west_3_secret_key") {
+		settings.AwsEuWest3SecretKey = d.Get("cloud_provider_aws.0.eu_west_3_secret_key").(string)
 	}
 
-	if d.HasChange("eu_central_1_access_key") {
-		settings.AwsEuCentral1AccessKey = d.Get("eu_central_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_central_1_access_key") {
+		settings.AwsEuCentral1AccessKey = d.Get("cloud_provider_aws.0.eu_central_1_access_key").(string)
 	}
 
-	if d.HasChange("eu_central_1_secret_key") {
-		settings.AwsEuCentral1SecretKey = d.Get("eu_central_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.eu_central_1_secret_key") {
+		settings.AwsEuCentral1SecretKey = d.Get("cloud_provider_aws.0.eu_central_1_secret_key").(string)
 	}
 
-	if d.HasChange("ca_central_1_access_key") {
-		settings.AwsCaCentral1AccessKey = d.Get("ca_central_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ca_central_1_access_key") {
+		settings.AwsCaCentral1AccessKey = d.Get("cloud_provider_aws.0.ca_central_1_access_key").(string)
 	}
 
-	if d.HasChange("ca_central_1_secret_key") {
-		settings.AwsCaCentral1SecretKey = d.Get("ca_central_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ca_central_1_secret_key") {
+		settings.AwsCaCentral1SecretKey = d.Get("cloud_provider_aws.0.ca_central_1_secret_key").(string)
 	}
 
-	if d.HasChange("cn_north_1_access_key") {
-		settings.AwsCnNorth1AccessKey = d.Get("cn_north_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.cn_north_1_access_key") {
+		settings.AwsCnNorth1AccessKey = d.Get("cloud_provider_aws.0.cn_north_1_access_key").(string)
 	}
 
-	if d.HasChange("cn_north_1_secret_key") {
-		settings.AwsCnNorth1SecretKey = d.Get("cn_north_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.cn_north_1_secret_key") {
+		settings.AwsCnNorth1SecretKey = d.Get("cloud_provider_aws.0.cn_north_1_secret_key").(string)
 	}
 
-	if d.HasChange("cn_northwest_1_access_key") {
-		settings.AwsCnNorthWest1AccessKey = d.Get("cn_northwest_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.cn_northwest_1_access_key") {
+		settings.AwsCnNorthWest1AccessKey = d.Get("cloud_provider_aws.0.cn_northwest_1_access_key").(string)
 	}
 
-	if d.HasChange("cn_northwest_1_secret_key") {
-		settings.AwsCnNorthWest1SecretKey = d.Get("cn_northwest_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.cn_northwest_1_secret_key") {
+		settings.AwsCnNorthWest1SecretKey = d.Get("cloud_provider_aws.0.cn_northwest_1_secret_key").(string)
 	}
 
-	if d.HasChange("ap_northeast_1_access_key") {
-		settings.AwsApNorthEast1AccessKey = d.Get("ap_northeast_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_northeast_1_access_key") {
+		settings.AwsApNorthEast1AccessKey = d.Get("cloud_provider_aws.0.ap_northeast_1_access_key").(string)
 	}
 
-	if d.HasChange("ap_northeast_1_secret_key") {
-		settings.AwsApNorthEast1SecretKey = d.Get("ap_northeast_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_northeast_1_secret_key") {
+		settings.AwsApNorthEast1SecretKey = d.Get("cloud_provider_aws.0.ap_northeast_1_secret_key").(string)
 	}
 
-	if d.HasChange("ap_northeast_2_access_key") {
-		settings.AwsApNorthEast2AccessKey = d.Get("ap_northeast_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_northeast_2_access_key") {
+		settings.AwsApNorthEast2AccessKey = d.Get("cloud_provider_aws.0.ap_northeast_2_access_key").(string)
 	}
 
-	if d.HasChange("ap_northeast_2_secret_key") {
-		settings.AwsApNorthEast2SecretKey = d.Get("ap_northeast_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_northeast_2_secret_key") {
+		settings.AwsApNorthEast2SecretKey = d.Get("cloud_provider_aws.0.ap_northeast_2_secret_key").(string)
 	}
 
-	if d.HasChange("ap_southeast_1_access_key") {
-		settings.AwsApSouthEast1AccessKey = d.Get("ap_southeast_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_southeast_1_access_key") {
+		settings.AwsApSouthEast1AccessKey = d.Get("cloud_provider_aws.0.ap_southeast_1_access_key").(string)
 	}
 
-	if d.HasChange("ap_southeast_1_secret_key") {
-		settings.AwsApSouthEast1SecretKey = d.Get("ap_southeast_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_southeast_1_secret_key") {
+		settings.AwsApSouthEast1SecretKey = d.Get("cloud_provider_aws.0.ap_southeast_1_secret_key").(string)
 	}
 
-	if d.HasChange("ap_southeast_2_access_key") {
-		settings.AwsApSouthEast2AccessKey = d.Get("ap_southeast_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_southeast_2_access_key") {
+		settings.AwsApSouthEast2AccessKey = d.Get("cloud_provider_aws.0.ap_southeast_2_access_key").(string)
 	}
 
-	if d.HasChange("ap_southeast_2_secret_key") {
-		settings.AwsApSouthEast2SecretKey = d.Get("ap_southeast_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_southeast_2_secret_key") {
+		settings.AwsApSouthEast2SecretKey = d.Get("cloud_provider_aws.0.ap_southeast_2_secret_key").(string)
 	}
 
-	if d.HasChange("ap_east_1_access_key") {
-		settings.AwsApEast1AccessKey = d.Get("ap_east_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_east_1_access_key") {
+		settings.AwsApEast1AccessKey = d.Get("cloud_provider_aws.0.ap_east_1_access_key").(string)
 	}
 
-	if d.HasChange("ap_east_1_secret_key") {
-		settings.AwsApEast1SecretKey = d.Get("ap_east_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_east_1_secret_key") {
+		settings.AwsApEast1SecretKey = d.Get("cloud_provider_aws.0.ap_east_1_secret_key").(string)
 	}
 
-	if d.HasChange("ap_south_1_access_key") {
-		settings.AwsApSouth1AccessKey = d.Get("ap_south_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_south_1_access_key") {
+		settings.AwsApSouth1AccessKey = d.Get("cloud_provider_aws.0.ap_south_1_access_key").(string)
 	}
 
-	if d.HasChange("ap_south_1_secret_key") {
-		settings.AwsApSouth1SecretKey = d.Get("ap_south_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.ap_south_1_secret_key") {
+		settings.AwsApSouth1SecretKey = d.Get("cloud_provider_aws.0.ap_south_1_secret_key").(string)
 	}
 
-	if d.HasChange("sa_east_1_access_key") {
-		settings.AwsSaEast1AccessKey = d.Get("sa_east_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws.0.sa_east_1_access_key") {
+		settings.AwsSaEast1AccessKey = d.Get("cloud_provider_aws.0.sa_east_1_access_key").(string)
 	}
 
-	if d.HasChange("sa_east_1_secret_key") {
-		settings.AwsSaEast1SecretKey = d.Get("sa_east_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws.0.sa_east_1_secret_key") {
+		settings.AwsSaEast1SecretKey = d.Get("cloud_provider_aws.0.sa_east_1_secret_key").(string)
+	}
+
+	if d.HasChange("cloud_provider_oracle.0.oracle_user_ocid") {
+		settings.OracleUserOcid = d.Get("cloud_provider_oracle.0.oracle_user_ocid").(string)
+	}
+
+	if d.HasChange("cloud_provider_oracle.0.oracle_public_key") {
+		settings.OraclePublicKey = d.Get("cloud_provider_oracle.0.oracle_public_key").(string)
 	}
 
 	err = apiClient.UpdateSettings(settings)
@@ -1064,4 +740,392 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 func resourceDeleteSettingsOverride(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
+}
+
+var cloudProviderOracleSchema = map[string]*schema.Schema{
+	"oracle_user_ocid": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Computed:    true,
+		Description: "The OCID of the Oracle Cloud user that is associated with the public key",
+	},
+	"oracle_public_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Computed:    true,
+		Description: "Generated public key for Oracle API. Copy this public key to the user API keys in the Oracle Cloud console. Clear the input field to generate a new key.",
+	},
+}
+
+var cloudProviderAwsSchema = map[string]*schema.Schema{
+	"route53_region": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Route 53 region: This will automatically create and update DNS records for each host in the selected region",
+		ValidateFunc: validation.StringInSlice([]string{
+			"us-east-1",
+			"us-east-2",
+			"us-west-1",
+			"us-west-2",
+			"us-gov-east-1",
+			"us-gov-west-1",
+			"eu-north-1",
+			"eu-west-1",
+			"eu-west-2",
+			"eu-west-3",
+			"eu-central-1",
+			"cn-north-1",
+			"cn-northwest-1",
+			"ca-central-1",
+			"ap-northeast-1",
+			"ap-northeast-2",
+			"ap-southeast-1",
+			"ap-southeast-2",
+			"ap-east-1",
+			"ap-south-1",
+			"sa-east-1",
+		}, false),
+	},
+	"route53_zone": {
+		Type:         schema.TypeString,
+		Optional:     true,
+		Description:  "Route 53 zone: This will automatically create and update DNS records for each host in the selected zone. The name of the host will be used for the subdomain in the zone. The AWS keys below must be saved before a list of available zones will be shown.",
+		ValidateFunc: validation.StringInSlice([]string{"aws", "oracle"}, false),
+	},
+	"us_east_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US East (N. Virginia) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_east_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US East (N. Virginia) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_east_2_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US East (Ohio) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_east_2_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US East (Ohio) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_west_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US West (N. California) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_west_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US West (N. California) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_west_2_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US West (Oregon) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_west_2_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US West (Oregon) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_gov_east_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US GovCloud (East) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_gov_east_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US GovCloud (East) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_gov_west_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US GovCloud (West) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"us_gov_west_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "US GovCloud (West) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_north_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (Stockholm) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_north_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (Stockholm) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_west_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (Ireland) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_west_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (Ireland) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_west_2_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (London) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_west_2_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (London) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_west_3_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (Paris) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_west_3_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (Paris) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_central_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (Frankfurt) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"eu_central_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "EU (Frankfurt) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ca_central_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Canada (Central) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ca_central_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Canada (Central) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"cn_north_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "China (Beijing) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"cn_north_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "China (Beijing) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"cn_northwest_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "China (Ningxia) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"cn_northwest_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "China (Ningxia) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_northeast_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Tokyo) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_northeast_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Tokyo) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_northeast_2_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Seoul) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_northeast_2_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Seoul) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_southeast_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Singapore) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_southeast_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Singapore) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_southeast_2_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Sydney) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_southeast_2_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Sydney) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_east_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Hong Kong) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_east_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Hong Kong) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_south_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Mumbai) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_south_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Mumbai) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"sa_east_1_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "South America (Sao Paulo) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"sa_east_1_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "South America (Sao Paulo) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
 }
