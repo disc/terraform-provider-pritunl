@@ -72,6 +72,46 @@ func resourceSettingsOverride() *schema.Resource {
 				Computed:    true,
 				Description: "Allow reading client IP address from reverse proxy header. Enable when using services such as CloudFlare or when using a load balancer",
 			},
+			"sso": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Pritunl color theme",
+				Default:     "light",
+				ValidateFunc: validation.StringInSlice([]string{
+					"saml_okta",
+					"saml_okta_duo",
+					"saml_okta_yubico",
+					"saml_onelogin",
+					"saml_onelogin_duo",
+					"saml_onelogin_yubico",
+					"authzero",
+					"authzero_duo",
+					"authzero_yubico",
+					"slack",
+					"slack_duo",
+					"slack_yubico",
+					"google",
+					"google_duo",
+					"google_yubico",
+					"azure",
+					"azure_duo",
+					"azure_yubico",
+					"saml",
+					"saml_duo",
+					"saml_yubico",
+					"duo",
+					"radius",
+					"radius_duo",
+				}, false),
+			},
+			"sso_settings": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: ssoSettingsSchema,
+				},
+			},
 			"sso_yubico_client": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -1127,5 +1167,279 @@ var cloudProviderAwsSchema = map[string]*schema.Schema{
 		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
 			return validation.StringIsNotEmpty(i, s)
 		},
+	},
+}
+
+var ssoSettingsSchema = map[string]*schema.Schema{
+	"default_organization_id": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Default Single Sign-On Organization",
+	},
+	"okta": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		Elem: &schema.Resource{
+			Schema: oktaSsoSettingsSchema,
+		},
+	},
+	"onelogin": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		Elem: &schema.Resource{
+			Schema: oneloginSsoSettingsSchema,
+		},
+	},
+	"authzero": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		Elem: &schema.Resource{
+			Schema: authzeroSsoSettingsSchema,
+		},
+	},
+	"slack": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		Elem: &schema.Resource{
+			Schema: slackSsoSettingsSchema,
+		},
+	},
+	"google": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.slack", "sso_settings.0.authzero", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		Elem: &schema.Resource{
+			Schema: googleSsoSettingsSchema,
+		},
+	},
+	"azure": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.saml", "sso_settings.0.radius"},
+		Elem: &schema.Resource{
+			Schema: azureSsoSettingsSchema,
+		},
+	},
+	"saml": { // uses with okta, onelogin
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius"},
+		RequiredWith:  []string{"sso_settings.0.okta", "sso_settings.0.onelogin"},
+		Elem: &schema.Resource{
+			Schema: samlSsoSettingsSchema,
+		},
+	},
+	"radius": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml"},
+		Elem: &schema.Resource{
+			Schema: radiusSsoSettingsSchema,
+		},
+	},
+	"duo": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.yubico"},
+		Elem: &schema.Resource{
+			Schema: duoSsoSettingsSchema,
+		},
+	},
+	"yubico": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.duo", "sso_settings.0.radius"},
+		Elem: &schema.Resource{
+			Schema: yubicoSsoSettingsSchema,
+		},
+	},
+}
+
+var oktaSsoSettingsSchema = map[string]*schema.Schema{
+	"token": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Okta API token",
+		Sensitive:   true,
+	},
+	"app_id": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Optional, ID on Okta Pritunl app. This can be found in the URL of the app settings page. Required to verify user is attached to Okta application on each VPN connection.",
+	},
+	"mode": {
+		Type:         schema.TypeString,
+		Optional:     true,
+		Description:  "Secondary factor for Okta users. Push when available will skip authentication for users who do not have push configured.",
+		ValidateFunc: validation.StringInSlice([]string{"passcode", "push", "push_none"}, false),
+	},
+}
+
+var oneloginSsoSettingsSchema = map[string]*schema.Schema{
+	"client_id": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "OneLogin API client ID",
+	},
+	"client_secret": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Sensitive:   true,
+		Description: "OneLogin API client secret",
+	},
+	"app_id": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Optional, ID on OneLogin Pritunl app. This can be found in the URL of the app settings page. Required to verify user is attached to OneLogin application on each VPN connection.",
+	},
+	"mode": {
+		Type:         schema.TypeString,
+		Optional:     true,
+		Description:  "Secondary factor for OneLogin users. Push when available will skip authentication for users who do not have push configured.",
+		ValidateFunc: validation.StringInSlice([]string{"passcode", "push", "push_none"}, false),
+	},
+}
+
+var samlSsoSettingsSchema = map[string]*schema.Schema{
+	"url": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "The SAML identity provider single sign-on url. Also known as SAML 2.0 Endpoint",
+	},
+	"issuer_url": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "The SAML identity provider issuer url",
+	},
+	"cert": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Sensitive:   true,
+		Description: "The SAML X.509 Certificate",
+	},
+}
+
+var authzeroSsoSettingsSchema = map[string]*schema.Schema{
+	"subdomain": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Subdomain of Auth0 application. Enter subdomain portion only such as 'pritunl' for pritunl.auth0.com",
+	},
+	"client_id": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Auth0 application client ID",
+	},
+	"client_secret": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Sensitive:   true,
+		Description: "Auth0 application client secret",
+	},
+}
+
+var radiusSsoSettingsSchema = map[string]*schema.Schema{
+	"host": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Radius host such as localhost:1645. If no port is specified default port 1645 will be used. Separate multiple hosts with a comma.",
+	},
+	"secret": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Sensitive:   true,
+		Description: "Radius shared secret",
+	},
+}
+
+var slackSsoSettingsSchema = map[string]*schema.Schema{
+	"domain": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Slack team domain to match against users team. (example: pritunl.slack.com)",
+	},
+}
+
+var azureSsoSettingsSchema = map[string]*schema.Schema{
+	"app_id": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Enter Azure application ID",
+	},
+	"app_secret": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Azure Application Secret",
+	},
+	"directory_id": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Azure Directory ID",
+	},
+}
+
+var googleSsoSettingsSchema = map[string]*schema.Schema{
+	"domain": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Google apps domain to match against users email address. Multiple domains can be entrered sperated by a comma. (example: pritunl.com)",
+	},
+	"email": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "The email address of an administrator user in the Google G Suite to delegate API access to. This user will be used to get the groups of Google users. Only needed when providing the Google private key.",
+	},
+}
+
+var duoSsoSettingsSchema = map[string]*schema.Schema{
+	"token": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Duo Integration Key",
+	},
+	"secret": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Sensitive:   true,
+		Description: "Duo Secret Key",
+	},
+	"host": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Duo API Hostname",
+	},
+	"mode": {
+		Type:         schema.TypeString,
+		Required:     true,
+		Description:  "Duo authentication mode",
+		ValidateFunc: validation.StringInSlice([]string{"push", "phone", "push_phone", "passcode"}, false),
+	},
+}
+
+var yubicoSsoSettingsSchema = map[string]*schema.Schema{
+	"client": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Yubico Client ID",
+	},
+	"secret": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Sensitive:   true,
+		Description: "Yubico Secret Key",
 	},
 }
