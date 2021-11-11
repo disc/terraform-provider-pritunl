@@ -111,22 +111,22 @@ func resourceSettingsOverride() *schema.Resource {
 				Description:  "Cloud Provider",
 				ValidateFunc: validation.StringInSlice([]string{"aws", "oracle"}, false),
 			},
-			"cloud_provider_aws": {
+			"cloud_provider_aws_settings": {
 				Type:          schema.TypeList,
 				Optional:      true,
 				Computed:      true,
 				MaxItems:      1,
-				ConflictsWith: []string{"cloud_provider_oracle"},
+				ConflictsWith: []string{"cloud_provider_oracle_settings"},
 				Elem: &schema.Resource{
 					Schema: cloudProviderAwsSchema,
 				},
 			},
-			"cloud_provider_oracle": {
+			"cloud_provider_oracle_settings": {
 				Type:          schema.TypeList,
 				Optional:      true,
 				Computed:      true,
 				MaxItems:      1,
-				ConflictsWith: []string{"cloud_provider_aws"},
+				ConflictsWith: []string{"cloud_provider_aws_settings"},
 				Elem: &schema.Resource{
 					Schema: cloudProviderOracleSchema,
 				},
@@ -166,7 +166,7 @@ func resourceReadSettingsOverride(ctx context.Context, d *schema.ResourceData, m
 	d.Set("restrict_import", settings.RestrictImport)
 	d.Set("client_reconnect", settings.ClientReconnect)
 	d.Set("cloud_provider", settings.CloudProvider)
-	d.Set("cloud_provider_aws", []map[string]interface{}{
+	d.Set("cloud_provider_aws_settings", []map[string]interface{}{
 		{
 			"route53_region":            settings.Route53Region,
 			"route53_zone":              settings.Route53Zone,
@@ -214,7 +214,7 @@ func resourceReadSettingsOverride(ctx context.Context, d *schema.ResourceData, m
 			"sa_east_1_secret_key":      settings.AwsSaEast1SecretKey,
 		},
 	})
-	d.Set("cloud_provider_oracle", []map[string]interface{}{
+	d.Set("cloud_provider_oracle_settings", []map[string]interface{}{
 		{
 			"oracle_user_ocid":  settings.OracleUserOcid,
 			"oracle_public_key": settings.OraclePublicKey,
@@ -290,187 +290,187 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.CloudProvider = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.route53_region"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.route53_region"); ok {
 		settings.Route53Region = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.route53_zone"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.route53_zone"); ok {
 		settings.Route53Zone = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_east_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_east_1_access_key"); ok {
 		settings.AwsUsEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_east_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_east_1_secret_key"); ok {
 		settings.AwsUsEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_east_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_east_2_access_key"); ok {
 		settings.AwsUsEast2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_east_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_east_2_secret_key"); ok {
 		settings.AwsUsEast2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_west_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_west_1_access_key"); ok {
 		settings.AwsUsWest1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_west_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_west_1_secret_key"); ok {
 		settings.AwsUsWest1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_west_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_west_2_access_key"); ok {
 		settings.AwsUsWest2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_west_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_west_2_secret_key"); ok {
 		settings.AwsUsWest2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_gov_east_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_gov_east_1_access_key"); ok {
 		settings.AwsUsGovEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_gov_east_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_gov_east_1_secret_key"); ok {
 		settings.AwsUsGovEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_gov_west_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_gov_west_1_access_key"); ok {
 		settings.AwsUsGovWest1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.us_gov_west_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.us_gov_west_1_secret_key"); ok {
 		settings.AwsUsGovWest1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_north_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_north_1_access_key"); ok {
 		settings.AwsEuNorth1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_north_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_north_1_secret_key"); ok {
 		settings.AwsEuNorth1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_west_1_access_key"); ok {
 		settings.AwsEuWest1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_west_1_secret_key"); ok {
 		settings.AwsEuWest1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_west_2_access_key"); ok {
 		settings.AwsEuWest2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_west_2_secret_key"); ok {
 		settings.AwsEuWest2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_3_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_west_3_access_key"); ok {
 		settings.AwsEuWest3AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_west_3_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_west_3_secret_key"); ok {
 		settings.AwsEuWest3SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_central_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_central_1_access_key"); ok {
 		settings.AwsEuCentral1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.eu_central_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.eu_central_1_secret_key"); ok {
 		settings.AwsEuCentral1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ca_central_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ca_central_1_access_key"); ok {
 		settings.AwsCaCentral1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ca_central_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ca_central_1_secret_key"); ok {
 		settings.AwsCaCentral1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.cn_north_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.cn_north_1_access_key"); ok {
 		settings.AwsCnNorth1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.cn_north_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.cn_north_1_secret_key"); ok {
 		settings.AwsCnNorth1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.cn_northwest_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.cn_northwest_1_access_key"); ok {
 		settings.AwsCnNorthWest1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.cn_northwest_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.cn_northwest_1_secret_key"); ok {
 		settings.AwsCnNorthWest1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_northeast_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_northeast_1_access_key"); ok {
 		settings.AwsApNorthEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_northeast_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_northeast_1_secret_key"); ok {
 		settings.AwsApNorthEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_northeast_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_northeast_2_access_key"); ok {
 		settings.AwsApNorthEast2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_northeast_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_northeast_2_secret_key"); ok {
 		settings.AwsApNorthEast2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_southeast_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_southeast_1_access_key"); ok {
 		settings.AwsApSouthEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_southeast_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_southeast_1_secret_key"); ok {
 		settings.AwsApSouthEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_southeast_2_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_southeast_2_access_key"); ok {
 		settings.AwsApSouthEast2AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_southeast_2_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_southeast_2_secret_key"); ok {
 		settings.AwsApSouthEast2SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_east_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_east_1_access_key"); ok {
 		settings.AwsApEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_east_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_east_1_secret_key"); ok {
 		settings.AwsApEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_south_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_south_1_access_key"); ok {
 		settings.AwsApSouth1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.ap_south_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_south_1_secret_key"); ok {
 		settings.AwsApSouth1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.sa_east_1_access_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.sa_east_1_access_key"); ok {
 		settings.AwsSaEast1AccessKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_aws.0.sa_east_1_secret_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.sa_east_1_secret_key"); ok {
 		settings.AwsSaEast1SecretKey = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_oracle.0.oracle_user_ocid"); ok {
+	if v, ok := d.GetOk("cloud_provider_oracle_settings.0.oracle_user_ocid"); ok {
 		settings.OracleUserOcid = v.(string)
 	}
 
-	if v, ok := d.GetOk("cloud_provider_oracle.0.oracle_public_key"); ok {
+	if v, ok := d.GetOk("cloud_provider_oracle_settings.0.oracle_public_key"); ok {
 		settings.OraclePublicKey = v.(string)
 	}
 
@@ -546,188 +546,188 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.CloudProvider = d.Get("cloud_provider").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.route53_region") {
-		settings.Route53Region = d.Get("cloud_provider_aws.0.route53_region").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.route53_region") {
+		settings.Route53Region = d.Get("cloud_provider_aws_settings.0.route53_region").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.route53_zone") {
-		settings.Route53Zone = d.Get("cloud_provider_aws.0.route53_zone").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.route53_zone") {
+		settings.Route53Zone = d.Get("cloud_provider_aws_settings.0.route53_zone").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_east_1_access_key") {
-		settings.AwsUsEast1AccessKey = d.Get("cloud_provider_aws.0.us_east_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_east_1_access_key") {
+		settings.AwsUsEast1AccessKey = d.Get("cloud_provider_aws_settings.0.us_east_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_east_1_secret_key") {
-		settings.AwsUsEast1SecretKey = d.Get("cloud_provider_aws.0.us_east_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_east_1_secret_key") {
+		settings.AwsUsEast1SecretKey = d.Get("cloud_provider_aws_settings.0.us_east_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_east_2_access_key") {
-		settings.AwsUsEast2AccessKey = d.Get("cloud_provider_aws.0.us_east_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_east_2_access_key") {
+		settings.AwsUsEast2AccessKey = d.Get("cloud_provider_aws_settings.0.us_east_2_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_east_2_secret_key") {
-		settings.AwsUsEast2SecretKey = d.Get("cloud_provider_aws.0.us_east_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_east_2_secret_key") {
+		settings.AwsUsEast2SecretKey = d.Get("cloud_provider_aws_settings.0.us_east_2_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_west_1_access_key") {
-		settings.AwsUsWest1AccessKey = d.Get("cloud_provider_aws.0.us_west_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_west_1_access_key") {
+		settings.AwsUsWest1AccessKey = d.Get("cloud_provider_aws_settings.0.us_west_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_west_1_secret_key") {
-		settings.AwsUsWest1SecretKey = d.Get("cloud_provider_aws.0.us_west_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_west_1_secret_key") {
+		settings.AwsUsWest1SecretKey = d.Get("cloud_provider_aws_settings.0.us_west_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_west_2_access_key") {
-		settings.AwsUsWest2AccessKey = d.Get("cloud_provider_aws.0.us_west_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_west_2_access_key") {
+		settings.AwsUsWest2AccessKey = d.Get("cloud_provider_aws_settings.0.us_west_2_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_west_2_secret_key") {
-		settings.AwsUsWest2SecretKey = d.Get("cloud_provider_aws.0.us_west_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_west_2_secret_key") {
+		settings.AwsUsWest2SecretKey = d.Get("cloud_provider_aws_settings.0.us_west_2_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_gov_east_1_access_key") {
-		settings.AwsUsGovEast1AccessKey = d.Get("cloud_provider_aws.0.us_gov_east_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_gov_east_1_access_key") {
+		settings.AwsUsGovEast1AccessKey = d.Get("cloud_provider_aws_settings.0.us_gov_east_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_gov_east_1_secret_key") {
-		settings.AwsUsGovEast1SecretKey = d.Get("cloud_provider_aws.0.us_gov_east_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_gov_east_1_secret_key") {
+		settings.AwsUsGovEast1SecretKey = d.Get("cloud_provider_aws_settings.0.us_gov_east_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_gov_west_1_access_key") {
-		settings.AwsUsGovWest1AccessKey = d.Get("cloud_provider_aws.0.us_gov_west_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_gov_west_1_access_key") {
+		settings.AwsUsGovWest1AccessKey = d.Get("cloud_provider_aws_settings.0.us_gov_west_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.us_gov_west_1_secret_key") {
-		settings.AwsUsGovWest1SecretKey = d.Get("cloud_provider_aws.0.us_gov_west_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.us_gov_west_1_secret_key") {
+		settings.AwsUsGovWest1SecretKey = d.Get("cloud_provider_aws_settings.0.us_gov_west_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_north_1_access_key") {
-		settings.AwsEuNorth1AccessKey = d.Get("cloud_provider_aws.0.eu_north_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_north_1_access_key") {
+		settings.AwsEuNorth1AccessKey = d.Get("cloud_provider_aws_settings.0.eu_north_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_north_1_secret_key") {
-		settings.AwsEuNorth1SecretKey = d.Get("cloud_provider_aws.0.eu_north_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_north_1_secret_key") {
+		settings.AwsEuNorth1SecretKey = d.Get("cloud_provider_aws_settings.0.eu_north_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_west_1_access_key") {
-		settings.AwsEuWest1AccessKey = d.Get("cloud_provider_aws.0.eu_west_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_west_1_access_key") {
+		settings.AwsEuWest1AccessKey = d.Get("cloud_provider_aws_settings.0.eu_west_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_west_1_secret_key") {
-		settings.AwsEuWest1SecretKey = d.Get("cloud_provider_aws.0.eu_west_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_west_1_secret_key") {
+		settings.AwsEuWest1SecretKey = d.Get("cloud_provider_aws_settings.0.eu_west_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_west_2_access_key") {
-		settings.AwsEuWest2AccessKey = d.Get("cloud_provider_aws.0.eu_west_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_west_2_access_key") {
+		settings.AwsEuWest2AccessKey = d.Get("cloud_provider_aws_settings.0.eu_west_2_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_west_2_secret_key") {
-		settings.AwsEuWest2SecretKey = d.Get("cloud_provider_aws.0.eu_west_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_west_2_secret_key") {
+		settings.AwsEuWest2SecretKey = d.Get("cloud_provider_aws_settings.0.eu_west_2_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_west_3_access_key") {
-		settings.AwsEuWest3AccessKey = d.Get("cloud_provider_aws.0.eu_west_3_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_west_3_access_key") {
+		settings.AwsEuWest3AccessKey = d.Get("cloud_provider_aws_settings.0.eu_west_3_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_west_3_secret_key") {
-		settings.AwsEuWest3SecretKey = d.Get("cloud_provider_aws.0.eu_west_3_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_west_3_secret_key") {
+		settings.AwsEuWest3SecretKey = d.Get("cloud_provider_aws_settings.0.eu_west_3_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_central_1_access_key") {
-		settings.AwsEuCentral1AccessKey = d.Get("cloud_provider_aws.0.eu_central_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_central_1_access_key") {
+		settings.AwsEuCentral1AccessKey = d.Get("cloud_provider_aws_settings.0.eu_central_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.eu_central_1_secret_key") {
-		settings.AwsEuCentral1SecretKey = d.Get("cloud_provider_aws.0.eu_central_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.eu_central_1_secret_key") {
+		settings.AwsEuCentral1SecretKey = d.Get("cloud_provider_aws_settings.0.eu_central_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ca_central_1_access_key") {
-		settings.AwsCaCentral1AccessKey = d.Get("cloud_provider_aws.0.ca_central_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ca_central_1_access_key") {
+		settings.AwsCaCentral1AccessKey = d.Get("cloud_provider_aws_settings.0.ca_central_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ca_central_1_secret_key") {
-		settings.AwsCaCentral1SecretKey = d.Get("cloud_provider_aws.0.ca_central_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ca_central_1_secret_key") {
+		settings.AwsCaCentral1SecretKey = d.Get("cloud_provider_aws_settings.0.ca_central_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.cn_north_1_access_key") {
-		settings.AwsCnNorth1AccessKey = d.Get("cloud_provider_aws.0.cn_north_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.cn_north_1_access_key") {
+		settings.AwsCnNorth1AccessKey = d.Get("cloud_provider_aws_settings.0.cn_north_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.cn_north_1_secret_key") {
-		settings.AwsCnNorth1SecretKey = d.Get("cloud_provider_aws.0.cn_north_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.cn_north_1_secret_key") {
+		settings.AwsCnNorth1SecretKey = d.Get("cloud_provider_aws_settings.0.cn_north_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.cn_northwest_1_access_key") {
-		settings.AwsCnNorthWest1AccessKey = d.Get("cloud_provider_aws.0.cn_northwest_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.cn_northwest_1_access_key") {
+		settings.AwsCnNorthWest1AccessKey = d.Get("cloud_provider_aws_settings.0.cn_northwest_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.cn_northwest_1_secret_key") {
-		settings.AwsCnNorthWest1SecretKey = d.Get("cloud_provider_aws.0.cn_northwest_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.cn_northwest_1_secret_key") {
+		settings.AwsCnNorthWest1SecretKey = d.Get("cloud_provider_aws_settings.0.cn_northwest_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_northeast_1_access_key") {
-		settings.AwsApNorthEast1AccessKey = d.Get("cloud_provider_aws.0.ap_northeast_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_northeast_1_access_key") {
+		settings.AwsApNorthEast1AccessKey = d.Get("cloud_provider_aws_settings.0.ap_northeast_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_northeast_1_secret_key") {
-		settings.AwsApNorthEast1SecretKey = d.Get("cloud_provider_aws.0.ap_northeast_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_northeast_1_secret_key") {
+		settings.AwsApNorthEast1SecretKey = d.Get("cloud_provider_aws_settings.0.ap_northeast_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_northeast_2_access_key") {
-		settings.AwsApNorthEast2AccessKey = d.Get("cloud_provider_aws.0.ap_northeast_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_northeast_2_access_key") {
+		settings.AwsApNorthEast2AccessKey = d.Get("cloud_provider_aws_settings.0.ap_northeast_2_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_northeast_2_secret_key") {
-		settings.AwsApNorthEast2SecretKey = d.Get("cloud_provider_aws.0.ap_northeast_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_northeast_2_secret_key") {
+		settings.AwsApNorthEast2SecretKey = d.Get("cloud_provider_aws_settings.0.ap_northeast_2_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_southeast_1_access_key") {
-		settings.AwsApSouthEast1AccessKey = d.Get("cloud_provider_aws.0.ap_southeast_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_southeast_1_access_key") {
+		settings.AwsApSouthEast1AccessKey = d.Get("cloud_provider_aws_settings.0.ap_southeast_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_southeast_1_secret_key") {
-		settings.AwsApSouthEast1SecretKey = d.Get("cloud_provider_aws.0.ap_southeast_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_southeast_1_secret_key") {
+		settings.AwsApSouthEast1SecretKey = d.Get("cloud_provider_aws_settings.0.ap_southeast_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_southeast_2_access_key") {
-		settings.AwsApSouthEast2AccessKey = d.Get("cloud_provider_aws.0.ap_southeast_2_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_southeast_2_access_key") {
+		settings.AwsApSouthEast2AccessKey = d.Get("cloud_provider_aws_settings.0.ap_southeast_2_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_southeast_2_secret_key") {
-		settings.AwsApSouthEast2SecretKey = d.Get("cloud_provider_aws.0.ap_southeast_2_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_southeast_2_secret_key") {
+		settings.AwsApSouthEast2SecretKey = d.Get("cloud_provider_aws_settings.0.ap_southeast_2_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_east_1_access_key") {
-		settings.AwsApEast1AccessKey = d.Get("cloud_provider_aws.0.ap_east_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_east_1_access_key") {
+		settings.AwsApEast1AccessKey = d.Get("cloud_provider_aws_settings.0.ap_east_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_east_1_secret_key") {
-		settings.AwsApEast1SecretKey = d.Get("cloud_provider_aws.0.ap_east_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_east_1_secret_key") {
+		settings.AwsApEast1SecretKey = d.Get("cloud_provider_aws_settings.0.ap_east_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_south_1_access_key") {
-		settings.AwsApSouth1AccessKey = d.Get("cloud_provider_aws.0.ap_south_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_south_1_access_key") {
+		settings.AwsApSouth1AccessKey = d.Get("cloud_provider_aws_settings.0.ap_south_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.ap_south_1_secret_key") {
-		settings.AwsApSouth1SecretKey = d.Get("cloud_provider_aws.0.ap_south_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.ap_south_1_secret_key") {
+		settings.AwsApSouth1SecretKey = d.Get("cloud_provider_aws_settings.0.ap_south_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.sa_east_1_access_key") {
-		settings.AwsSaEast1AccessKey = d.Get("cloud_provider_aws.0.sa_east_1_access_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.sa_east_1_access_key") {
+		settings.AwsSaEast1AccessKey = d.Get("cloud_provider_aws_settings.0.sa_east_1_access_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_aws.0.sa_east_1_secret_key") {
-		settings.AwsSaEast1SecretKey = d.Get("cloud_provider_aws.0.sa_east_1_secret_key").(string)
+	if d.HasChange("cloud_provider_aws_settings.0.sa_east_1_secret_key") {
+		settings.AwsSaEast1SecretKey = d.Get("cloud_provider_aws_settings.0.sa_east_1_secret_key").(string)
 	}
 
-	if d.HasChange("cloud_provider_oracle.0.oracle_user_ocid") {
-		settings.OracleUserOcid = d.Get("cloud_provider_oracle.0.oracle_user_ocid").(string)
+	if d.HasChange("cloud_provider_oracle_settings.0.oracle_user_ocid") {
+		settings.OracleUserOcid = d.Get("cloud_provider_oracle_settings.0.oracle_user_ocid").(string)
 	}
 
-	if d.HasChange("cloud_provider_oracle.0.oracle_public_key") {
-		settings.OraclePublicKey = d.Get("cloud_provider_oracle.0.oracle_public_key").(string)
+	if d.HasChange("cloud_provider_oracle_settings.0.oracle_public_key") {
+		settings.OraclePublicKey = d.Get("cloud_provider_oracle_settings.0.oracle_public_key").(string)
 	}
 
 	err = apiClient.UpdateSettings(settings)
