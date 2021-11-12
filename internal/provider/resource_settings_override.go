@@ -114,8 +114,8 @@ func resourceSettingsOverride() *schema.Resource {
 			"cloud_provider_aws_settings": {
 				Type:          schema.TypeList,
 				Optional:      true,
-				Computed:      true,
 				MaxItems:      1,
+				RequiredWith:  []string{"cloud_provider"},
 				ConflictsWith: []string{"cloud_provider_oracle_settings"},
 				Elem: &schema.Resource{
 					Schema: cloudProviderAwsSchema,
@@ -124,8 +124,8 @@ func resourceSettingsOverride() *schema.Resource {
 			"cloud_provider_oracle_settings": {
 				Type:          schema.TypeList,
 				Optional:      true,
-				Computed:      true,
 				MaxItems:      1,
+				RequiredWith:  []string{"cloud_provider"},
 				ConflictsWith: []string{"cloud_provider_aws_settings"},
 				Elem: &schema.Resource{
 					Schema: cloudProviderOracleSchema,
