@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"strings"
 )
 
 func resourceSettingsOverride() *schema.Resource {
@@ -514,6 +515,25 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.OraclePublicKey = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.default_organization_id"); ok {
+		settings.SSOOrg = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.google.0.domain"); ok {
+		settings.SSOMatch = strings.Split(v.(string), ",")
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.google.0.email"); ok {
+		settings.SSOGoogleEmail = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.google.0.private_key"); ok {
+		settings.SSOGoogleKey = v.(string)
+	}
+
+	// FIXME: calculate sso mode based on config
+	settings.SSO = "google"
+
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
 		return diag.FromErr(err)
@@ -769,6 +789,25 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 	if d.HasChange("cloud_provider_oracle_settings.0.oracle_public_key") {
 		settings.OraclePublicKey = d.Get("cloud_provider_oracle_settings.0.oracle_public_key").(string)
 	}
+
+	if d.HasChange("sso_settings.0.default_organization_id") {
+		settings.SSOOrg = d.Get("sso_settings.0.default_organization_id").(string)
+	}
+
+	if d.HasChange("sso_settings.0.google.0.domain") {
+		settings.SSOMatch = strings.Split(d.Get("sso_settings.0.google.0.domain").(string), ",")
+	}
+
+	if d.HasChange("sso_settings.0.google.0.email") {
+		settings.SSOGoogleEmail = d.Get("sso_settings.0.google.0.email").(string)
+	}
+
+	if d.HasChange("sso_settings.0.google.0.private_key") {
+		settings.SSOGoogleKey = d.Get("sso_settings.0.google.0.private_key").(string)
+	}
+
+	// FIXME: calculate sso mode based on config
+	settings.SSO = "google"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -1396,12 +1435,17 @@ var googleSsoSettingsSchema = map[string]*schema.Schema{
 	"domain": {
 		Type:        schema.TypeString,
 		Required:    true,
-		Description: "Google apps domain to match against users email address. Multiple domains can be entrered sperated by a comma. (example: pritunl.com)",
+		Description: "Google apps domain to match against users email address. Multiple domains can be entered seperated by a comma. (example: pritunl.com)",
 	},
 	"email": {
 		Type:        schema.TypeString,
 		Optional:    true,
-		Description: "The email address of an administrator user in the Google G Suite to delegate API access to. This user will be used to get the groups of Google users. Only needed when providing the Google private key.",
+		Description: "The email address of an administrator user in the Google G Suite to delegate API access to. This user will be used to get the groups of Google users. Only needed when providing the Google private key",
+	},
+	"private_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "The private key for service account in JSON format. This will allow a case sensitive match for any of the user groups to an existing organization. The group names will be matched to the first matching organization name in sorted order. If empty organization wont be matched to user groups. Also requires Google Admin Email",
 	},
 }
 
