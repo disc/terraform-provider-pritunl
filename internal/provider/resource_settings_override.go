@@ -112,16 +112,6 @@ func resourceSettingsOverride() *schema.Resource {
 					Schema: ssoSettingsSchema,
 				},
 			},
-			"sso_cache": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Enable an 8 hour secondary authentication cache using client ID, IP address and MAC address. This will allow clients to reconnect without secondary authentication. Works with Duo push, Okta push, OneLogin push, Duo passcodes and YubiKeys. Supported by all OpenVPN clients",
-			},
-			"sso_client_cache": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Enable a two day secondary authentication cache using a token stored on the client. This will allow clients to reconnect without secondary authentication. Works with Duo push, Okta push, OneLogin push, Duo passcodes and YubiKeys. Only supported by Pritunl client",
-			},
 			"restrict_import": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -496,6 +486,14 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOOrg = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.cache"); ok {
+		settings.SSOCache = v.(bool)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.client_cache"); ok {
+		settings.SSOClientCache = v.(bool)
+	}
+
 	if v, ok := d.GetOk("sso_settings.0.saml.0.url"); ok {
 		settings.SSOSamlUrl = v.(string)
 	}
@@ -853,6 +851,14 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 	if d.HasChange("sso_settings.0.default_organization_id") {
 		settings.SSOOrg = d.Get("sso_settings.0.default_organization_id").(string)
+	}
+
+	if d.HasChange("sso_settings.0.cache") {
+		settings.SSOCache = d.Get("sso_settings.0.cache").(bool)
+	}
+
+	if d.HasChange("sso_settings.0.client_cache") {
+		settings.SSOClientCache = d.Get("sso_settings.0.client_cache").(bool)
 	}
 
 	if d.HasChange("sso_settings.0.saml.0.url") {
@@ -1367,6 +1373,16 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Default Single Sign-On Organization",
+	},
+	"cache": {
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Description: "Enable an 8 hour secondary authentication cache using client ID, IP address and MAC address. This will allow clients to reconnect without secondary authentication. Works with Duo push, Okta push, OneLogin push, Duo passcodes and YubiKeys. Supported by all OpenVPN clients",
+	},
+	"client_cache": {
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Description: "Enable a two day secondary authentication cache using a token stored on the client. This will allow clients to reconnect without secondary authentication. Works with Duo push, Okta push, OneLogin push, Duo passcodes and YubiKeys. Only supported by Pritunl client",
 	},
 	"okta": {
 		Type:          schema.TypeList,
