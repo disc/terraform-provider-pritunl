@@ -531,6 +531,22 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOSamlCert = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.duo.0.token"); ok {
+		settings.SSODuoToken = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.duo.0.secret"); ok {
+		settings.SSODuoSecret = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.duo.0.host"); ok {
+		settings.SSODuoHost = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.duo.0.mode"); ok {
+		settings.SSODuoMode = v.(string)
+	}
+
 	if v, ok := d.GetOk("sso_settings.0.google.0.domain"); ok {
 		settings.SSOMatch = strings.Split(v.(string), ",")
 	}
@@ -556,7 +572,7 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "saml_okta"
+	settings.SSO = "saml_okta_duo"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -830,6 +846,22 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOSamlCert = d.Get("sso_settings.0.saml.0.cert").(string)
 	}
 
+	if d.HasChange("sso_settings.0.duo.0.token") {
+		settings.SSODuoToken = d.Get("sso_settings.0.duo.0.token").(string)
+	}
+
+	if d.HasChange("sso_settings.0.duo.0.secret") {
+		settings.SSODuoSecret = d.Get("sso_settings.0.duo.0.secret").(string)
+	}
+
+	if d.HasChange("sso_settings.0.duo.0.host") {
+		settings.SSODuoHost = d.Get("sso_settings.0.duo.0.host").(string)
+	}
+
+	if d.HasChange("sso_settings.0.duo.0.mode") {
+		settings.SSODuoMode = d.Get("sso_settings.0.duo.0.mode").(string)
+	}
+
 	if d.HasChange("sso_settings.0.google.0.domain") {
 		settings.SSOMatch = strings.Split(d.Get("sso_settings.0.google.0.domain").(string), ",")
 	}
@@ -855,7 +887,7 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "saml_okta"
+	settings.SSO = "saml_okta_duo"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
