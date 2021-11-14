@@ -579,8 +579,24 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOOktaToken = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.onelogin.0.client_id"); ok {
+		settings.SSOOneloginId = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.onelogin.0.client_secret"); ok {
+		settings.SSOOneloginSecret = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.onelogin.0.app_id"); ok {
+		settings.SSOOneloginAppId = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.onelogin.0.mode"); ok {
+		settings.SSOOneloginMode = v.(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "saml_okta_yubico"
+	settings.SSO = "saml_onelogin"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -902,8 +918,24 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOOktaToken = d.Get("sso_settings.0.okta.0.token").(string)
 	}
 
+	if d.HasChange("sso_settings.0.onelogin.0.client_id") {
+		settings.SSOOneloginId = d.Get("sso_settings.0.onelogin.0.client_id").(string)
+	}
+
+	if d.HasChange("sso_settings.0.onelogin.0.client_secret") {
+		settings.SSOOneloginSecret = d.Get("sso_settings.0.onelogin.0.client_secret").(string)
+	}
+
+	if d.HasChange("sso_settings.0.onelogin.0.app_id") {
+		settings.SSOOneloginAppId = d.Get("sso_settings.0.onelogin.0.app_id").(string)
+	}
+
+	if d.HasChange("sso_settings.0.onelogin.0.mode") {
+		settings.SSOOneloginMode = d.Get("sso_settings.0.onelogin.0.mode").(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "saml_okta_yubico"
+	settings.SSO = "saml_onelogin"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -1325,7 +1357,7 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius"},
 		RequiredWith:  []string{"sso_settings.0.saml"},
 		Elem: &schema.Resource{
 			Schema: oneloginSsoSettingsSchema,
@@ -1371,7 +1403,7 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius"},
 		Elem: &schema.Resource{
 			Schema: samlSsoSettingsSchema,
 		},
