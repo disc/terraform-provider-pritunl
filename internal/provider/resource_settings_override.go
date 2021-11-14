@@ -595,8 +595,20 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOOneloginMode = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.authzero.0.subdomain"); ok {
+		settings.SSOAuthzeroDomain = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.authzero.0.client_id"); ok {
+		settings.SSOAuthzeroAppId = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.authzero.0.client_secret"); ok {
+		settings.SSOAuthzeroAppSecret = v.(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "saml_onelogin"
+	settings.SSO = "authzero_yubico"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -934,8 +946,20 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOOneloginMode = d.Get("sso_settings.0.onelogin.0.mode").(string)
 	}
 
+	if d.HasChange("sso_settings.0.authzero.0.subdomain") {
+		settings.SSOAuthzeroDomain = d.Get("sso_settings.0.authzero.0.subdomain").(string)
+	}
+
+	if d.HasChange("sso_settings.0.authzero.0.client_id") {
+		settings.SSOAuthzeroAppId = d.Get("sso_settings.0.authzero.0.client_id").(string)
+	}
+
+	if d.HasChange("sso_settings.0.authzero.0.client_secret") {
+		settings.SSOAuthzeroAppSecret = d.Get("sso_settings.0.authzero.0.client_secret").(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "saml_onelogin"
+	settings.SSO = "authzero_yubico"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
