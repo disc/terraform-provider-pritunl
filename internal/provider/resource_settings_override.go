@@ -76,8 +76,7 @@ func resourceSettingsOverride() *schema.Resource {
 			"sso": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Pritunl color theme",
-				Default:     "light",
+				Description: "Single Sign-On Mode",
 				ValidateFunc: validation.StringInSlice([]string{
 					"saml_okta",
 					"saml_okta_duo",
@@ -112,18 +111,6 @@ func resourceSettingsOverride() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: ssoSettingsSchema,
 				},
-			},
-			"sso_yubico_client": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Sensitive:   true,
-				Description: "Yubico Client ID",
-			},
-			"sso_yubico_secret": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Sensitive:   true,
-				Description: "Yubico Secret Key",
 			},
 			"sso_cache": {
 				Type:        schema.TypeBool,
@@ -200,8 +187,6 @@ func resourceReadSettingsOverride(ctx context.Context, d *schema.ResourceData, m
 	d.Set("server_port", settings.ServerPort)
 	d.Set("acme_domain", settings.AcmeDomain)
 	d.Set("reverse_proxy", settings.ReverseProxy)
-	d.Set("sso_yubico_client", settings.SSOYubicoClient)
-	d.Set("sso_yubico_secret", settings.SSOYubicoSecret)
 	d.Set("sso_cache", settings.SSOCache)
 	d.Set("sso_client_cache", settings.SSOClientCache)
 	d.Set("restrict_import", settings.RestrictImport)
@@ -301,14 +286,6 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 	if v, ok := d.GetOk("reverse_proxy"); ok {
 		settings.ReverseProxy = v.(bool)
-	}
-
-	if v, ok := d.GetOk("sso_yubico_client"); ok {
-		settings.SSOYubicoClient = v.(string)
-	}
-
-	if v, ok := d.GetOk("sso_yubico_secret"); ok {
-		settings.SSOYubicoSecret = v.(string)
 	}
 
 	if v, ok := d.GetOk("sso_cache"); ok {
@@ -611,8 +588,20 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOMatch = []string{v.(string)}
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.azure.0.directory_id"); ok {
+		settings.SSOAzureDirectoryId = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.azure.0.app_id"); ok {
+		settings.SSOAzureAppId = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.azure.0.app_secret"); ok {
+		settings.SSOAzureAppSecret = v.(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "slack_yubico"
+	settings.SSO = "azure_yubico"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -656,14 +645,6 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 	if d.HasChange("reverse_proxy") {
 		settings.ReverseProxy = d.Get("reverse_proxy").(bool)
-	}
-
-	if d.HasChange("sso_yubico_client") {
-		settings.SSOYubicoClient = d.Get("sso_yubico_client").(string)
-	}
-
-	if d.HasChange("sso_yubico_secret") {
-		settings.SSOYubicoSecret = d.Get("sso_yubico_secret").(string)
 	}
 
 	if d.HasChange("sso_cache") {
@@ -966,8 +947,20 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOMatch = []string{d.Get("sso_settings.0.slack.0.domain").(string)}
 	}
 
+	if d.HasChange("sso_settings.0.azure.0.directory_id") {
+		settings.SSOAzureDirectoryId = d.Get("sso_settings.0.azure.0.directory_id").(string)
+	}
+
+	if d.HasChange("sso_settings.0.azure.0.app_id") {
+		settings.SSOAzureAppId = d.Get("sso_settings.0.azure.0.app_id").(string)
+	}
+
+	if d.HasChange("sso_settings.0.azure.0.app_secret") {
+		settings.SSOAzureAppSecret = d.Get("sso_settings.0.azure.0.app_secret").(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "slack_yubico"
+	settings.SSO = "azure_yubico"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -1583,6 +1576,7 @@ var azureSsoSettingsSchema = map[string]*schema.Schema{
 	"app_secret": {
 		Type:        schema.TypeString,
 		Required:    true,
+		Sensitive:   true,
 		Description: "Azure Application Secret",
 	},
 	"directory_id": {
