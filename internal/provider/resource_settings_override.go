@@ -607,8 +607,12 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOAuthzeroAppSecret = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.slack.0.domain"); ok {
+		settings.SSOMatch = []string{v.(string)}
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "authzero_yubico"
+	settings.SSO = "slack_yubico"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -958,8 +962,12 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOAuthzeroAppSecret = d.Get("sso_settings.0.authzero.0.client_secret").(string)
 	}
 
+	if d.HasChange("sso_settings.0.slack.0.domain") {
+		settings.SSOMatch = []string{d.Get("sso_settings.0.slack.0.domain").(string)}
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "authzero_yubico"
+	settings.SSO = "slack_yubico"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
