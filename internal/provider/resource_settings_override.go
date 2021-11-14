@@ -519,6 +519,18 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOOrg = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.saml.0.url"); ok {
+		settings.SSOSamlUrl = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.saml.0.issuer_url"); ok {
+		settings.SSOSamlIssuerUrl = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.saml.0.cert"); ok {
+		settings.SSOSamlCert = v.(string)
+	}
+
 	if v, ok := d.GetOk("sso_settings.0.google.0.domain"); ok {
 		settings.SSOMatch = strings.Split(v.(string), ",")
 	}
@@ -531,8 +543,20 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOGoogleKey = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.okta.0.app_id"); ok {
+		settings.SSOOktaAppId = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.okta.0.mode"); ok {
+		settings.SSOOktaMode = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.okta.0.token"); ok {
+		settings.SSOOktaToken = v.(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "google"
+	settings.SSO = "saml_okta"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -794,6 +818,18 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOOrg = d.Get("sso_settings.0.default_organization_id").(string)
 	}
 
+	if d.HasChange("sso_settings.0.saml.0.url") {
+		settings.SSOSamlUrl = d.Get("sso_settings.0.saml.0.url").(string)
+	}
+
+	if d.HasChange("sso_settings.0.saml.0.issuer_url") {
+		settings.SSOSamlIssuerUrl = d.Get("sso_settings.0.saml.0.issuer_url").(string)
+	}
+
+	if d.HasChange("sso_settings.0.saml.0.cert") {
+		settings.SSOSamlCert = d.Get("sso_settings.0.saml.0.cert").(string)
+	}
+
 	if d.HasChange("sso_settings.0.google.0.domain") {
 		settings.SSOMatch = strings.Split(d.Get("sso_settings.0.google.0.domain").(string), ",")
 	}
@@ -806,8 +842,20 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOGoogleKey = d.Get("sso_settings.0.google.0.private_key").(string)
 	}
 
+	if d.HasChange("sso_settings.0.okta.0.app_id") {
+		settings.SSOOktaAppId = d.Get("sso_settings.0.okta.0.app_id").(string)
+	}
+
+	if d.HasChange("sso_settings.0.okta.0.mode") {
+		settings.SSOOktaMode = d.Get("sso_settings.0.okta.0.mode").(string)
+	}
+
+	if d.HasChange("sso_settings.0.okta.0.token") {
+		settings.SSOOktaToken = d.Get("sso_settings.0.okta.0.token").(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "google"
+	settings.SSO = "saml_okta"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -1219,7 +1267,8 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius"},
+		RequiredWith:  []string{"sso_settings.0.saml"},
 		Elem: &schema.Resource{
 			Schema: oktaSsoSettingsSchema,
 		},
@@ -1229,6 +1278,7 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Optional:      true,
 		MaxItems:      1,
 		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		RequiredWith:  []string{"sso_settings.0.saml"},
 		Elem: &schema.Resource{
 			Schema: oneloginSsoSettingsSchema,
 		},
@@ -1274,7 +1324,6 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Optional:      true,
 		MaxItems:      1,
 		ConflictsWith: []string{"sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius"},
-		RequiredWith:  []string{"sso_settings.0.okta", "sso_settings.0.onelogin"},
 		Elem: &schema.Resource{
 			Schema: samlSsoSettingsSchema,
 		},
@@ -1445,6 +1494,7 @@ var googleSsoSettingsSchema = map[string]*schema.Schema{
 	"private_key": {
 		Type:        schema.TypeString,
 		Optional:    true,
+		Sensitive:   true,
 		Description: "The private key for service account in JSON format. This will allow a case sensitive match for any of the user groups to an existing organization. The group names will be matched to the first matching organization name in sorted order. If empty organization wont be matched to user groups. Also requires Google Admin Email",
 	},
 }

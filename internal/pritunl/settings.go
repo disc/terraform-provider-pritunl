@@ -29,7 +29,7 @@ type Settings struct {
 	SSOGoogleEmail           string   `json:"sso_google_email,omitempty"`
 	SSOSamlUrl               string   `json:"sso_saml_url,omitempty"`
 	SSOSamlIssuerUrl         string   `json:"sso_saml_issuer_url,omitempty"`
-	SSOSamlCertUrl           string   `json:"sso_saml_cert,omitempty"`
+	SSOSamlCert              string   `json:"sso_saml_cert,omitempty"`
 	SSOOktaAppId             string   `json:"sso_okta_app_id,omitempty"`
 	SSOOktaToken             string   `json:"sso_okta_token,omitempty"`
 	SSOOktaMode              string   `json:"sso_okta_mode,omitempty"`
