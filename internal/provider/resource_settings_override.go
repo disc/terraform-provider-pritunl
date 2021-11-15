@@ -598,8 +598,16 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOAzureAppSecret = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.radius.0.host"); ok {
+		settings.SSORadiusHost = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.radius.0.secret"); ok {
+		settings.SSORadiusSecret = v.(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "azure_yubico"
+	settings.SSO = "radius_duo"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -965,8 +973,16 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOAzureAppSecret = d.Get("sso_settings.0.azure.0.app_secret").(string)
 	}
 
+	if d.HasChange("sso_settings.0.radius.0.host") {
+		settings.SSORadiusHost = d.Get("sso_settings.0.radius.0.host").(string)
+	}
+
+	if d.HasChange("sso_settings.0.radius.0.secret") {
+		settings.SSORadiusSecret = d.Get("sso_settings.0.radius.0.secret").(string)
+	}
+
 	// FIXME: calculate sso mode based on config
-	settings.SSO = "azure_yubico"
+	settings.SSO = "radius_duo"
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -1373,6 +1389,9 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Default Single Sign-On Organization",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"cache": {
 		Type:        schema.TypeBool,
@@ -1484,11 +1503,14 @@ var oktaSsoSettingsSchema = map[string]*schema.Schema{
 		Required:    true,
 		Description: "Okta API token",
 		Sensitive:   true,
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"app_id": {
 		Type:        schema.TypeString,
 		Optional:    true,
-		Description: "Optional, ID on Okta Pritunl app. This can be found in the URL of the app settings page. Required to verify user is attached to Okta application on each VPN connection.",
+		Description: "The ID on Okta Pritunl app. This can be found in the URL of the app settings page. Required to verify user is attached to Okta application on each VPN connection.",
 	},
 	"mode": {
 		Type:         schema.TypeString,
@@ -1503,17 +1525,23 @@ var oneloginSsoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "OneLogin API client ID",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"client_secret": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Sensitive:   true,
 		Description: "OneLogin API client secret",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"app_id": {
 		Type:        schema.TypeString,
 		Optional:    true,
-		Description: "Optional, ID on OneLogin Pritunl app. This can be found in the URL of the app settings page. Required to verify user is attached to OneLogin application on each VPN connection.",
+		Description: "The ID on OneLogin Pritunl app. This can be found in the URL of the app settings page. Required to verify user is attached to OneLogin application on each VPN connection.",
 	},
 	"mode": {
 		Type:         schema.TypeString,
@@ -1528,17 +1556,26 @@ var samlSsoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "The SAML identity provider single sign-on url. Also known as SAML 2.0 Endpoint",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"issuer_url": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "The SAML identity provider issuer url",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"cert": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Sensitive:   true,
 		Description: "The SAML X.509 Certificate",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 }
 
@@ -1547,17 +1584,26 @@ var authzeroSsoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Subdomain of Auth0 application. Enter subdomain portion only such as 'pritunl' for pritunl.auth0.com",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"client_id": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Auth0 application client ID",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"client_secret": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Sensitive:   true,
 		Description: "Auth0 application client secret",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 }
 
@@ -1566,12 +1612,18 @@ var radiusSsoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Radius host such as localhost:1645. If no port is specified default port 1645 will be used. Separate multiple hosts with a comma.",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"secret": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Sensitive:   true,
 		Description: "Radius shared secret",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 }
 
@@ -1580,6 +1632,9 @@ var slackSsoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Slack team domain to match against users team. (example: pritunl.slack.com)",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 }
 
@@ -1588,17 +1643,26 @@ var azureSsoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Enter Azure application ID",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"app_secret": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Sensitive:   true,
 		Description: "Azure Application Secret",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"directory_id": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Azure Directory ID",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 }
 
@@ -1607,6 +1671,9 @@ var googleSsoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Google apps domain to match against users email address. Multiple domains can be entered seperated by a comma. (example: pritunl.com)",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"email": {
 		Type:        schema.TypeString,
@@ -1626,22 +1693,34 @@ var duoSsoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Duo Integration Key",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"secret": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Sensitive:   true,
 		Description: "Duo Secret Key",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"host": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Duo API Hostname",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"mode": {
-		Type:         schema.TypeString,
-		Required:     true,
-		Description:  "Duo authentication mode",
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Duo authentication mode",
+		// TODO: Add validation for:
+		// Duo passcode cannot be when only authenticating with Duo.
+		// Duo passcode cannot be used with Radius.
 		ValidateFunc: validation.StringInSlice([]string{"push", "phone", "push_phone", "passcode"}, false),
 	},
 }
@@ -1651,11 +1730,17 @@ var yubicoSsoSettingsSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Required:    true,
 		Description: "Yubico Client ID",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 	"secret": {
 		Type:        schema.TypeString,
 		Required:    true,
 		Sensitive:   true,
 		Description: "Yubico Secret Key",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 }
