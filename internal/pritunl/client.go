@@ -1,10 +1,12 @@
 package pritunl
 
 import (
+	"archive/tar"
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 )
@@ -22,6 +24,9 @@ type Client interface {
 	CreateUser(newUser User) (*User, error)
 	UpdateUser(id string, user *User) error
 	DeleteUser(id string, orgId string) error
+
+	GetUserKeyUrls(id string, orgId string) (*Key, error)
+	GetUserKeys(id string, orgId string) (map[string]string, error)
 
 	GetServers() ([]Server, error)
 	GetServer(id string) (*Server, error)
@@ -749,6 +754,70 @@ func (c client) DeleteUser(id string, orgId string) error {
 	}
 
 	return nil
+}
+
+func (c client) GetUserKeyUrls(id string, orgId string) (*Key, error) {
+	url := fmt.Sprintf("/key/%s/%s", orgId, id)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetUserKeyUrls: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("GetUserKeyUrls: Error reading HTTP response: %s", err)
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting the key\nbody=%s", body)
+	}
+
+	var key Key
+	err = json.Unmarshal(body, &key)
+	if err != nil {
+		return nil, fmt.Errorf("GetUserKeyUrls: %s: %+v, id=%s, body=%s", err, key, id, body)
+	}
+
+	return &key, nil
+}
+
+func (c client) GetUserKeys(id string, orgId string) (map[string]string, error) {
+	url := fmt.Sprintf("/key/%s/%s.tar", orgId, id)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetKeyTar: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Non-200 response on getting the key tarball\nbody=%s", body)
+	}
+
+	result := make(map[string]string)
+	tarReader := tar.NewReader(resp.Body)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("GetKeyTar: Error reading response: %s", err)
+		}
+		fmt.Printf("Contents of %s:\n", header.Name)
+
+		body, err := ioutil.ReadAll(tarReader)
+		if err != nil {
+			return nil, fmt.Errorf("GetKeyTar: Error reading response: %s", err)
+		}
+		result[header.Name] = string(body)
+	}
+
+	return result, nil
 }
 
 func (c client) GetHosts() ([]Host, error) {
