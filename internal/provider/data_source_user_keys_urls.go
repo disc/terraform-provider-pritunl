@@ -16,7 +16,7 @@ func dataSourceUserKeyUrls() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"user_id": {
 				Type:     schema.TypeString,
-				Computed: true,
+				Required: true,
 			},
 			"organization_id": {
 				Type:     schema.TypeString,
