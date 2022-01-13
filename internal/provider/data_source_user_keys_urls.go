@@ -2,11 +2,11 @@ package provider
 
 import (
 	"context"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"fmt"
 
 	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceUserKeyUrls() *schema.Resource {
@@ -61,13 +61,12 @@ func dataSourceUserKeyUrlsRead(_ context.Context, d *schema.ResourceData, meta i
 
 	userId := d.Get("user_id").(string)
 	orgId := d.Get("organization_id").(string)
+	d.SetId(fmt.Sprintf("%s-%s", orgId, userId))
 
 	key, err := apiClient.GetUserKeyUrls(userId, orgId)
 	if err != nil {
 		return diag.Errorf("could not fetch keys for user %s in organization %s. Previous error message: %v", userId, orgId, err)
 	}
-
-	d.SetId(key.ID)
 
 	err = d.Set("key_url", key.KeyUrl)
 	if err != nil {

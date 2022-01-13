@@ -2,11 +2,11 @@ package provider
 
 import (
 	"context"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"fmt"
 
 	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceUserKeys() *schema.Resource {
@@ -38,6 +38,7 @@ func dataSourceUserKeysRead(_ context.Context, d *schema.ResourceData, meta inte
 
 	userId := d.Get("user_id").(string)
 	orgId := d.Get("organization_id").(string)
+	d.SetId(fmt.Sprintf("%s-%s", orgId, userId))
 
 	keys, err := apiClient.GetUserKeys(userId, orgId)
 	if err != nil {
