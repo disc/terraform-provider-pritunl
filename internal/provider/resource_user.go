@@ -98,6 +98,23 @@ func resourceUser() *schema.Resource {
 				Optional:    true,
 				Description: "Bypass secondary authentication such as the PIN and two-factor authentication. Use for server users that can't provide a two-factor code.",
 			},
+			"pin": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "PIN code, must be six digits if set. Cannot be retrieved back.",
+			},
+			"pin_set": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Whenever PIN code is set for the user.",
+			},
+			"otp_secret": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Sensitive:   true,
+				Description: "Two-step authentication key - TOTP secret value",
+			},
 		},
 		CreateContext: resourceUserCreate,
 		ReadContext:   resourceUserRead,
@@ -129,6 +146,8 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 	d.Set("mac_addresses", user.MacAddresses)
 	d.Set("bypass_secondary", user.BypassSecondary)
 	d.Set("organization_id", user.Organization)
+	d.Set("pin_set", user.Pin.IsSet)
+	d.Set("otp_secret", user.OtpSecret)
 
 	if len(user.Groups) > 0 {
 		groupsList := make([]string, 0)
@@ -239,6 +258,14 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	if v, ok := d.GetOk("bypass_secondary"); ok {
 		user.BypassSecondary = v.(bool)
+	}
+
+	if d.HasChange("pin") {
+		if v, ok := d.GetOk("pin"); ok {
+			user.Pin = pritunl.NewPin(v.(string))
+		} else {
+			user.Pin = pritunl.Pin{IsSet: false}
+		}
 	}
 
 	err = apiClient.UpdateUser(d.Id(), user)
