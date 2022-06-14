@@ -75,3 +75,4 @@ resource "pritunl_server" "test" {
 - **secret** (String)
 - **token** (String)
 - **url** (String)
+- **connection_check** (Boolean)

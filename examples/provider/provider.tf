@@ -12,7 +12,8 @@ provider "pritunl" {
   token  = "api-token"
   secret = "api-secret"
 
-  insecure = false
+  insecure         = false
+  connection_check = true
 }
 
 resource "pritunl_organization" "developers" {
