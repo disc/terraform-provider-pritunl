@@ -1,4 +1,4 @@
-name: tests
+name: Github Actions CI
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   tests:
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
