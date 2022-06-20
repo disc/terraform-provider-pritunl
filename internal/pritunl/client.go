@@ -46,6 +46,9 @@ type Client interface {
 
 	StartServer(serverId string) error
 	StopServer(serverId string) error
+
+	GetSettings() (*Settings, error)
+	UpdateSettings(settings *Settings) error
 }
 
 type client struct {
@@ -832,6 +835,54 @@ func (c client) DetachHostFromServer(hostId, serverId string) error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Non-200 response on detaching the host from the server\nbody=%s", body)
+	}
+
+	return nil
+}
+
+func (c client) GetSettings() (*Settings, error) {
+	url := fmt.Sprintf("/settings")
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetSettings: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting settings\nbody=%s", body)
+	}
+
+	var settings Settings
+
+	err = json.Unmarshal(body, &settings)
+	if err != nil {
+		return nil, fmt.Errorf("GetSettings: %s: body=%s", err, body)
+	}
+
+	return &settings, nil
+}
+
+func (c client) UpdateSettings(settings *Settings) error {
+	jsonData, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("UpdateSettings: Error on marshalling data: %s", err)
+	}
+
+	url := fmt.Sprintf("/settings")
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("UpdateSettings: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on updating settings\nbody=%s", body)
 	}
 
 	return nil
