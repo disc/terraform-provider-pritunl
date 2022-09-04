@@ -1,5 +1,5 @@
 use pritunl;
-db.administrators.update(
+db.administrators.updateOne(
     {
         "username": "pritunl"
     },
