@@ -18,7 +18,7 @@ type User struct {
 	ClientToClient  bool                     `json:"client_to_client,omitempty"`
 	MacAddresses    []string                 `json:"mac_addresses,omitempty"`
 	YubicoID        string                   `json:"yubico_id,omitempty"`
-	SSO             string                   `json:"sso,omitempty"`
+	SSO             bool                     `json:"sso,omitempty"`
 	BypassSecondary bool                     `json:"bypass_secondary,omitempty"`
 	Groups          []string                 `json:"groups,omitempty"`
 	Audit           bool                     `json:"audit,omitempty"`
