@@ -17,7 +17,7 @@ test:
 	./tools/wait-for-it.sh localhost:27017 -- echo "mongodb is up"
 
 	# enables an api access for the pritunl user, updates an api token and secret
-	@docker exec -i tf_pritunl_acc_test mongo --quiet < ./tools/mongo.js
+	@docker exec -i tf_pritunl_acc_test mongo pritunl < ./tools/mongo.js
 
 	TF_ACC=1 \
 	PRITUNL_URL="https://localhost/" \
