@@ -881,14 +881,18 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("organization_ids") {
 		oldOrgs, newOrgs := d.GetChange("organization_ids")
-		for _, v := range oldOrgs.([]interface{}) {
-			err = apiClient.DetachOrganizationFromServer(v.(string), d.Id())
+
+		oldOrgsOnly := diffStringLists(oldOrgs.([]interface{}), newOrgs.([]interface{}))
+		for _, v := range oldOrgsOnly {
+			err = apiClient.DetachOrganizationFromServer(v, d.Id())
 			if err != nil {
 				return diag.Errorf("Error on detaching server to the organization: %s", err)
 			}
 		}
-		for _, v := range newOrgs.([]interface{}) {
-			err = apiClient.AttachOrganizationToServer(v.(string), d.Id())
+
+		newOrgsOnly := diffStringLists(newOrgs.([]interface{}), oldOrgs.([]interface{}))
+		for _, v := range newOrgsOnly {
+			err = apiClient.AttachOrganizationToServer(v, d.Id())
 			if err != nil {
 				return diag.Errorf("Error on attaching server to the organization: %s", err)
 			}
@@ -982,6 +986,26 @@ func resourceDeleteServer(ctx context.Context, d *schema.ResourceData, meta inte
 	d.SetId("")
 
 	return nil
+}
+
+func diffStringLists(mainList []interface{}, otherList []interface{}) []string {
+	result := make([]string, 0)
+	var found bool
+
+	for _, i := range mainList {
+		found = false
+		for _, j := range otherList {
+			if i.(string) == j.(string) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			result = append(result, i.(string))
+		}
+	}
+
+	return result
 }
 
 func flattenRoutesData(routesList []pritunl.Route) []interface{} {
