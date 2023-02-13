@@ -21,6 +21,7 @@ func resourceUser() *schema.Resource {
 			"organization_id": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Description: "The organizations that user belongs to.",
 				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
 					return validation.StringIsNotEmpty(i, s)
