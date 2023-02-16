@@ -319,6 +319,10 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 		serverStruct.LinkPingTimeout = v.(int)
 	}
 
+	if v, ok := serverData["session_timeout"]; ok {
+		serverStruct.SessionTimeout = v.(int)
+	}
+
 	if v, ok := serverData["inactive_timeout"]; ok {
 		serverStruct.InactiveTimeout = v.(int)
 	}
