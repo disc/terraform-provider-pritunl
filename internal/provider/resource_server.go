@@ -233,11 +233,18 @@ func resourceServer() *schema.Resource {
 				Description:  "Optional, ping timeout used when multiple users have the same network link to failover to another user when one network link fails..",
 				ValidateFunc: validation.IntAtLeast(0),
 			},
+			"session_timeout": {
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				Description:  "Disconnect users after the specified number of seconds.",
+				ValidateFunc: validation.IntAtLeast(1),
+			},
 			"inactive_timeout": {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				Description:  "Disconnects users after the specified number of seconds of inactivity..",
+				Description:  "Disconnects users after the specified number of seconds of inactivity.",
 				ValidateFunc: validation.IntAtLeast(1),
 			},
 			"max_clients": {
@@ -495,6 +502,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("ping_timeout", server.PingTimeout)
 	d.Set("link_ping_interval", server.LinkPingInterval)
 	d.Set("link_ping_timeout", server.LinkPingTimeout)
+	d.Set("session_timeout", server.SessionTimeout)
 	d.Set("inactive_timeout", server.InactiveTimeout)
 	d.Set("max_clients", server.MaxClients)
 	d.Set("network_mode", server.NetworkMode)
@@ -614,6 +622,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		"ping_timeout":       d.Get("ping_timeout"),
 		"link_ping_interval": d.Get("link_ping_interval"),
 		"link_ping_timeout":  d.Get("link_ping_timeout"),
+		"session_timeout":    d.Get("session_timeout"),
 		"inactive_timeout":   d.Get("inactive_timeout"),
 		"max_clients":        d.Get("max_clients"),
 		"network_mode":       d.Get("network_mode"),
@@ -783,6 +792,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("link_ping_timeout") {
 		server.LinkPingTimeout = d.Get("link_ping_timeout").(int)
+	}
+
+	if d.HasChange("session_timeout") {
+		server.SessionTimeout = d.Get("session_timeout").(int)
 	}
 
 	if d.HasChange("inactive_timeout") {
