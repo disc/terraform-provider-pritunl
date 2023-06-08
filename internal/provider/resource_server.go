@@ -3,13 +3,14 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net"
+	"strings"
+
 	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"net"
-	"strings"
 )
 
 func resourceServer() *schema.Resource {
@@ -173,7 +174,7 @@ func resourceServer() *schema.Resource {
 				},
 				Required:    false,
 				Optional:    true,
-				Description: "Enter list of groups to allow connections from. Names are case sensitive. If empty all groups will able to connect",
+				Description: "Enter list of DNS servers applied on the client",
 			},
 			"otp_auth": {
 				Type:        schema.TypeBool,
