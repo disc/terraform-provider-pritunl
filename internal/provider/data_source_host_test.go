@@ -16,18 +16,18 @@ func TestDataSourceHost(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testdataHostSimpleConfig(existsHostname),
+				Config: testDataHostSimpleConfig(existsHostname),
 				Check:  resource.ComposeTestCheckFunc(),
 			},
 			{
-				Config:      testdataHostSimpleConfig(notExistHostname),
-				ExpectError: regexp.MustCompile(fmt.Sprintf("could not a find host with a hostname %s. Previous error message: could not find a host with specified parameters", notExistHostname)),
+				Config:      testDataHostSimpleConfig(notExistHostname),
+				ExpectError: regexp.MustCompile(fmt.Sprintf("could not find host with a hostname %s. Previous error message: could not find a host with specified parameters", notExistHostname)),
 			},
 		},
 	})
 }
 
-func testdataHostSimpleConfig(name string) string {
+func testDataHostSimpleConfig(name string) string {
 	return fmt.Sprintf(`
 data "pritunl_host" "test" {
 	hostname    = "%[1]s"

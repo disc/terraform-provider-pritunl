@@ -11,7 +11,7 @@ import (
 func dataSourceHost() *schema.Resource {
 	return &schema.Resource{
 		Description: "Use this data source to get information about the Pritunl hosts.",
-		ReadContext: dataSourceHostsRead,
+		ReadContext: dataSourceHostRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:     schema.TypeString,
@@ -26,7 +26,7 @@ func dataSourceHost() *schema.Resource {
 	}
 }
 
-func dataSourceHostsRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	hostname := d.Get("hostname")
 	filterFunction := func(host pritunl.Host) bool {
 		return host.Hostname == hostname
@@ -34,7 +34,7 @@ func dataSourceHostsRead(_ context.Context, d *schema.ResourceData, meta interfa
 
 	host, err := filterHosts(meta, filterFunction)
 	if err != nil {
-		return diag.Errorf("could not a find host with a hostname %s. Previous error message: %v", hostname, err)
+		return diag.Errorf("could not find host with a hostname %s. Previous error message: %v", hostname, err)
 	}
 
 	d.SetId(host.ID)
