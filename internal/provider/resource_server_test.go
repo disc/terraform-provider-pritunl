@@ -212,6 +212,7 @@ func TestGetServer_with_a_few_attached_routes(t *testing.T) {
 
 	expectedRoute1Network := "10.2.0.0/24"
 	expectedRoute2Network := "10.3.0.0/24"
+	expectedRoute3Network := "10.4.0.0/32"
 	expectedRouteComment := "tfacc-route"
 
 	resource.Test(t, resource.TestCase{
@@ -220,26 +221,34 @@ func TestGetServer_with_a_few_attached_routes(t *testing.T) {
 		CheckDestroy:      testGetServerDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testGetServerSimpleConfigWithAFewAttachedRoutes("tfacc-server1", expectedRoute1Network, expectedRoute2Network),
+				Config: testGetServerSimpleConfigWithAFewAttachedRoutes("tfacc-server1", expectedRoute1Network, expectedRoute2Network, expectedRoute3Network),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server1"),
 
 					func(s *terraform.State) error {
 						routeNetwork1 := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.0.network"]
 						routeNetwork2 := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.1.network"]
+						routeNetwork3 := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.2.network"]
 						routeComment1 := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.0.comment"]
 						routeComment2 := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.1.comment"]
+						routeComment3 := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.2.comment"]
 						if routeNetwork1 != expectedRoute1Network {
 							return fmt.Errorf("first route network is invalid: expected is %s, but actual is %s", expectedRoute1Network, routeNetwork1)
 						}
 						if routeNetwork2 != expectedRoute2Network {
-							return fmt.Errorf("second route network is invalid: expected is %s, but actual is %s", expectedRoute2Network, routeNetwork1)
+							return fmt.Errorf("second route network is invalid: expected is %s, but actual is %s", expectedRoute2Network, routeNetwork2)
+						}
+						if routeNetwork3 != expectedRoute3Network {
+							return fmt.Errorf("second route network is invalid: expected is %s, but actual is %s", expectedRoute3Network, routeNetwork3)
 						}
 						if routeComment1 != expectedRouteComment {
 							return fmt.Errorf("first route comment is invalid: expected is %s, but actual is %s", expectedRouteComment, routeComment1)
 						}
 						if routeComment2 != expectedRouteComment {
 							return fmt.Errorf("second route comment is invalid: expected is %s, but actual is %s", expectedRouteComment, routeComment2)
+						}
+						if routeComment3 != expectedRouteComment {
+							return fmt.Errorf(" route comment is invalid: expected is %s, but actual is %s", expectedRouteComment, routeComment3)
 						}
 						return nil
 					},
