@@ -2,10 +2,11 @@ package provider
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"regexp"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestGetServer_basic(t *testing.T) {
@@ -465,7 +466,7 @@ resource "pritunl_server" "test" {
 }
 `, name, route)
 }
-func testGetServerSimpleConfigWithAFewAttachedRoutes(name, route1, route2 string) string {
+func testGetServerSimpleConfigWithAFewAttachedRoutes(name, route1, route2, route3 string) string {
 	return fmt.Sprintf(`
 resource "pritunl_server" "test" {
 	name = "%[1]s"
@@ -479,8 +480,14 @@ resource "pritunl_server" "test" {
 		network = "%[3]s"
 		comment = "tfacc-route"
   	}
+
+	route {
+		network = "%[4]s"
+		comment = "tfacc-route"
+		net_gateway = true
+  	}	
 }
-`, name, route1, route2)
+`, name, route1, route2, route3)
 }
 
 func testGetServerConfig(name, network string, port int) string {
