@@ -477,7 +477,7 @@ resource "pritunl_server" "test" {
 }
 
 func testGetServerSimpleConfigWithAFewAttachedRoutes(name, route1, route2, route3 string) string {
-	//added net_gateway test
+
 	return fmt.Sprintf(`
 resource "pritunl_server" "test" {
 	name = "%[1]s"
