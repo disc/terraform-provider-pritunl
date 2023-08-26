@@ -41,6 +41,9 @@ func ConvertMapToRoute(data map[string]interface{}) Route {
 	if v, ok := data["nat"]; ok {
 		route.Nat = v.(bool)
 	}
+	if v, ok := data["net_gateway"]; ok {
+		route.NetGateway = v.(bool)
+	}
 
 	return route
 }
