@@ -131,7 +131,7 @@ func TestGetServer_with_a_few_attached_organizations(t *testing.T) {
 						}
 
 						if _, ok := expectedOrganizationIds[attachedOrganization2Id]; !ok {
-							return fmt.Errorf("attached organization_id %s doesn't contain in expected organizations list", attachedOrganization1Id)
+							return fmt.Errorf("attached organization_id %s doesn't contain in expected organizations list", attachedOrganization2Id)
 						}
 
 						return nil
