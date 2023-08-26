@@ -410,6 +410,13 @@ func resourceServer() *schema.Resource {
 							Description: "NAT vpn traffic destined to this network",
 							Computed:    true,
 						},
+						"net_gateway": {
+							Type:        schema.TypeBool,
+							Required:    false,
+							Optional:    true,
+							Description: "Net Gateway vpn traffic destined to this network",
+							Computed:    true,
+						},
 					},
 				},
 				Required:    false,
@@ -1036,6 +1043,7 @@ func flattenRoutesData(routesList []pritunl.Route) []interface{} {
 
 			routeMap["network"] = route.Network
 			routeMap["nat"] = route.Nat
+			routeMap["net_gateway"] = route.NetGateway
 			if route.Comment != "" {
 				routeMap["comment"] = route.Comment
 			}
@@ -1061,7 +1069,7 @@ func matchRoutesWithSchema(routes []pritunl.Route, declaredRoutes []interface{})
 		declaredRouteMap := declaredRoute.(map[string]interface{})
 
 		for key, route := range routesMap {
-			if route.Network != declaredRouteMap["network"] || route.Nat != declaredRouteMap["nat"] {
+			if route.Network != declaredRouteMap["network"] || route.Nat != declaredRouteMap["nat"] || route.NetGateway != declaredRouteMap["net_gateway"] {
 				continue
 			}
 
