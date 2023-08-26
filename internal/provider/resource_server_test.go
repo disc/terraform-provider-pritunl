@@ -444,6 +444,7 @@ resource "pritunl_server" "test" {
 }
 
 func testGetServerSimpleConfigWithAFewAttachedOrganization(name, organization1Name, organization2Name string) string {
+	//testing net-gateway
 	return fmt.Sprintf(`
 resource "pritunl_organization" "test" {
 	name    = "%[2]s"
