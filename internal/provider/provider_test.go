@@ -2,13 +2,14 @@ package provider
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+	"testing"
+
 	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"os"
-	"strconv"
-	"testing"
 )
 
 var providerFactories = map[string]func() (*schema.Provider, error){
@@ -26,11 +27,11 @@ func TestMain(m *testing.M) {
 	}
 
 	url := os.Getenv("PRITUNL_URL")
-	token := os.Getenv("PRITUNL_TOKEN")
-	secret := os.Getenv("PRITUNL_SECRET")
+	username := os.Getenv("PRITUNL_USERNAME")
+	password := os.Getenv("PRITUNL_PASSWORD")
 	insecure, _ := strconv.ParseBool(os.Getenv("PRITUNL_INSECURE"))
 
-	testClient = pritunl.NewClient(url, token, secret, insecure)
+	testClient = pritunl.NewClient(url, username, password, insecure)
 	err := testClient.TestApiCall()
 	if err != nil {
 		panic(err)
@@ -42,8 +43,8 @@ func TestMain(m *testing.M) {
 func preCheck(t *testing.T) {
 	variables := []string{
 		"PRITUNL_URL",
-		"PRITUNL_TOKEN",
-		"PRITUNL_SECRET",
+		"PRITUNL_USERNAME",
+		"PRITUNL_PASSWORD",
 	}
 
 	for _, variable := range variables {

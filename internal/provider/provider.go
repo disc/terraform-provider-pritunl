@@ -16,15 +16,15 @@ func Provider() *schema.Provider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("PRITUNL_URL", ""),
 			},
-			"token": {
+			"username": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("PRITUNL_TOKEN", ""),
+				DefaultFunc: schema.EnvDefaultFunc("PRITUNL_USERNAME", ""),
 			},
-			"secret": {
+			"password": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("PRITUNL_SECRET", ""),
+				DefaultFunc: schema.EnvDefaultFunc("PRITUNL_PASSWORD", ""),
 			},
 			"insecure": {
 				Type:        schema.TypeBool,
@@ -51,12 +51,12 @@ func Provider() *schema.Provider {
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	url := d.Get("url").(string)
-	token := d.Get("token").(string)
-	secret := d.Get("secret").(string)
+	username := d.Get("username").(string)
+	password := d.Get("password").(string)
 	insecure := d.Get("insecure").(bool)
 	connectionCheck := d.Get("connection_check").(bool)
 
-	apiClient := pritunl.NewClient(url, token, secret, insecure)
+	apiClient := pritunl.NewClient(url, username, password, insecure)
 
 	if connectionCheck {
 		// execute test api call to ensure that provided credentials are valid and pritunl api works
