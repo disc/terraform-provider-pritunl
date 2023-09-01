@@ -22,8 +22,8 @@ terraform {
 
 provider "pritunl" {
   url      = "https://vpn.server.com"
-  token    = "api-token"
-  secret   = "api-secret-key"
+  username = "admin"
+  password = "your-password"
   insecure = false
 }
 
@@ -72,7 +72,7 @@ resource "pritunl_server" "test" {
 ### Optional
 
 - **insecure** (Boolean)
-- **secret** (String)
-- **token** (String)
+- **username** (String)
+- **password** (String)
 - **url** (String)
 - **connection_check** (Boolean)
