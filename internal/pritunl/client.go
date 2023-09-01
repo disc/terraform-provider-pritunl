@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"net/url"
 )
 
 type Client interface {
@@ -53,6 +55,18 @@ type client struct {
 	baseUrl    string
 }
 
+type CookieJar struct {
+	CookieSlice []*http.Cookie
+}
+
+func (jar *CookieJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
+	jar.CookieSlice = append(jar.CookieSlice, cookies...)
+}
+
+func (jar *CookieJar) Cookies(u *url.URL) []*http.Cookie {
+	return jar.CookieSlice
+}
+
 func (c client) TestApiCall() error {
 	url := fmt.Sprintf("/state")
 	req, err := http.NewRequest("GET", url, nil)
@@ -79,6 +93,7 @@ func (c client) TestApiCall() error {
 func (c client) GetOrganization(id string) (*Organization, error) {
 	url := fmt.Sprintf("/organization/%s", id)
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -104,6 +119,7 @@ func (c client) GetOrganization(id string) (*Organization, error) {
 func (c client) GetOrganizations() ([]Organization, error) {
 	url := fmt.Sprintf("/organization")
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -131,6 +147,7 @@ func (c client) CreateOrganization(name string) (*Organization, error) {
 
 	url := "/organization"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -160,6 +177,7 @@ func (c client) UpdateOrganization(id string, organization *Organization) error 
 
 	url := fmt.Sprintf("/organization/%s", id)
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -178,6 +196,7 @@ func (c client) UpdateOrganization(id string, organization *Organization) error 
 func (c client) DeleteOrganization(id string) error {
 	url := fmt.Sprintf("/organization/%s", id)
 	req, err := http.NewRequest("DELETE", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -196,6 +215,7 @@ func (c client) DeleteOrganization(id string) error {
 func (c client) GetServer(id string) (*Server, error) {
 	url := fmt.Sprintf("/server/%s", id)
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -221,6 +241,7 @@ func (c client) GetServer(id string) (*Server, error) {
 func (c client) GetServers() ([]Server, error) {
 	url := fmt.Sprintf("/server")
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -403,6 +424,7 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 
 	url := "/server"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -432,6 +454,7 @@ func (c client) UpdateServer(id string, server *Server) error {
 
 	url := fmt.Sprintf("/server/%s", id)
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -450,6 +473,7 @@ func (c client) UpdateServer(id string, server *Server) error {
 func (c client) DeleteServer(id string) error {
 	url := fmt.Sprintf("/server/%s", id)
 	req, err := http.NewRequest("DELETE", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -468,6 +492,7 @@ func (c client) DeleteServer(id string) error {
 func (c client) GetOrganizationsByServer(serverId string) ([]Organization, error) {
 	url := fmt.Sprintf("/server/%s/organization", serverId)
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -489,6 +514,7 @@ func (c client) GetOrganizationsByServer(serverId string) ([]Organization, error
 func (c client) AttachOrganizationToServer(organizationId, serverId string) error {
 	url := fmt.Sprintf("/server/%s/organization/%s", serverId, organizationId)
 	req, err := http.NewRequest("PUT", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -507,6 +533,7 @@ func (c client) AttachOrganizationToServer(organizationId, serverId string) erro
 func (c client) DetachOrganizationFromServer(organizationId, serverId string) error {
 	url := fmt.Sprintf("/server/%s/organization/%s", serverId, organizationId)
 	req, err := http.NewRequest("DELETE", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -525,6 +552,7 @@ func (c client) DetachOrganizationFromServer(organizationId, serverId string) er
 func (c client) StartServer(serverId string) error {
 	url := fmt.Sprintf("/server/%s/operation/start", serverId)
 	req, err := http.NewRequest("PUT", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -543,6 +571,7 @@ func (c client) StartServer(serverId string) error {
 func (c client) StopServer(serverId string) error {
 	url := fmt.Sprintf("/server/%s/operation/stop", serverId)
 	req, err := http.NewRequest("PUT", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -561,6 +590,7 @@ func (c client) StopServer(serverId string) error {
 func (c client) GetRoutesByServer(serverId string) ([]Route, error) {
 	url := fmt.Sprintf("/server/%s/route", serverId)
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -584,6 +614,7 @@ func (c client) AddRouteToServer(serverId string, route Route) error {
 
 	url := fmt.Sprintf("/server/%s/route", serverId)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -604,6 +635,7 @@ func (c client) AddRoutesToServer(serverId string, routes []Route) error {
 
 	url := fmt.Sprintf("/server/%s/routes", serverId)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -624,6 +656,7 @@ func (c client) UpdateRouteOnServer(serverId string, route Route) error {
 
 	url := fmt.Sprintf("/server/%s/route/%s", serverId, route.GetID())
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -642,6 +675,7 @@ func (c client) UpdateRouteOnServer(serverId string, route Route) error {
 func (c client) DeleteRouteFromServer(serverId string, route Route) error {
 	url := fmt.Sprintf("/server/%s/route/%s", serverId, route.GetID())
 	req, err := http.NewRequest("DELETE", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -660,6 +694,7 @@ func (c client) DeleteRouteFromServer(serverId string, route Route) error {
 func (c client) GetUser(id string, orgId string) (*User, error) {
 	url := fmt.Sprintf("/user/%s/%s", orgId, id)
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -689,6 +724,7 @@ func (c client) CreateUser(newUser User) (*User, error) {
 
 	url := fmt.Sprintf("/user/%s", newUser.Organization)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -722,6 +758,7 @@ func (c client) UpdateUser(id string, user *User) error {
 
 	url := fmt.Sprintf("/user/%s/%s", user.Organization, id)
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -740,6 +777,7 @@ func (c client) UpdateUser(id string, user *User) error {
 func (c client) DeleteUser(id string, orgId string) error {
 	url := fmt.Sprintf("/user/%s/%s", orgId, id)
 	req, err := http.NewRequest("DELETE", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -758,6 +796,7 @@ func (c client) DeleteUser(id string, orgId string) error {
 func (c client) GetHosts() ([]Host, error) {
 	url := fmt.Sprintf("/host")
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -783,6 +822,7 @@ func (c client) GetHosts() ([]Host, error) {
 func (c client) GetHostsByServer(serverId string) ([]Host, error) {
 	url := fmt.Sprintf("/server/%s/host", serverId)
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -808,6 +848,7 @@ func (c client) GetHostsByServer(serverId string) ([]Host, error) {
 func (c client) AttachHostToServer(hostId, serverId string) error {
 	url := fmt.Sprintf("/server/%s/host/%s", serverId, hostId)
 	req, err := http.NewRequest("PUT", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -826,6 +867,7 @@ func (c client) AttachHostToServer(hostId, serverId string) error {
 func (c client) DetachHostFromServer(hostId, serverId string) error {
 	url := fmt.Sprintf("/server/%s/host/%s", serverId, hostId)
 	req, err := http.NewRequest("DELETE", url, nil)
+	req.Header.Add("csrf-token", c.getToken())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -841,18 +883,45 @@ func (c client) DetachHostFromServer(hostId, serverId string) error {
 	return nil
 }
 
-func NewClient(baseUrl, apiToken, apiSecret string, insecure bool) Client {
+func NewClient(baseUrl, username, password string, insecure bool) Client {
 	underlyingTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
 	}
 	httpClient := &http.Client{
+		Jar: &CookieJar{},
 		Transport: &transport{
 			baseUrl:             baseUrl,
-			apiToken:            apiToken,
-			apiSecret:           apiSecret,
 			underlyingTransport: underlyingTransport,
 		},
 	}
 
+	// login
+	login := map[string]string{"username": username, "password": password}
+	loginJson, _ := json.Marshal(login)
+	req, err := http.NewRequest("POST", "/auth/session", bytes.NewBuffer(loginJson))
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Fatalf("Error: %s", err)
+	}
+	log.Printf("status Code: %d", resp.StatusCode)
+	resp.Body.Close()
+
 	return &client{httpClient: httpClient}
+}
+
+func (c client) getToken() string {
+	url := fmt.Sprintf("/state")
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		log.Fatalf("Error: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var state State
+	json.Unmarshal(body, &state)
+
+	return state.CsrfToken
 }
