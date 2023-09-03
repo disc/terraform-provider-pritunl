@@ -55,6 +55,7 @@ description: |-
 - **restrict_routes** (Boolean) Prevent traffic from networks not specified in the servers routes from being tunneled over the vpn.
 - **route** (Block List) The list of attached routes to the server (see [below for nested schema](#nestedblock--route))
 - **search_domain** (String) DNS search domain for clients. Separate multiple search domains by a comma.
+- **session_timeout** (Number) Disconnects users after the specified number of seconds.
 - **status** (String) The status of the server
 - **vxlan** (Boolean) Use VXLan for routing client-to-client traffic with replicated servers.
 
