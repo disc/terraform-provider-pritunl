@@ -871,7 +871,7 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	if d.HasChange("sso_auth") {
-		server.Debug = d.Get("sso_auth").(bool)
+		server.SsoAuth = d.Get("sso_auth").(bool)
 	}
 
 	if d.HasChange("restrict_routes") {
