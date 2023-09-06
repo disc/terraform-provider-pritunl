@@ -56,6 +56,7 @@ description: |-
 - **route** (Block List) The list of attached routes to the server (see [below for nested schema](#nestedblock--route))
 - **search_domain** (String) DNS search domain for clients. Separate multiple search domains by a comma.
 - **session_timeout** (Number) Disconnects users after the specified number of seconds.
+- **sso_auth** (Boolean) Require client to authenticate with single sign-on provider on each connection using web browser.
 - **status** (String) The status of the server
 - **vxlan** (Boolean) Use VXLan for routing client-to-client traffic with replicated servers.
 

@@ -336,6 +336,12 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Description: "Show server debugging information in output.",
 			},
+			"sso_auth": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Require client to authenticate with single sign-on provider on each connection using web browser.",
+			},
 			"restrict_routes": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -524,6 +530,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("replica_count", server.ReplicaCount)
 	d.Set("multi_device", server.MultiDevice)
 	d.Set("debug", server.Debug)
+	d.Set("sso_auth", server.SsoAuth)
 	d.Set("restrict_routes", server.RestrictRoutes)
 	d.Set("block_outside_dns", server.BlockOutsideDns)
 	d.Set("dns_mapping", server.DnsMapping)
@@ -644,6 +651,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		"replica_count":      d.Get("replica_count"),
 		"multi_device":       d.Get("multi_device"),
 		"debug":              d.Get("debug"),
+		"sso_auth":           d.Get("sso_auth"),
 		"restrict_routes":    d.Get("restrict_routes"),
 		"block_outside_dns":  d.Get("block_outside_dns"),
 		"dns_mapping":        d.Get("dns_mapping"),
@@ -860,6 +868,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("debug") {
 		server.Debug = d.Get("debug").(bool)
+	}
+
+	if d.HasChange("sso_auth") {
+		server.Debug = d.Get("sso_auth").(bool)
 	}
 
 	if d.HasChange("restrict_routes") {
