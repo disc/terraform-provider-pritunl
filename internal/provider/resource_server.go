@@ -782,6 +782,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	isWgEnabled := server.NetworkWG != "" && server.PortWG > 0
 	server.WG = isWgEnabled
 
+	if d.HasChange("sso_auth") {
+		server.OtpAuth = d.Get("sso_auth").(bool)
+	}
+
 	if d.HasChange("otp_auth") {
 		server.OtpAuth = d.Get("otp_auth").(bool)
 	}
