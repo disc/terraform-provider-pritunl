@@ -783,7 +783,7 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	server.WG = isWgEnabled
 
 	if d.HasChange("sso_auth") {
-		server.OtpAuth = d.Get("sso_auth").(bool)
+		server.SsoAuth = d.Get("sso_auth").(bool)
 	}
 
 	if d.HasChange("otp_auth") {
