@@ -160,12 +160,13 @@ func resourceServer() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 					ValidateDiagFunc: func(v interface{}, path cty.Path) diag.Diagnostics {
-						if strings.Contains(v.(string), " ") {
+						groupName := v.(string)
+						if strings.Contains(groupName, " ") {
 							return diag.Diagnostics{
 								{
 									Severity:      diag.Error,
 									Summary:       "Group name must not contain spaces",
-									Detail:        v.(string) + " contains spaces",
+									Detail:        groupName + " contains spaces",
 									AttributePath: cty.Path{cty.GetAttrStep{Name: "groups"}},
 								},
 							}

@@ -471,6 +471,38 @@ func TestGetServer_without_hosts(t *testing.T) {
 	})
 }
 
+func TestCreateServer_with_invalid_group(t *testing.T) {
+	correctGroupName := "GroupHasNoSpaces"
+	invalidGroupName := "Group Name With Spaces"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { preCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testGetServerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      testGetServerWithGroupsConfig("tfacc-server1", invalidGroupName),
+				ExpectError: regexp.MustCompile(fmt.Sprintf("%s contains spaces", invalidGroupName)),
+			},
+			{
+				Config: testGetServerWithGroupsConfig("tfacc-server2", correctGroupName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server2"),
+
+					func(s *terraform.State) error {
+						groupName := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["groups.0"]
+						if groupName != correctGroupName {
+							return fmt.Errorf("group name mismatch")
+						}
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testGetServerSimpleConfig(name string) string {
 	return fmt.Sprintf(`
 resource "pritunl_server" "test" {
@@ -602,6 +634,15 @@ resource "pritunl_server" "test" {
 	host_ids = []
 }
 `, name)
+}
+
+func testGetServerWithGroupsConfig(name string, groupName string) string {
+	return fmt.Sprintf(`
+resource "pritunl_server" "test" {
+	name    = "%[1]s"
+	groups    = ["%[2]s"]
+}
+`, name, groupName)
 }
 
 func testGetServerDestroy(s *terraform.State) error {
