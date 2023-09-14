@@ -176,6 +176,12 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Description: "Enter list of DNS servers applied on the client",
 			},
+			"sso_auth": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Require client to authenticate with single sign-on provider on each connection using web browser. Requires client to have access to Pritunl web server port and running updated Pritunl Client. Single sign-on provider must already be configured for this feature to work properly",
+			},
 			"otp_auth": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -503,6 +509,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("dns_servers", server.DnsServers)
 	d.Set("network_wg", server.NetworkWG)
 	d.Set("port_wg", server.PortWG)
+	d.Set("sso_auth", server.SsoAuth)
 	d.Set("otp_auth", server.OtpAuth)
 	d.Set("ipv6", server.IPv6)
 	d.Set("dh_param_bits", server.DhParamBits)
@@ -623,6 +630,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		"dns_servers":        d.Get("dns_servers"),
 		"network_wg":         d.Get("network_wg"),
 		"port_wg":            d.Get("port_wg"),
+		"sso_auth":           d.Get("sso_auth"),
 		"otp_auth":           d.Get("otp_auth"),
 		"ipv6":               d.Get("ipv6"),
 		"dh_param_bits":      d.Get("dh_param_bits"),
@@ -773,6 +781,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	isWgEnabled := server.NetworkWG != "" && server.PortWG > 0
 	server.WG = isWgEnabled
+
+	if d.HasChange("sso_auth") {
+		server.SsoAuth = d.Get("sso_auth").(bool)
+	}
 
 	if d.HasChange("otp_auth") {
 		server.OtpAuth = d.Get("otp_auth").(bool)

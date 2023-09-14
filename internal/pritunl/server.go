@@ -50,6 +50,7 @@ type Server struct {
 	VxLan            bool     `json:"vxlan,omitempty"`
 	DnsMapping       bool     `json:"dns_mapping,omitempty"`
 	PreConnectMsg    string   `json:"pre_connect_msg,omitempty"`
+	SsoAuth          bool     `json:"sso_auth,omitempty"`
 	OtpAuth          bool     `json:"otp_auth,omitempty"`
 	MssFix           int      `json:"mss_fix,omitempty"`
 	LzoCompression   bool     `json:"lzo_compression,omitempty"`

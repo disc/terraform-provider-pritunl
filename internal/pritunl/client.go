@@ -291,6 +291,10 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 	isWgEnabled := serverStruct.NetworkWG != "" && serverStruct.PortWG > 0
 	serverStruct.WG = isWgEnabled
 
+	if v, ok := serverData["sso_auth"]; ok {
+		serverStruct.SsoAuth = v.(bool)
+	}
+
 	if v, ok := serverData["otp_auth"]; ok {
 		serverStruct.OtpAuth = v.(bool)
 	}

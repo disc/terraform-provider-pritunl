@@ -44,6 +44,7 @@ description: |-
 - **network_start** (String) Starting network address for the bridged VPN client IP addresses. Must be in the subnet of the server network.
 - **network_wg** (String) Network address for the private network that will be created for clients. This network cannot conflict with any existing local networks
 - **organization_ids** (List of String) The list of attached organizations to the server.
+- **sso_auth** (Boolean) Require client to authenticate with single sign-on provider on each connection using web browser. Requires client to have access to Pritunl web server port and running updated Pritunl Client. Single sign-on provider must already be configured for this feature to work properly.
 - **otp_auth** (Boolean) Enables two-step authentication using Google Authenticator. Verification code is entered as the user password when connecting
 - **ping_interval** (Number) Interval to ping client
 - **ping_timeout** (Number) Timeout for client ping. Must be greater then ping interval
