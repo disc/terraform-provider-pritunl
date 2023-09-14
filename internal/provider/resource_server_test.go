@@ -40,6 +40,14 @@ func TestGetServer_basic(t *testing.T) {
 				),
 			},
 			importStep("pritunl_server.test"),
+			{
+				Config: testGetServerWithActiveSsoAuth("tfacc-server3"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server3"),
+					resource.TestCheckResourceAttr("pritunl_server.test", "sso_auth", "true"),
+				),
+			},
+			importStep("pritunl_server.test"),
 			// test importing
 			{
 				ResourceName: "pritunl_server.test",
@@ -424,6 +432,15 @@ func testGetServerSimpleConfig(name string) string {
 	return fmt.Sprintf(`
 resource "pritunl_server" "test" {
 	name    = "%[1]s"
+}
+`, name)
+}
+
+func testGetServerWithActiveSsoAuth(name string) string {
+	return fmt.Sprintf(`
+resource "pritunl_server" "test" {
+	name     = "%[1]s"
+	sso_auth = true
 }
 `, name)
 }
