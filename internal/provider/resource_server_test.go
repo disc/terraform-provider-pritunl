@@ -40,11 +40,54 @@ func TestGetServer_basic(t *testing.T) {
 				),
 			},
 			importStep("pritunl_server.test"),
+			// test importing
 			{
-				Config: testGetServerWithActiveSsoAuth("tfacc-server3"),
+				ResourceName: "pritunl_server.test",
+				ImportStateIdFunc: func(*terraform.State) (string, error) {
+					return serverId, nil
+				},
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestGetServer_with_sso_auth(t *testing.T) {
+	var serverId string
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { preCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testGetServerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testGetServerWithActiveSsoAuth("tfacc-server1"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server1"),
+					resource.TestCheckResourceAttr("pritunl_server.test", "sso_auth", "true"),
+
+					// extract serverId for future use
+					func(s *terraform.State) error {
+						serverId = s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["id"]
+						return nil
+					},
+				),
+			},
+			importStep("pritunl_server.test"),
+			{
+				Config: testGetServerWithUnsetSsoAuth("tfacc-server2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server2"),
+					resource.TestCheckResourceAttr("pritunl_server.test", "sso_auth", "false"),
+				),
+			},
+			importStep("pritunl_server.test"),
+			{
+				Config: testGetServerWithDeactiveSsoAuth("tfacc-server3"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("pritunl_server.test", "name", "tfacc-server3"),
-					resource.TestCheckResourceAttr("pritunl_server.test", "sso_auth", "true"),
+					resource.TestCheckResourceAttr("pritunl_server.test", "sso_auth", "false"),
 				),
 			},
 			importStep("pritunl_server.test"),
@@ -445,6 +488,23 @@ resource "pritunl_server" "test" {
 `, name)
 }
 
+func testGetServerWithUnsetSsoAuth(name string) string {
+	return fmt.Sprintf(`
+resource "pritunl_server" "test" {
+	name    = "%[1]s"
+}
+`, name)
+}
+
+func testGetServerWithDeactiveSsoAuth(name string) string {
+	return fmt.Sprintf(`
+resource "pritunl_server" "test" {
+	name     = "%[1]s"
+	sso_auth = false
+}
+`, name)
+}
+
 func testGetServerSimpleConfigWithAttachedOrganization(name, organizationName string) string {
 	return fmt.Sprintf(`
 resource "pritunl_organization" "test" {
@@ -485,7 +545,7 @@ func testGetServerSimpleConfigWithAttachedRoute(name, route string) string {
 	return fmt.Sprintf(`
 resource "pritunl_server" "test" {
 	name = "%[1]s"
-	
+
 	route {
 		network = "%[2]s"
 		comment = "tfacc-route"
@@ -499,7 +559,7 @@ func testGetServerSimpleConfigWithAFewAttachedRoutes(name, route1, route2, route
 	return fmt.Sprintf(`
 resource "pritunl_server" "test" {
 	name = "%[1]s"
-	
+
 	route {
 		network = "%[2]s"
 		comment = "tfacc-route"
@@ -514,7 +574,7 @@ resource "pritunl_server" "test" {
 		network = "%[4]s"
 		comment = "tfacc-route"
 		net_gateway = true
-  	}	
+  	}
 }
 `, name, route1, route2, route3)
 }
