@@ -4,60 +4,110 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"strings"
 	"testing"
 )
 
-func TestAccUser_basic(t *testing.T) {
-	var userId, orgId string
+func TestAccPritunlUser(t *testing.T) {
 
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { preCheck(t) },
-		ProviderFactories: providerFactories,
-		//CheckDestroy:      testAccUserDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccUserConfig("tfacc-user1", "tfacc-org1"),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("pritunl_user.test", "name", "tfacc-user1"),
-					resource.TestCheckResourceAttr("pritunl_organization.test", "name", "tfacc-org1"),
+	t.Run("creates users without error", func(t *testing.T) {
+		username := "tfacc-user1"
+		orgName := "tfacc-org1"
 
-					// extract siteName for future use
-					func(s *terraform.State) error {
-						userId = s.RootModule().Resources["pritunl_user.test"].Primary.Attributes["id"]
-						orgId = s.RootModule().Resources["pritunl_organization.test"].Primary.Attributes["id"]
-						return nil
-					},
-				),
-			},
-			userImportStep("pritunl_user.test"),
-			{
-				Config: testAccUserConfig("tfacc-user2", "tfacc-org1"),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("pritunl_user.test", "name", "tfacc-user2"),
-				),
-			},
-			userImportStep("pritunl_user.test"),
-			// test importing
-			{
-				ResourceName: "pritunl_user.test",
-				ImportStateIdFunc: func(*terraform.State) (string, error) {
-					return fmt.Sprintf("%s-%s", orgId, userId), nil
+		check := resource.ComposeTestCheckFunc(
+			resource.TestCheckResourceAttr("pritunl_user.test", "name", username),
+			resource.TestCheckResourceAttr("pritunl_organization.test", "name", orgName),
+		)
+
+		resource.Test(t, resource.TestCase{
+			PreCheck:          func() { preCheck(t) },
+			ProviderFactories: providerFactories,
+			Steps: []resource.TestStep{
+				{
+					Config: testPritunlUserConfig(username, orgName),
+					Check:  check,
 				},
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
-		},
+		})
+	})
+
+	t.Run("updates users without error", func(t *testing.T) {
+		username := "tfacc-user1"
+		orgName := "tfacc-org1"
+
+		newUsername := "tfacc-user1-new"
+
+		initialConfig := testPritunlUserConfig(username, orgName)
+
+		checks := map[string]resource.TestCheckFunc{
+			"before": resource.ComposeTestCheckFunc(
+				resource.TestCheckResourceAttr("pritunl_user.test", "name", username),
+				resource.TestCheckResourceAttr("pritunl_organization.test", "name", orgName),
+			),
+			"after": resource.ComposeTestCheckFunc(
+				resource.TestCheckResourceAttr("pritunl_user.test", "name", newUsername),
+				resource.TestCheckResourceAttr("pritunl_organization.test", "name", orgName),
+			),
+		}
+
+		resource.Test(t, resource.TestCase{
+			PreCheck:          func() { preCheck(t) },
+			ProviderFactories: providerFactories,
+			Steps: []resource.TestStep{
+				{
+					Config: initialConfig,
+					Check:  checks["before"],
+				},
+				{
+					Config: strings.Replace(initialConfig, username, newUsername, 1),
+					Check:  checks["after"],
+				},
+			},
+		})
+	})
+
+	t.Run("imports users without error", func(t *testing.T) {
+		username := "tfacc-user1"
+		orgName := "tfacc-org1"
+
+		check := resource.ComposeTestCheckFunc(
+			resource.TestCheckResourceAttr("pritunl_user.test", "name", username),
+			resource.TestCheckResourceAttr("pritunl_organization.test", "name", orgName),
+		)
+
+		resource.Test(t, resource.TestCase{
+			PreCheck:          func() { preCheck(t) },
+			ProviderFactories: providerFactories,
+			Steps: []resource.TestStep{
+				{
+					Config: testPritunlUserConfig(username, orgName),
+					Check:  check,
+				},
+				{
+					ResourceName:      "pritunl_user.test",
+					ImportState:       true,
+					ImportStateVerify: true,
+					ImportStateIdFunc: func(state *terraform.State) (string, error) {
+						userId := state.RootModule().Resources["pritunl_user.test"].Primary.Attributes["id"]
+						orgId := state.RootModule().Resources["pritunl_organization.test"].Primary.Attributes["id"]
+
+						return fmt.Sprintf("%s-%s", orgId, userId), nil
+					},
+				},
+			},
+		})
 	})
 }
 
-func testAccUserConfig(username, orgName string) string {
+func testPritunlUserConfig(username, orgName string) string {
 	return fmt.Sprintf(`
-resource "pritunl_organization" "test" {
-	name = "%[2]s"
-}
-resource "pritunl_user" "test" {
-	name    			= "%[1]s"
-	organization_id		= pritunl_organization.test.id
-}
-`, username, orgName)
+		resource "pritunl_organization" "test" {
+			name = "%[2]s"
+		}
+
+		resource "pritunl_user" "test" {
+			name    			= "%[1]s"
+			organization_id		= pritunl_organization.test.id
+		}
+	`, username, orgName)
 }
