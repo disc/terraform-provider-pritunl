@@ -68,7 +68,8 @@ func importStep(name string, ignore ...string) resource.TestStep {
 	return step
 }
 
-func userImportStep(name string) resource.TestStep {
+// pritunl_user import requires organization and user IDs
+func pritunlUserImportStep(name string) resource.TestStep {
 	step := resource.TestStep{
 		ResourceName:      name,
 		ImportState:       true,
