@@ -7,30 +7,30 @@ import (
 	"testing"
 )
 
-func TestDataSourceHost(t *testing.T) {
+func TestAccPritunlHost(t *testing.T) {
 	// pritunl.local sets in Makefile's "test" target
 	existsHostname := "pritunl.local"
 	notExistHostname := "not-exist-hostname"
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() {},
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testdataHostSimpleConfig(existsHostname),
+				Config: testPritunlHostSimpleConfig(existsHostname),
 				Check:  resource.ComposeTestCheckFunc(),
 			},
 			{
-				Config:      testdataHostSimpleConfig(notExistHostname),
+				Config:      testPritunlHostSimpleConfig(notExistHostname),
 				ExpectError: regexp.MustCompile(fmt.Sprintf("could not a find host with a hostname %s. Previous error message: could not find a host with specified parameters", notExistHostname)),
 			},
 		},
 	})
 }
 
-func testdataHostSimpleConfig(name string) string {
+func testPritunlHostSimpleConfig(name string) string {
 	return fmt.Sprintf(`
-data "pritunl_host" "test" {
-	hostname    = "%[1]s"
-}
-`, name)
+		data "pritunl_host" "test" {
+			hostname    = "%[1]s"
+		}
+	`, name)
 }
