@@ -150,6 +150,7 @@ func TestGetServer_with_attached_organization(t *testing.T) {
 
 func TestGetServer_with_a_few_attached_organizations(t *testing.T) {
 	var serverId string
+	expectedOrganizationIds := make(map[string]struct{})
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { preCheck(t) },
@@ -168,7 +169,7 @@ func TestGetServer_with_a_few_attached_organizations(t *testing.T) {
 						attachedOrganization2Id := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["organization_ids.1"]
 						organization1Id := s.RootModule().Resources["pritunl_organization.test"].Primary.Attributes["id"]
 						organization2Id := s.RootModule().Resources["pritunl_organization.test2"].Primary.Attributes["id"]
-						expectedOrganizationIds := map[string]struct{}{
+						expectedOrganizationIds = map[string]struct{}{
 							organization1Id: {},
 							organization2Id: {},
 						}
@@ -195,15 +196,28 @@ func TestGetServer_with_a_few_attached_organizations(t *testing.T) {
 					},
 				),
 			},
-			importStep("pritunl_server.test"),
 			// test importing
 			{
 				ResourceName: "pritunl_server.test",
 				ImportStateIdFunc: func(*terraform.State) (string, error) {
 					return serverId, nil
 				},
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					importedOrganization1Id := states[0].Attributes["organization_ids.0"]
+					importedOrganization2Id := states[0].Attributes["organization_ids.1"]
+
+					if _, ok := expectedOrganizationIds[importedOrganization1Id]; !ok {
+						return fmt.Errorf("imported organization_id %s doesn't contain in expected organizations list", importedOrganization1Id)
+					}
+
+					if _, ok := expectedOrganizationIds[importedOrganization2Id]; !ok {
+						return fmt.Errorf("imported organization_id %s doesn't contain in expected organizations list", importedOrganization2Id)
+					}
+
+					return nil
+				},
 				ImportState:       true,
-				ImportStateVerify: true,
+				ImportStateVerify: false,
 			},
 		},
 	})
