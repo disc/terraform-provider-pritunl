@@ -24,11 +24,7 @@ func TestAccPritunlOrganization(t *testing.T) {
 					Check:  check,
 				},
 				// import test
-				{
-					ResourceName:      "pritunl_organization.test",
-					ImportState:       true,
-					ImportStateVerify: true,
-				},
+				importStep("pritunl_organization.test"),
 			},
 		})
 	})
