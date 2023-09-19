@@ -532,7 +532,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("port_wg", server.PortWG)
 	d.Set("sso_auth", server.SsoAuth)
 	d.Set("otp_auth", server.OtpAuth)
-	d.Set("device_auth", server.OtpAuth)
+	d.Set("device_auth", server.DeviceAuth)
 	d.Set("ipv6", server.IPv6)
 	d.Set("dh_param_bits", server.DhParamBits)
 	d.Set("ping_interval", server.PingInterval)
