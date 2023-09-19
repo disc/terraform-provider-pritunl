@@ -203,6 +203,12 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Description: "Enables two-step authentication using Google Authenticator. Verification code is entered as the user password when connecting",
 			},
+			"device_auth": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Require administrator to approve every client device using TPM or Apple Secure Enclave",
+			},
 			"ipv6": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -526,6 +532,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("port_wg", server.PortWG)
 	d.Set("sso_auth", server.SsoAuth)
 	d.Set("otp_auth", server.OtpAuth)
+	d.Set("device_auth", server.OtpAuth)
 	d.Set("ipv6", server.IPv6)
 	d.Set("dh_param_bits", server.DhParamBits)
 	d.Set("ping_interval", server.PingInterval)
@@ -647,6 +654,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		"port_wg":            d.Get("port_wg"),
 		"sso_auth":           d.Get("sso_auth"),
 		"otp_auth":           d.Get("otp_auth"),
+		"device_auth":        d.Get("device_auth"),
 		"ipv6":               d.Get("ipv6"),
 		"dh_param_bits":      d.Get("dh_param_bits"),
 		"ping_interval":      d.Get("ping_interval"),
@@ -803,6 +811,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("otp_auth") {
 		server.OtpAuth = d.Get("otp_auth").(bool)
+	}
+
+	if d.HasChange("device_auth") {
+		server.DeviceAuth = d.Get("device_auth").(bool)
 	}
 
 	if d.HasChange("ipv6") {
