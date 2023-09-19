@@ -24,6 +24,7 @@ type User struct {
 	Audit           bool                     `json:"audit,omitempty"`
 	Gravatar        bool                     `json:"gravatar,omitempty"`
 	OtpAuth         bool                     `json:"otp_auth,omitempty"`
+	DeviceAuth      bool                     `json:"device_auth,omitempty"`
 	Organization    string                   `json:"organization,omitempty"`
 }
 

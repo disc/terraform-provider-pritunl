@@ -52,6 +52,7 @@ type Server struct {
 	PreConnectMsg    string   `json:"pre_connect_msg,omitempty"`
 	SsoAuth          bool     `json:"sso_auth,omitempty"`
 	OtpAuth          bool     `json:"otp_auth,omitempty"`
+	DeviceAuth       bool     `json:"device_auth,omitempty"`
 	MssFix           int      `json:"mss_fix,omitempty"`
 	LzoCompression   bool     `json:"lzo_compression,omitempty"`
 	BlockOutsideDns  bool     `json:"block_outside_dns,omitempty"`

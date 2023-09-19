@@ -299,6 +299,10 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 		serverStruct.OtpAuth = v.(bool)
 	}
 
+	if v, ok := serverData["device_auth"]; ok {
+		serverStruct.DeviceAuth = v.(bool)
+	}
+
 	if v, ok := serverData["ipv6"]; ok {
 		serverStruct.IPv6 = v.(bool)
 	}
