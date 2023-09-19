@@ -54,28 +54,6 @@ func TestAccPritunlServer(t *testing.T) {
 			})
 		}
 
-		t.Run("creates a server with device_auth attribute", func(t *testing.T) {
-			serverName := "tfacc-server1"
-
-			testCase := func(t *testing.T, deviceAuth bool) {
-				resource.Test(t, resource.TestCase{
-					PreCheck:          func() { preCheck(t) },
-					ProviderFactories: providerFactories,
-					CheckDestroy:      testPritunlServerDestroy,
-					Steps: []resource.TestStep{
-						{
-							Config: testPritunlServerConfigWithDeviceAuth(serverName, deviceAuth),
-							Check: resource.ComposeTestCheckFunc(
-								resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
-								resource.TestCheckResourceAttr("pritunl_server.test", "device_auth", strconv.FormatBool(deviceAuth)),
-							),
-						},
-						// import test
-						importStep("pritunl_server.test"),
-					},
-				})
-			}
-
 		t.Run("with enabled option", func(t *testing.T) {
 			testCase(t, true)
 		})
@@ -95,7 +73,6 @@ func TestAccPritunlServer(t *testing.T) {
 						Check: resource.ComposeTestCheckFunc(
 							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
 							resource.TestCheckResourceAttr("pritunl_server.test", "sso_auth", "false"),
-							resource.TestCheckResourceAttr("pritunl_server.test", "device_auth", "false"),
 						),
 					},
 					// import test
@@ -105,6 +82,56 @@ func TestAccPritunlServer(t *testing.T) {
 		})
 	})
 
+	t.Run("creates a server with device_auth attribute", func(t *testing.T) {
+		serverName := "tfacc-server1"
+
+		testCase := func(t *testing.T, deviceAuth bool) {
+			resource.Test(t, resource.TestCase{
+				PreCheck:          func() { preCheck(t) },
+				ProviderFactories: providerFactories,
+				CheckDestroy:      testPritunlServerDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testPritunlServerConfigWithDeviceAuth(serverName, deviceAuth),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
+							resource.TestCheckResourceAttr("pritunl_server.test", "device_auth", strconv.FormatBool(deviceAuth)),
+						),
+					},
+					// import test
+					importStep("pritunl_server.test"),
+				},
+			})
+		}
+
+		t.Run("with enabled option", func(t *testing.T) {
+			testCase(t, true)
+		})
+
+		t.Run("with disabled option", func(t *testing.T) {
+			testCase(t, false)
+		})
+
+		t.Run("without an option", func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				PreCheck:          func() { preCheck(t) },
+				ProviderFactories: providerFactories,
+				CheckDestroy:      testPritunlServerDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testPritunlServerSimpleConfig(serverName),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
+							resource.TestCheckResourceAttr("pritunl_server.test", "device_auth", "false"),
+						),
+					},
+					// import test
+					importStep("pritunl_server.test"),
+				},
+			})
+		})
+	})
+	
 	t.Run("creates a server with an attached organization", func(t *testing.T) {
 		serverName := "tfacc-server1"
 		orgName := "tfacc-org1"
