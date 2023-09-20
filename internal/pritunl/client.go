@@ -303,6 +303,10 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 		serverStruct.DeviceAuth = v.(bool)
 	}
 
+	if v, ok := serverData["dynamic_firewall"]; ok {
+		serverStruct.DynamicFirewall = v.(bool)
+	}
+
 	if v, ok := serverData["ipv6"]; ok {
 		serverStruct.IPv6 = v.(bool)
 	}

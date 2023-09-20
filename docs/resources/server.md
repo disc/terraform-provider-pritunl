@@ -47,6 +47,7 @@ description: |-
 - **sso_auth** (Boolean) Require client to authenticate with single sign-on provider on each connection using web browser. Requires client to have access to Pritunl web server port and running updated Pritunl Client. Single sign-on provider must already be configured for this feature to work properly.
 - **otp_auth** (Boolean) Enables two-step authentication using Google Authenticator. Verification code is entered as the user password when connecting
 - **device_auth** (Boolean) Require administrator to approve every client device using TPM or Apple Secure Enclave
+- **dynamic_firewall** (Boolean) Block VPN server ports by default and open port for client IP address after authenticating with HTTPS request
 - **ping_interval** (Number) Interval to ping client
 - **ping_timeout** (Number) Timeout for client ping. Must be greater then ping interval
 - **port** (Number) The port for the server
