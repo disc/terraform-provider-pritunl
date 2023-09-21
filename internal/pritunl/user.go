@@ -25,7 +25,6 @@ type User struct {
 	Gravatar        bool                     `json:"gravatar,omitempty"`
 	OtpAuth         bool                     `json:"otp_auth,omitempty"`
 	DeviceAuth      bool                     `json:"device_auth,omitempty"`
-	DynamicFirewall bool                     `json:"dynamic_firewall,omitempty"`
 	Organization    string                   `json:"organization,omitempty"`
 }
 
