@@ -131,7 +131,57 @@ func TestAccPritunlServer(t *testing.T) {
 			})
 		})
 	})
-	
+
+	t.Run("creates a server with dynamic_firewall attribute", func(t *testing.T) {
+		serverName := "tfacc-server1"
+
+		testCase := func(t *testing.T, dynamicFirewall bool) {
+			resource.Test(t, resource.TestCase{
+				PreCheck:          func() { preCheck(t) },
+				ProviderFactories: providerFactories,
+				CheckDestroy:      testPritunlServerDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testPritunlServerConfigWithDynamicFirewall(serverName, dynamicFirewall),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
+							resource.TestCheckResourceAttr("pritunl_server.test", "dynamic_firewall", strconv.FormatBool(dynamicFirewall)),
+						),
+					},
+					// import test
+					importStep("pritunl_server.test"),
+				},
+			})
+		}
+
+		t.Run("with enabled option", func(t *testing.T) {
+			testCase(t, true)
+		})
+
+		t.Run("with disabled option", func(t *testing.T) {
+			testCase(t, false)
+		})
+
+		t.Run("without an option", func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				PreCheck:          func() { preCheck(t) },
+				ProviderFactories: providerFactories,
+				CheckDestroy:      testPritunlServerDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testPritunlServerSimpleConfig(serverName),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
+							resource.TestCheckResourceAttr("pritunl_server.test", "dynamic_firewall", "false"),
+						),
+					},
+					// import test
+					importStep("pritunl_server.test"),
+				},
+			})
+		})
+	})
+
 	t.Run("creates a server with an attached organization", func(t *testing.T) {
 		serverName := "tfacc-server1"
 		orgName := "tfacc-org1"
@@ -487,6 +537,15 @@ func testPritunlServerConfigWithDeviceAuth(name string, deviceAuth bool) string 
 			device_auth = %[2]v
 		}
 	`, name, deviceAuth)
+}
+
+func testPritunlServerConfigWithDynamicFirewall(name string, dynamicFirewall bool) string {
+	return fmt.Sprintf(`
+		resource "pritunl_server" "test" {
+			name     = "%[1]s"
+			dynamic_firewall = %[2]v
+		}
+	`, name, dynamicFirewall)
 }
 
 func testPritunlServerConfigWithAttachedOrganization(name, organizationName string) string {

@@ -209,6 +209,12 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Description: "Require administrator to approve every client device using TPM or Apple Secure Enclave",
 			},
+			"dynamic_firewall": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Block VPN server ports by default and open port for client IP address after authenticating with HTTPS request",
+			},
 			"ipv6": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -533,6 +539,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("sso_auth", server.SsoAuth)
 	d.Set("otp_auth", server.OtpAuth)
 	d.Set("device_auth", server.DeviceAuth)
+	d.Set("dynamic_firewall", server.DynamicFirewall)
 	d.Set("ipv6", server.IPv6)
 	d.Set("dh_param_bits", server.DhParamBits)
 	d.Set("ping_interval", server.PingInterval)
@@ -655,6 +662,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		"sso_auth":           d.Get("sso_auth"),
 		"otp_auth":           d.Get("otp_auth"),
 		"device_auth":        d.Get("device_auth"),
+		"dynamic_firewall":   d.Get("dynamic_firewall"),
 		"ipv6":               d.Get("ipv6"),
 		"dh_param_bits":      d.Get("dh_param_bits"),
 		"ping_interval":      d.Get("ping_interval"),
@@ -815,6 +823,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("device_auth") {
 		server.DeviceAuth = d.Get("device_auth").(bool)
+	}
+
+	if d.HasChange("dynamic_firewall") {
+		server.DynamicFirewall = d.Get("dynamic_firewall").(bool)
 	}
 
 	if d.HasChange("ipv6") {
