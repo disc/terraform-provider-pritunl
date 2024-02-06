@@ -945,7 +945,19 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		server.DnsServers = dnsServers
 	}
 
-	// Stop server before applying any change
+	links, err := apiClient.GetLinksByServer(server.ID)
+	if err != nil {
+		return diag.Errorf("Error on getting links by the server: %s", err)
+	}
+
+	// Stop servers before applying any change
+	for _, link := range links {
+		err := apiClient.StopServer(link.ID)
+		if err != nil {
+			return diag.Errorf("Error on stopping linked server: %s", err)
+		}
+	}
+
 	err = apiClient.StopServer(d.Id())
 	if err != nil {
 		return diag.Errorf("Error on stopping server: %s", err)
@@ -1038,6 +1050,12 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	if shouldServerBeStarted {
+		for _, link := range links {
+			err := apiClient.StartServer(link.ID)
+			if err != nil {
+				return diag.Errorf("Error on starting linked server: %s", err)
+			}
+		}
 		err = apiClient.StartServer(d.Id())
 		if err != nil {
 			return diag.Errorf("Error on starting server: %s", err)
