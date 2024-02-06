@@ -29,6 +29,10 @@ type Client interface {
 	UpdateServer(id string, server *Server) error
 	DeleteServer(id string) error
 
+	GetLinksByServer(serverId string) ([]Link, error)
+	AttachLinkBetweenServers(firstServerId, secondServerId string) error
+	DetachLinkBetweenServers(firstServerId, secondServerId string) error
+
 	GetOrganizationsByServer(serverId string) ([]Organization, error)
 	AttachOrganizationToServer(organizationId, serverId string) error
 	DetachOrganizationFromServer(organizationId, serverId string) error
@@ -472,6 +476,63 @@ func (c client) DeleteServer(id string) error {
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Non-200 response on deleting the server\nbody=%s", body)
+	}
+
+	return nil
+}
+
+func (c client) GetLinksByServer(serverId string) ([]Link, error) {
+	url := fmt.Sprintf("/server/%s/link", serverId)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetLinksByServer: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting links on the server\nbody=%s", body)
+	}
+
+	var links []Link
+	json.Unmarshal(body, &links)
+
+	return links, nil
+}
+
+func (c client) AttachLinkBetweenServers(firstServerId, secondServerId string) error {
+	url := fmt.Sprintf("/server/%s/link/%s", firstServerId, secondServerId)
+	req, err := http.NewRequest("PUT", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("AttachLinkBetweenServers: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on attaching an organization the server\nbody=%s", body)
+	}
+
+	return nil
+}
+
+func (c client) DetachLinkBetweenServers(firstServerId, secondServerId string) error {
+	url := fmt.Sprintf("/server/%s/link/%s", firstServerId, secondServerId)
+	req, err := http.NewRequest("DELETE", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("DetachLinkBetweenServers: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on detaching the organization from the server\nbody=%s", body)
 	}
 
 	return nil
