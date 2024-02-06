@@ -515,10 +515,12 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	// get routes
-	routes, err := apiClient.GetRoutesByServer(d.Id())
+	routesWithServerLinks, err := apiClient.GetRoutesByServer(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	routes := filterServerLinksForRoutes(routesWithServerLinks)
 
 	// get hosts
 	hosts, err := apiClient.GetHostsByServer(d.Id())
@@ -1176,4 +1178,15 @@ func matchStringEntitiesWithSchema(entities []string, declaredEntities []interfa
 	}
 
 	return result
+}
+
+func filterServerLinksForRoutes(routesWithServerLinks []pritunl.Route) []pritunl.Route {
+	routes := make([]pritunl.Route, 0)
+	for _, route := range routesWithServerLinks {
+		if route.ServerLink {
+			continue
+		}
+		routes = append(routes, route)
+	}
+	return routes
 }
