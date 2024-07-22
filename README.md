@@ -18,7 +18,7 @@
 
 ## Requirements
 -	[Terraform](https://www.terraform.io/downloads.html) >=0.13.x
--	[Go](https://golang.org/doc/install) 1.22.x (for building the provider plugin)
+-	[Go](https://golang.org/doc/install) 1.22.x (to build the provider plugin)
 
 ## Building The Provider
 
@@ -39,7 +39,7 @@ terraform {
   required_providers {
     pritunl = {
       source  = "disc/pritunl"
-      version = "0.1.13"
+      version = "0.2.0"
     }
   }
 }

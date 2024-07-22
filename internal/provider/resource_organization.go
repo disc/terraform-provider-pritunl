@@ -9,6 +9,7 @@ import (
 
 func resourceOrganization() *schema.Resource {
 	return &schema.Resource{
+		Description: "The organization resource allows managing information about a particular Pritunl organization.",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
