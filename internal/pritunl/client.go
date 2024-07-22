@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 type Client interface {
@@ -771,13 +772,27 @@ func (c client) GetHosts() ([]Host, error) {
 	url := fmt.Sprintf("/host")
 	req, err := http.NewRequest("GET", url, nil)
 
-	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetHosts: Error creating request: %s", err)
+	}
+
+	var body []byte
+	var resp *http.Response
+	for retries := 0; retries < 3; retries++ {
+		resp, err = c.httpClient.Do(req)
+		if err == nil && resp.StatusCode == 200 {
+			body, _ = io.ReadAll(resp.Body)
+			break
+		}
+		time.Sleep(time.Second)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("GetHosts: Error on HTTP request: %s", err)
 	}
+
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("Non-200 response on getting the hosts\nbody=%s", body)
 	}
