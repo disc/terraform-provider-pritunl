@@ -17,10 +17,19 @@ Use this data source to get information about the Pritunl hosts.
 
 ### Required
 
-- **hostname** (String) Hostname
+- `hostname` (String) Hostname
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-
-
+- `availability_group` (String) Availability group for host. Replicated servers will only be replicated to a group of hosts in the same availability group"
+- `id` (String) The ID of this resource.
+- `link_addr` (String) IP address or domain used when linked servers connect to a linked server on this host
+- `local_addr` (String) Local network address for server
+- `local_addr6` (String) Local IPv6 network address for server
+- `name` (String) Name of host
+- `public_addr` (String) Public IP address or domain name of the host
+- `public_addr6` (String) Public IPv6 address or domain name of the host
+- `routed_subnet6` (String) IPv6 subnet that is routed to the host
+- `routed_subnet6_wg` (String) IPv6 WG subnet that is routed to the host
+- `status` (String) Status of host
+- `sync_address` (String) IP address or domain used by users when syncing configuration. This is needed when using a load balancer.

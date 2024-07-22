@@ -12,6 +12,7 @@ import (
 
 func resourceUser() *schema.Resource {
 	return &schema.Resource{
+		Description: "The organization resource allows managing information about a particular Pritunl user.",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,

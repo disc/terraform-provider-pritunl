@@ -8,6 +8,8 @@ description: |-
 
 # Pritunl Provider
 
+
+
 ## Example Usage
 
 ```terraform
@@ -63,6 +65,14 @@ resource "pritunl_server" "test" {
     comment = "Private network #2"
     nat     = false
   }
+
+  route {
+    network = "10.3.0.0/32"
+    comment = "Private network #3"
+    nat     = false
+    net_gateway = true
+  }
+
 }
 ```
 
@@ -71,8 +81,8 @@ resource "pritunl_server" "test" {
 
 ### Optional
 
-- **insecure** (Boolean)
-- **secret** (String)
-- **token** (String)
-- **url** (String)
-- **connection_check** (Boolean)
+- `connection_check` (Boolean)
+- `insecure` (Boolean)
+- `secret` (String)
+- `token` (String)
+- `url` (String)

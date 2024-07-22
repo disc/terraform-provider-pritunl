@@ -55,7 +55,7 @@ resource "pritunl_server" "test" {
 
   route {
     network = "10.3.0.0/32"
-    comment = "Private network #2"
+    comment = "Private network #3"
     nat     = false
     net_gateway = true
   }
