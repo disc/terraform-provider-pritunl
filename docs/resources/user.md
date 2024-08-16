@@ -32,6 +32,7 @@ The organization resource allows managing information about a particular Pritunl
 - `groups` (List of String) Enter list of groups to allow connections from. Names are case sensitive. If empty all groups will able to connect.
 - `mac_addresses` (List of String) Comma separated list of MAC addresses client is allowed to connect from. The validity of the MAC address provided by the VPN client cannot be verified.
 - `network_links` (List of String) Network address with cidr subnet. This will provision access to a clients local network to the attached vpn servers and other clients. Multiple networks may be separated by a comma. Router must have a static route to VPN virtual network through client.
+- `pin` (String) The PIN code for the user.
 - `port_forwarding` (List of Map of String) Comma seperated list of ports to forward using format source_port:dest_port/protocol or start_port-end_port/protocol. Such as 80, 80/tcp, 80:8000/tcp, 1000-2000/udp.
 
 ### Read-Only

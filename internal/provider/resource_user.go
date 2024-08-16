@@ -3,11 +3,12 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"strings"
 )
 
 func resourceUser() *schema.Resource {
@@ -100,6 +101,12 @@ func resourceUser() *schema.Resource {
 				Optional:    true,
 				Description: "Bypass secondary authentication such as the PIN and two-factor authentication. Use for server users that can't provide a two-factor code.",
 			},
+			"pin": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "The PIN for user authentication.",
+			},
 		},
 		CreateContext: resourceUserCreate,
 		ReadContext:   resourceUserRead,
@@ -168,6 +175,13 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	user, err := apiClient.GetUser(d.Id(), d.Get("organization_id").(string))
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if d.HasChange("pin") {
+		if v, ok := d.GetOk("pin"); ok {
+			user.Pin.IsSet = false
+			user.Pin.Secret = v.(string)
+		}
 	}
 
 	if v, ok := d.GetOk("name"); ok {
@@ -251,7 +265,7 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	return resourceUserRead(ctx, d, meta)
 }
 
-func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
 	dnsServers := make([]string, 0)
@@ -293,6 +307,12 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 		MacAddresses:    macAddresses,
 		BypassSecondary: d.Get("bypass_secondary").(bool),
 		Groups:          groups,
+	}
+
+	if pin, ok := d.GetOk("pin"); ok {
+		userData.Pin = pritunl.Pin{
+			Secret: pin.(string),
+		}
 	}
 
 	user, err := apiClient.CreateUser(userData)
