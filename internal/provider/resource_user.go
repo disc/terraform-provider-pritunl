@@ -265,7 +265,7 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	return resourceUserRead(ctx, d, meta)
 }
 
-func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
 	dnsServers := make([]string, 0)

@@ -11,9 +11,11 @@ func TestAccPritunlUser(t *testing.T) {
 	t.Run("creates users without error", func(t *testing.T) {
 		username := "tfacc-user1"
 		orgName := "tfacc-org1"
+		pin := "123456"
 
 		check := resource.ComposeTestCheckFunc(
 			resource.TestCheckResourceAttr("pritunl_user.test", "name", username),
+			resource.TestCheckResourceAttr("pritunl_user.test", "pin", pin),
 			resource.TestCheckResourceAttr("pritunl_organization.test", "name", orgName),
 		)
 
@@ -22,7 +24,7 @@ func TestAccPritunlUser(t *testing.T) {
 			ProviderFactories: providerFactories,
 			Steps: []resource.TestStep{
 				{
-					Config: testPritunlUserConfig(username, orgName),
+					Config: testPritunlUserConfig(username, orgName, pin),
 					Check:  check,
 				},
 				// import test
@@ -32,7 +34,7 @@ func TestAccPritunlUser(t *testing.T) {
 	})
 }
 
-func testPritunlUserConfig(username, orgName string) string {
+func testPritunlUserConfig(username, orgName, pin string) string {
 	return fmt.Sprintf(`
 		resource "pritunl_organization" "test" {
 			name = "%[2]s"
@@ -40,7 +42,8 @@ func testPritunlUserConfig(username, orgName string) string {
 
 		resource "pritunl_user" "test" {
 			name    			= "%[1]s"
+			pin     			= "%[3]s"
 			organization_id		= pritunl_organization.test.id
 		}
-	`, username, orgName)
+	`, username, orgName, pin)
 }
