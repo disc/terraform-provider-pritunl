@@ -28,6 +28,15 @@ resource "pritunl_user" "test" {
   name            = "test-user"
   organization_id = pritunl_organization.developers.id
   email           = "test@test.com"
+  groups = [
+    "admins",
+  ]
+}
+
+resource "pritunl_user" "test_pin" {
+  name            = "test-user-pin"
+  organization_id = pritunl_organization.developers.id
+  email           = "test@test.com"
   pin             = "123456"
   groups = [
     "admins",
