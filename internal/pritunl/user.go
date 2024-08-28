@@ -29,7 +29,7 @@ type User struct {
 	OtpAuth         bool                     `json:"otp_auth,omitempty"`
 	DeviceAuth      bool                     `json:"device_auth,omitempty"`
 	Organization    string                   `json:"organization,omitempty"`
-	Pin             Pin                      `json:"pin,omitempty"`
+	Pin             *Pin                      `json:"pin,omitempty"`
 }
 
 type PortForwarding struct {
@@ -48,7 +48,7 @@ type Pin struct {
 // When marshaling a User JSON, the "pin" field will contain the PIN secret
 // if it is set, otherwise the field is excluded. This is used when making
 // a user create or update request to the Pritunl API.
-func (p Pin) MarshalJSON() ([]byte, error) {
+func (p *Pin) MarshalJSON() ([]byte, error) {
 	if p.Secret != "" {
 		return json.Marshal(p.Secret)
 	}

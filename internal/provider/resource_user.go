@@ -179,7 +179,7 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	if d.HasChange("pin") {
 		if v, ok := d.GetOk("pin"); ok {
-			user.Pin.Secret = v.(string)
+			user.Pin = &pritunl.Pin{Secret: v.(string)}
 		}
 	}
 
@@ -309,7 +309,7 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	if pin, ok := d.GetOk("pin"); ok {
-		userData.Pin = pritunl.Pin{
+		userData.Pin = &pritunl.Pin{
 			Secret: pin.(string),
 		}
 	}
