@@ -179,7 +179,6 @@ func resourceUserUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	if d.HasChange("pin") {
 		if v, ok := d.GetOk("pin"); ok {
-			user.Pin.IsSet = false
 			user.Pin.Secret = v.(string)
 		}
 	}
