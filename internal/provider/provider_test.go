@@ -71,9 +71,10 @@ func importStep(name string, ignore ...string) resource.TestStep {
 // pritunl_user import requires organization and user IDs
 func pritunlUserImportStep(name string) resource.TestStep {
 	step := resource.TestStep{
-		ResourceName:      name,
-		ImportState:       true,
-		ImportStateVerify: true,
+		ResourceName:            name,
+		ImportState:             true,
+		ImportStateVerify:       true,
+		ImportStateVerifyIgnore: []string{"pin"},
 		ImportStateIdFunc: func(state *terraform.State) (string, error) {
 			userId := state.RootModule().Resources["pritunl_user.test"].Primary.Attributes["id"]
 			orgId := state.RootModule().Resources["pritunl_organization.test"].Primary.Attributes["id"]

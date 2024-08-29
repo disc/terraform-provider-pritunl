@@ -33,6 +33,16 @@ resource "pritunl_user" "test" {
   ]
 }
 
+resource "pritunl_user" "test_pin" {
+  name            = "test-user-pin"
+  organization_id = pritunl_organization.developers.id
+  email           = "test@test.com"
+  pin             = "123456"
+  groups = [
+    "admins",
+  ]
+}
+
 resource "pritunl_server" "test" {
   name = "test"
 
