@@ -203,3 +203,7 @@ terraform import pritunl_server.example 60cd0bfa7723cf3c911468a8
 ## License
 
 The Terraform Pritunl Provider is available to everyone under the terms of the Mozilla Public License Version 2.0. [Take a look the LICENSE file](LICENSE).
+
+## Maintainers
+
+Alexandr Hacicheant [a.hacicheant@gmail.com]
