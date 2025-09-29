@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/hashicorp/go-cty v1.5.0
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.38.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.38.1
 )
 
 require (
