@@ -1114,22 +1114,21 @@ func flattenRoutesData(routesList []pritunl.Route) []interface{} {
 func matchRoutesWithSchema(routes []pritunl.Route, declaredRoutes []interface{}) []pritunl.Route {
 	result := make([]pritunl.Route, len(declaredRoutes))
 
-	routesMap := make(map[string]pritunl.Route, len(declaredRoutes))
+	routesMap := make(map[string]pritunl.Route)
 	for _, route := range routes {
-		routesMap[route.GetID()] = route
+		routesMap[route.Network] = route
 	}
 
 	for i, declaredRoute := range declaredRoutes {
 		declaredRouteMap := declaredRoute.(map[string]interface{})
+		network, ok := declaredRouteMap["network"].(string)
+		if !ok {
+			continue
+		}
 
-		for key, route := range routesMap {
-			if route.Network != declaredRouteMap["network"] || route.Nat != declaredRouteMap["nat"] || route.NetGateway != declaredRouteMap["net_gateway"] {
-				continue
-			}
-
-			result[i] = route
-			delete(routesMap, key)
-			break
+		if apiRoute, exists := routesMap[network]; exists {
+			result[i] = apiRoute
+			delete(routesMap, network)
 		}
 	}
 
