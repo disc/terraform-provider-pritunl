@@ -975,39 +975,41 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	if d.HasChange("route") {
 		oldRoutes, newRoutes := d.GetChange("route")
 
-		newRoutesMap := make(map[string]pritunl.Route, 0)
+		newRoutesMap := make(map[string]pritunl.Route)
 		for _, v := range newRoutes.([]interface{}) {
 			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
-			newRoutesMap[route.GetID()] = route
+			newRoutesMap[route.Network] = route
 		}
-		oldRoutesMap := make(map[string]pritunl.Route, 0)
+		oldRoutesMap := make(map[string]pritunl.Route)
 		for _, v := range oldRoutes.([]interface{}) {
 			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
-			oldRoutesMap[route.GetID()] = route
+			oldRoutesMap[route.Network] = route
 		}
 
-		for _, route := range newRoutesMap {
-			if _, found := oldRoutesMap[route.GetID()]; found {
-				// update or skip
-				err = apiClient.UpdateRouteOnServer(d.Id(), route)
-				if err != nil {
-					return diag.Errorf("Error on updating route on the server: %s", err)
+		for network, newRoute := range newRoutesMap {
+			if oldRoute, found := oldRoutesMap[network]; found {
+				// update if something changed or skip
+				if oldRoute.Nat != newRoute.Nat || oldRoute.NetGateway != newRoute.NetGateway || oldRoute.Comment != newRoute.Comment {
+					err = apiClient.UpdateRouteOnServer(d.Id(), newRoute)
+					if err != nil {
+						return diag.Errorf("Error on updating route on the server: %s", err)
+					}
 				}
 			} else {
 				// add route
-				err = apiClient.AddRouteToServer(d.Id(), route)
+				err = apiClient.AddRouteToServer(d.Id(), newRoute)
 				if err != nil {
-					return diag.Errorf("Error on attaching route from the server: %s", err)
+					return diag.Errorf("Error on adding route to the server: %s", err)
 				}
 			}
 		}
 
-		for _, route := range oldRoutesMap {
-			if _, found := newRoutesMap[route.GetID()]; !found {
+		for network, oldRoute := range oldRoutesMap {
+			if _, found := newRoutesMap[network]; !found {
 				// delete route
-				err = apiClient.DeleteRouteFromServer(d.Id(), route)
+				err = apiClient.DeleteRouteFromServer(d.Id(), oldRoute)
 				if err != nil {
-					return diag.Errorf("Error on detaching route from the server: %s", err)
+					return diag.Errorf("Error on deleting route from the server: %s", err)
 				}
 			}
 		}
@@ -1112,22 +1114,21 @@ func flattenRoutesData(routesList []pritunl.Route) []interface{} {
 func matchRoutesWithSchema(routes []pritunl.Route, declaredRoutes []interface{}) []pritunl.Route {
 	result := make([]pritunl.Route, len(declaredRoutes))
 
-	routesMap := make(map[string]pritunl.Route, len(declaredRoutes))
+	routesMap := make(map[string]pritunl.Route)
 	for _, route := range routes {
-		routesMap[route.GetID()] = route
+		routesMap[route.Network] = route
 	}
 
 	for i, declaredRoute := range declaredRoutes {
 		declaredRouteMap := declaredRoute.(map[string]interface{})
+		network, ok := declaredRouteMap["network"].(string)
+		if !ok {
+			continue
+		}
 
-		for key, route := range routesMap {
-			if route.Network != declaredRouteMap["network"] || route.Nat != declaredRouteMap["nat"] || route.NetGateway != declaredRouteMap["net_gateway"] {
-				continue
-			}
-
-			result[i] = route
-			delete(routesMap, key)
-			break
+		if apiRoute, exists := routesMap[network]; exists {
+			result[i] = apiRoute
+			delete(routesMap, network)
 		}
 	}
 
