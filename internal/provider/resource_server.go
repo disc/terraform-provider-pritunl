@@ -400,6 +400,12 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Description: "Use VXLan for routing client-to-client traffic with replicated servers.",
 			},
+			"geo_sort": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Enable geo sorting for host selection. Clients will connect to the closest host based on GeoIP lookup.",
+			},
 			"organization_ids": {
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
@@ -566,6 +572,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("dns_mapping", server.DnsMapping)
 	d.Set("inter_client", server.InterClient)
 	d.Set("vxlan", server.VxLan)
+	d.Set("geo_sort", server.GeoSort)
 	d.Set("status", server.Status)
 
 	if len(organizations) > 0 {
@@ -689,6 +696,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		"dns_mapping":        d.Get("dns_mapping"),
 		"inter_client":       d.Get("inter_client"),
 		"vxlan":              d.Get("vxlan"),
+		"geo_sort":           d.Get("geo_sort"),
 	}
 
 	server, err := apiClient.CreateServer(serverData)
@@ -928,6 +936,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("vxlan") {
 		server.VxLan = d.Get("vxlan").(bool)
+	}
+
+	if d.HasChange("geo_sort") {
+		server.GeoSort = d.Get("geo_sort").(bool)
 	}
 
 	if d.HasChange("groups") {

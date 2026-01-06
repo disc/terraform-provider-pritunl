@@ -548,6 +548,15 @@ func testPritunlServerConfigWithDynamicFirewall(name string, dynamicFirewall boo
 	`, name, dynamicFirewall)
 }
 
+func testPritunlServerConfigWithGeoSort(name string, geoSort bool) string {
+	return fmt.Sprintf(`
+		resource "pritunl_server" "test" {
+			name     = "%[1]s"
+			geo_sort = %[2]v
+		}
+	`, name, geoSort)
+}
+
 func testPritunlServerConfigWithAttachedOrganization(name, organizationName string) string {
 	return fmt.Sprintf(`
 		resource "pritunl_organization" "test" {
