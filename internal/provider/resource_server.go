@@ -716,14 +716,17 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	// Delete default route
-	defaultRoute := pritunl.Route{
-		Network: "0.0.0.0/0",
-		Nat:     true,
+	// Delete default routes
+	defaultRoutes := []pritunl.Route{
+		{Network: "0.0.0.0/0", Nat: true},
+		{Network: "8.8.8.8/32", Nat: true}, // DNS Server route added in newer Pritunl versions
 	}
-	err = apiClient.DeleteRouteFromServer(d.Id(), defaultRoute)
-	if err != nil {
-		return diag.Errorf("Error on attaching server to the organization: %s", err)
+	for _, defaultRoute := range defaultRoutes {
+		err = apiClient.DeleteRouteFromServer(d.Id(), defaultRoute)
+		if err != nil {
+			// Ignore errors for routes that don't exist
+			continue
+		}
 	}
 
 	if d.HasChange("route") {

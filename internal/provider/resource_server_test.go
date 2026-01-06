@@ -182,6 +182,57 @@ func TestAccPritunlServer(t *testing.T) {
 		})
 	})
 
+	t.Run("creates a server with geo_sort attribute", func(t *testing.T) {
+		serverName := "tfacc-server1"
+
+		testCase := func(t *testing.T, geoSort bool) {
+			resource.Test(t, resource.TestCase{
+				PreCheck:          func() { preCheck(t) },
+				ProviderFactories: providerFactories,
+				CheckDestroy:      testPritunlServerDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testPritunlServerConfigWithGeoSort(serverName, geoSort),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
+							resource.TestCheckResourceAttr("pritunl_server.test", "geo_sort", strconv.FormatBool(geoSort)),
+						),
+					},
+					// import test
+					importStep("pritunl_server.test"),
+				},
+			})
+		}
+
+		t.Run("with enabled option", func(t *testing.T) {
+			t.Skip("geo_sort=true requires enterprise license not available in test Docker image")
+			testCase(t, true)
+		})
+
+		t.Run("with disabled option", func(t *testing.T) {
+			testCase(t, false)
+		})
+
+		t.Run("without an option", func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				PreCheck:          func() { preCheck(t) },
+				ProviderFactories: providerFactories,
+				CheckDestroy:      testPritunlServerDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config: testPritunlServerSimpleConfig(serverName),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
+							resource.TestCheckResourceAttr("pritunl_server.test", "geo_sort", "false"),
+						),
+					},
+					// import test
+					importStep("pritunl_server.test"),
+				},
+			})
+		})
+	})
+
 	t.Run("creates a server with an attached organization", func(t *testing.T) {
 		serverName := "tfacc-server1"
 		orgName := "tfacc-org1"
