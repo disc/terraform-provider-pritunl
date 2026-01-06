@@ -13,12 +13,23 @@ test:
 		-p 27017:27017/tcp \
 		ghcr.io/jippi/docker-pritunl:1.32.4469.94
 
-	@chmod +x ./tools/wait-for-it.sh
-	./tools/wait-for-it.sh localhost:27017 -t 60 -- echo "mongodb is up"
-	./tools/wait-for-it.sh localhost:443 -t 60 -- echo "pritunl web server is up"
+	# Wait for MongoDB to be ready inside the container
+	@echo "Waiting for MongoDB..."
+	@for i in 1 2 3 4 5 6 7 8 9 10 11 12; do \
+		if docker exec tf_pritunl_acc_test mongo --eval "db.runCommand('ping').ok" --quiet >/dev/null 2>&1; then \
+			echo "MongoDB is ready"; \
+			break; \
+		fi; \
+		echo "Attempt $$i: MongoDB not ready, waiting 5s..."; \
+		sleep 5; \
+	done
 
 	# enables an api access for the pritunl user, updates an api token and secret
 	@docker exec -i tf_pritunl_acc_test mongo pritunl < ./tools/mongo.js
+
+	# Wait for Pritunl web server
+	@chmod +x ./tools/wait-for-it.sh
+	./tools/wait-for-it.sh localhost:443 -t 60 -- echo "pritunl web server is up"
 
 	# Wait for API to be ready with credentials
 	@echo "Waiting for Pritunl API to be ready..."
