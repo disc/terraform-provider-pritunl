@@ -14,15 +14,8 @@ test:
 		ghcr.io/jippi/docker-pritunl:1.32.4469.94
 
 	# Wait for MongoDB to be ready inside the container
-	@echo "Waiting for MongoDB..."
-	@for i in 1 2 3 4 5 6 7 8 9 10 11 12; do \
-		if docker exec tf_pritunl_acc_test mongo --eval "db.runCommand('ping').ok" --quiet >/dev/null 2>&1; then \
-			echo "MongoDB is ready"; \
-			break; \
-		fi; \
-		echo "Attempt $$i: MongoDB not ready, waiting 5s..."; \
-		sleep 5; \
-	done
+	@chmod +x ./tools/wait-for-mongo.sh
+	./tools/wait-for-mongo.sh tf_pritunl_acc_test 60
 
 	# enables an api access for the pritunl user, updates an api token and secret
 	@docker exec -i tf_pritunl_acc_test mongo pritunl < ./tools/mongo.js
@@ -32,15 +25,8 @@ test:
 	./tools/wait-for-it.sh localhost:443 -t 60 -- echo "pritunl web server is up"
 
 	# Wait for API to be ready with credentials
-	@echo "Waiting for Pritunl API to be ready..."
-	@for i in 1 2 3 4 5 6 7 8 9 10 11 12; do \
-		if curl -sk https://localhost/state >/dev/null 2>&1; then \
-			echo "Pritunl API is ready"; \
-			break; \
-		fi; \
-		echo "Attempt $$i: API not ready, waiting 5s..."; \
-		sleep 5; \
-	done
+	@chmod +x ./tools/wait-for-api.sh
+	./tools/wait-for-api.sh https://localhost/state 60
 
 	TF_ACC=1 \
 	PRITUNL_URL="https://localhost/" \
