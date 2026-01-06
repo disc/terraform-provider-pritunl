@@ -391,6 +391,10 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 		serverStruct.Debug = v.(bool)
 	}
 
+	if v, ok := serverData["geo_sort"]; ok {
+		serverStruct.GeoSort = v.(bool)
+	}
+
 	if v, ok := serverData["restrict_routes"]; ok {
 		serverStruct.RestrictRoutes = v.(bool)
 	}

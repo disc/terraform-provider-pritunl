@@ -205,7 +205,6 @@ func TestAccPritunlServer(t *testing.T) {
 		}
 
 		t.Run("with enabled option", func(t *testing.T) {
-			t.Skip("geo_sort=true requires enterprise license not available in test Docker image")
 			testCase(t, true)
 		})
 
