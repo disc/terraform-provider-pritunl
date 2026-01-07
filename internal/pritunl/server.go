@@ -59,6 +59,7 @@ type Server struct {
 	BlockOutsideDns  bool     `json:"block_outside_dns,omitempty"`
 	JumboFrames      bool     `json:"jumbo_frames,omitempty"`
 	Debug            bool     `json:"debug,omitempty"`
+	GeoSort          bool     `json:"geo_sort,omitempty"`
 	Status           string   `json:"status,omitempty"`
 }
 
