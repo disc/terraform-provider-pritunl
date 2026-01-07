@@ -724,8 +724,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 	for _, defaultRoute := range defaultRoutes {
 		err = apiClient.DeleteRouteFromServer(d.Id(), defaultRoute)
 		if err != nil {
-			// Ignore errors for routes that don't exist
-			continue
+			return diag.FromErr(err)
 		}
 	}
 
