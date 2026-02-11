@@ -2,11 +2,12 @@ package provider
 
 import (
 	"context"
+	"strings"
+
 	"github.com/disc/terraform-provider-pritunl/internal/pritunl"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"strings"
 )
 
 func resourceSettingsOverride() *schema.Resource {
@@ -25,14 +26,6 @@ func resourceSettingsOverride() *schema.Resource {
 				Default:      "light",
 				ValidateFunc: validation.StringInSlice([]string{"dark", "light"}, false),
 			},
-			// Auditing cannot be disabled from web console.
-			//"auditing": {
-			//	Type:         schema.TypeString,
-			//	Optional:     true,
-			//	Computed:     true,
-			//	Description:  "Auditing mode. Enable to log user actions such as login attempts and profile downloads",
-			//	ValidateFunc: validation.StringInSlice([]string{"all", "none"}, false),
-			//},
 			"monitoring": {
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -47,11 +40,6 @@ func resourceSettingsOverride() *schema.Resource {
 				Description:  "Pin mode",
 				ValidateFunc: validation.StringInSlice([]string{"optional", "required", "disabled"}, false),
 			},
-			// If you change the port don't forget to update the port in the provider's url as well
-			//provider "pritunl" {
-			//	url    = var.pritunl_url // <--
-			//	...
-			//}
 			"server_port": {
 				Type:         schema.TypeInt,
 				Optional:     true,
@@ -72,6 +60,98 @@ func resourceSettingsOverride() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Description: "Allow reading client IP address from reverse proxy header. Enable when using services such as CloudFlare or when using a load balancer",
+			},
+			"email_from": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Email from address",
+			},
+			"email_server": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Email server address",
+			},
+			"email_username": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Email server username",
+			},
+			"email_password": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "Email server password",
+			},
+			"influxdb_url": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "InfluxDB URL",
+			},
+			"influxdb_token": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "InfluxDB token",
+			},
+			"influxdb_org": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "InfluxDB organization",
+			},
+			"influxdb_bucket": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "InfluxDB bucket",
+			},
+			"server_cert": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "Web console SSL certificate",
+			},
+			"server_key": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Sensitive:   true,
+				Description: "Web console SSL private key",
+			},
+			"public_address": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "Public IPv4 address",
+			},
+			"public_address6": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "Public IPv6 address",
+			},
+			"routed_subnet6": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Routed IPv6 subnet",
+			},
+			"routed_subnet6_wg": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Routed IPv6 subnet for WireGuard",
+			},
+			"ipv6": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Enable IPv6",
+			},
+			"drop_permissions": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Drop permissions after starting server",
+			},
+			"restrict_client": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Restrict client options",
 			},
 			"sso": {
 				Type:        schema.TypeString,
@@ -102,6 +182,9 @@ func resourceSettingsOverride() *schema.Resource {
 					"duo",
 					"radius",
 					"radius_duo",
+					"jumpcloud",
+					"jumpcloud_duo",
+					"jumpcloud_yubico",
 				}, false),
 			},
 			"sso_settings": {
@@ -127,14 +210,14 @@ func resourceSettingsOverride() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Description:  "Cloud Provider",
-				ValidateFunc: validation.StringInSlice([]string{"aws", "oracle"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"aws", "oracle", "pritunl"}, false),
 			},
 			"cloud_provider_aws_settings": {
 				Type:          schema.TypeList,
 				Optional:      true,
 				MaxItems:      1,
 				RequiredWith:  []string{"cloud_provider"},
-				ConflictsWith: []string{"cloud_provider_oracle_settings"},
+				ConflictsWith: []string{"cloud_provider_oracle_settings", "cloud_provider_pritunl_settings"},
 				Elem: &schema.Resource{
 					Schema: cloudProviderAwsSchema,
 				},
@@ -144,9 +227,19 @@ func resourceSettingsOverride() *schema.Resource {
 				Optional:      true,
 				MaxItems:      1,
 				RequiredWith:  []string{"cloud_provider"},
-				ConflictsWith: []string{"cloud_provider_aws_settings"},
+				ConflictsWith: []string{"cloud_provider_aws_settings", "cloud_provider_pritunl_settings"},
 				Elem: &schema.Resource{
 					Schema: cloudProviderOracleSchema,
+				},
+			},
+			"cloud_provider_pritunl_settings": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				MaxItems:      1,
+				RequiredWith:  []string{"cloud_provider"},
+				ConflictsWith: []string{"cloud_provider_aws_settings", "cloud_provider_oracle_settings"},
+				Elem: &schema.Resource{
+					Schema: cloudProviderPritunlSchema,
 				},
 			},
 		},
@@ -160,7 +253,6 @@ func resourceSettingsOverride() *schema.Resource {
 	}
 }
 
-// Uses for importing
 func resourceReadSettingsOverride(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(pritunl.Client)
 
@@ -177,63 +269,230 @@ func resourceReadSettingsOverride(ctx context.Context, d *schema.ResourceData, m
 	d.Set("server_port", settings.ServerPort)
 	d.Set("acme_domain", settings.AcmeDomain)
 	d.Set("reverse_proxy", settings.ReverseProxy)
-	d.Set("sso_cache", settings.SSOCache)
-	d.Set("sso_client_cache", settings.SSOClientCache)
 	d.Set("restrict_import", settings.RestrictImport)
 	d.Set("client_reconnect", settings.ClientReconnect)
 	d.Set("cloud_provider", settings.CloudProvider)
-	d.Set("cloud_provider_aws_settings", []map[string]interface{}{
-		{
-			"route53_region":            settings.Route53Region,
-			"route53_zone":              settings.Route53Zone,
-			"us_east_1_access_key":      settings.AwsUsEast1AccessKey,
-			"us_east_1_secret_key":      settings.AwsUsEast1SecretKey,
-			"us_east_2_access_key":      settings.AwsUsEast2AccessKey,
-			"us_east_2_secret_key":      settings.AwsUsEast2SecretKey,
-			"us_west_1_access_key":      settings.AwsUsWest1AccessKey,
-			"us_west_1_secret_key":      settings.AwsUsWest1SecretKey,
-			"us_west_2_access_key":      settings.AwsUsWest2AccessKey,
-			"us_west_2_secret_key":      settings.AwsUsWest2SecretKey,
-			"us_gov_east_1_access_key":  settings.AwsUsGovEast1AccessKey,
-			"us_gov_east_1_secret_key":  settings.AwsUsGovEast1SecretKey,
-			"us_gov_west_1_access_key":  settings.AwsUsGovWest1AccessKey,
-			"us_gov_west_1_secret_key":  settings.AwsUsGovWest1SecretKey,
-			"eu_north_1_access_key":     settings.AwsEuNorth1AccessKey,
-			"eu_north_1_secret_key":     settings.AwsEuNorth1SecretKey,
-			"eu_west_1_access_key":      settings.AwsEuWest1AccessKey,
-			"eu_west_1_secret_key":      settings.AwsEuWest1SecretKey,
-			"eu_west_2_access_key":      settings.AwsEuWest2AccessKey,
-			"eu_west_2_secret_key":      settings.AwsEuWest2SecretKey,
-			"eu_west_3_access_key":      settings.AwsEuWest3AccessKey,
-			"eu_west_3_secret_key":      settings.AwsEuWest3SecretKey,
-			"eu_central_1_access_key":   settings.AwsEuCentral1AccessKey,
-			"eu_central_1_secret_key":   settings.AwsEuCentral1SecretKey,
-			"ca_central_1_access_key":   settings.AwsCaCentral1AccessKey,
-			"ca_central_1_secret_key":   settings.AwsCaCentral1SecretKey,
-			"cn_north_1_access_key":     settings.AwsCnNorth1AccessKey,
-			"cn_north_1_secret_key":     settings.AwsCnNorth1SecretKey,
-			"cn_northwest_1_access_key": settings.AwsCnNorthWest1AccessKey,
-			"cn_northwest_1_secret_key": settings.AwsCnNorthWest1SecretKey,
-			"ap_northeast_1_access_key": settings.AwsApNorthEast1AccessKey,
-			"ap_northeast_1_secret_key": settings.AwsApNorthEast1SecretKey,
-			"ap_northeast_2_access_key": settings.AwsApNorthEast2AccessKey,
-			"ap_northeast_2_secret_key": settings.AwsApNorthEast2SecretKey,
-			"ap_southeast_1_access_key": settings.AwsApSouthEast1AccessKey,
-			"ap_southeast_1_secret_key": settings.AwsApSouthEast1SecretKey,
-			"ap_southeast_2_access_key": settings.AwsApSouthEast2AccessKey,
-			"ap_southeast_2_secret_key": settings.AwsApSouthEast2SecretKey,
-			"ap_east_1_access_key":      settings.AwsApEast1AccessKey,
-			"ap_east_1_secret_key":      settings.AwsApEast1SecretKey,
-			"ap_south_1_access_key":     settings.AwsApSouth1AccessKey,
-			"ap_south_1_secret_key":     settings.AwsApSouth1SecretKey,
-			"sa_east_1_access_key":      settings.AwsSaEast1AccessKey,
-			"sa_east_1_secret_key":      settings.AwsSaEast1SecretKey,
-		},
-	})
+
+	d.Set("email_from", settings.EmailFrom)
+	d.Set("email_server", settings.EmailServer)
+	d.Set("email_username", settings.EmailUsername)
+	if settings.EmailPassword != "" {
+		d.Set("email_password", settings.EmailPassword)
+	}
+
+	d.Set("influxdb_url", settings.InfluxdbUrl)
+	if settings.InfluxdbToken != "" {
+		d.Set("influxdb_token", settings.InfluxdbToken)
+	}
+	d.Set("influxdb_org", settings.InfluxdbOrg)
+	d.Set("influxdb_bucket", settings.InfluxdbBucket)
+
+	d.Set("server_cert", settings.ServerCert)
+	if settings.ServerKey != "" {
+		d.Set("server_key", settings.ServerKey)
+	}
+
+	d.Set("public_address", settings.PublicAddress)
+	d.Set("public_address6", settings.PublicAddress6)
+	d.Set("routed_subnet6", settings.RoutedSubnet6)
+	d.Set("routed_subnet6_wg", settings.RoutedSubnet6Wg)
+	d.Set("ipv6", settings.IPv6)
+
+	d.Set("drop_permissions", settings.DropPermissions)
+	d.Set("restrict_client", settings.RestrictClient)
+
+	d.Set("sso", settings.SSO)
+
+	sso := settings.SSO
+	if sso != "" {
+		ssoSettings := map[string]interface{}{
+			"default_organization_id": settings.SSOOrg,
+			"cache":                   settings.SSOCache,
+			"client_cache":            settings.SSOClientCache,
+			"server_sso_url":          settings.ServerSSOUrl,
+		}
+
+		if strings.Contains(sso, "okta") {
+			ssoSettings["okta"] = []map[string]interface{}{
+				{
+					"app_id": settings.SSOOktaAppId,
+					"mode":   settings.SSOOktaMode,
+					"token":  settings.SSOOktaToken,
+				},
+			}
+		}
+
+		if strings.Contains(sso, "onelogin") {
+			ssoSettings["onelogin"] = []map[string]interface{}{
+				{
+					"client_id":     settings.SSOOneloginId,
+					"client_secret": settings.SSOOneloginSecret,
+					"app_id":        settings.SSOOneloginAppId,
+					"mode":          settings.SSOOneloginMode,
+				},
+			}
+		}
+
+		if strings.Contains(sso, "saml") && !strings.Contains(sso, "okta") && !strings.Contains(sso, "onelogin") || strings.Contains(sso, "okta") || strings.Contains(sso, "onelogin") {
+			if settings.SSOSamlUrl != "" || settings.SSOSamlIssuerUrl != "" || settings.SSOSamlCert != "" {
+				ssoSettings["saml"] = []map[string]interface{}{
+					{
+						"url":        settings.SSOSamlUrl,
+						"issuer_url": settings.SSOSamlIssuerUrl,
+						"cert":       settings.SSOSamlCert,
+					},
+				}
+			}
+		}
+
+		if strings.Contains(sso, "authzero") {
+			ssoSettings["authzero"] = []map[string]interface{}{
+				{
+					"subdomain":     settings.SSOAuthzeroDomain,
+					"client_id":     settings.SSOAuthzeroAppId,
+					"client_secret": settings.SSOAuthzeroAppSecret,
+				},
+			}
+		}
+
+		if strings.Contains(sso, "slack") {
+			domain := ""
+			if len(settings.SSOMatch) > 0 {
+				domain = settings.SSOMatch[0]
+			}
+			ssoSettings["slack"] = []map[string]interface{}{
+				{
+					"domain": domain,
+				},
+			}
+		}
+
+		if strings.Contains(sso, "google") {
+			domain := strings.Join(settings.SSOMatch, ",")
+			ssoSettings["google"] = []map[string]interface{}{
+				{
+					"domain":      domain,
+					"email":       settings.SSOGoogleEmail,
+					"private_key": settings.SSOGoogleKey,
+				},
+			}
+		}
+
+		if strings.Contains(sso, "azure") {
+			ssoSettings["azure"] = []map[string]interface{}{
+				{
+					"app_id":       settings.SSOAzureAppId,
+					"app_secret":   settings.SSOAzureAppSecret,
+					"directory_id": settings.SSOAzureDirectoryId,
+					"region":       settings.SSOAzureRegion,
+					"version":      settings.SSOAzureVersion,
+				},
+			}
+		}
+
+		if strings.Contains(sso, "radius") {
+			ssoSettings["radius"] = []map[string]interface{}{
+				{
+					"host":   settings.SSORadiusHost,
+					"secret": settings.SSORadiusSecret,
+				},
+			}
+		}
+
+		if strings.Contains(sso, "jumpcloud") {
+			ssoSettings["jumpcloud"] = []map[string]interface{}{
+				{
+					"app_id": settings.SSOJumpcloudAppId,
+					"secret": settings.SSOJumpcloudSecret,
+				},
+			}
+		}
+
+		if strings.Contains(sso, "duo") {
+			ssoSettings["duo"] = []map[string]interface{}{
+				{
+					"token":  settings.SSODuoToken,
+					"secret": settings.SSODuoSecret,
+					"host":   settings.SSODuoHost,
+					"mode":   settings.SSODuoMode,
+				},
+			}
+		}
+
+		if strings.Contains(sso, "yubico") {
+			ssoSettings["yubico"] = []map[string]interface{}{
+				{
+					"client": settings.SSOYubicoClient,
+					"secret": settings.SSOYubicoSecret,
+				},
+			}
+		}
+
+		d.Set("sso_settings", []map[string]interface{}{ssoSettings})
+	}
+
+	awsSettings := map[string]interface{}{
+		"route53_region":            settings.Route53Region,
+		"route53_zone":              settings.Route53Zone,
+		"us_east_1_access_key":      settings.AwsUsEast1AccessKey,
+		"us_east_1_secret_key":      settings.AwsUsEast1SecretKey,
+		"us_east_2_access_key":      settings.AwsUsEast2AccessKey,
+		"us_east_2_secret_key":      settings.AwsUsEast2SecretKey,
+		"us_west_1_access_key":      settings.AwsUsWest1AccessKey,
+		"us_west_1_secret_key":      settings.AwsUsWest1SecretKey,
+		"us_west_2_access_key":      settings.AwsUsWest2AccessKey,
+		"us_west_2_secret_key":      settings.AwsUsWest2SecretKey,
+		"us_gov_east_1_access_key":  settings.AwsUsGovEast1AccessKey,
+		"us_gov_east_1_secret_key":  settings.AwsUsGovEast1SecretKey,
+		"us_gov_west_1_access_key":  settings.AwsUsGovWest1AccessKey,
+		"us_gov_west_1_secret_key":  settings.AwsUsGovWest1SecretKey,
+		"eu_north_1_access_key":     settings.AwsEuNorth1AccessKey,
+		"eu_north_1_secret_key":     settings.AwsEuNorth1SecretKey,
+		"eu_west_1_access_key":      settings.AwsEuWest1AccessKey,
+		"eu_west_1_secret_key":      settings.AwsEuWest1SecretKey,
+		"eu_west_2_access_key":      settings.AwsEuWest2AccessKey,
+		"eu_west_2_secret_key":      settings.AwsEuWest2SecretKey,
+		"eu_west_3_access_key":      settings.AwsEuWest3AccessKey,
+		"eu_west_3_secret_key":      settings.AwsEuWest3SecretKey,
+		"eu_central_1_access_key":   settings.AwsEuCentral1AccessKey,
+		"eu_central_1_secret_key":   settings.AwsEuCentral1SecretKey,
+		"ca_central_1_access_key":   settings.AwsCaCentral1AccessKey,
+		"ca_central_1_secret_key":   settings.AwsCaCentral1SecretKey,
+		"cn_north_1_access_key":     settings.AwsCnNorth1AccessKey,
+		"cn_north_1_secret_key":     settings.AwsCnNorth1SecretKey,
+		"cn_northwest_1_access_key": settings.AwsCnNorthWest1AccessKey,
+		"cn_northwest_1_secret_key": settings.AwsCnNorthWest1SecretKey,
+		"ap_northeast_1_access_key": settings.AwsApNorthEast1AccessKey,
+		"ap_northeast_1_secret_key": settings.AwsApNorthEast1SecretKey,
+		"ap_northeast_2_access_key": settings.AwsApNorthEast2AccessKey,
+		"ap_northeast_2_secret_key": settings.AwsApNorthEast2SecretKey,
+		"ap_southeast_1_access_key": settings.AwsApSouthEast1AccessKey,
+		"ap_southeast_1_secret_key": settings.AwsApSouthEast1SecretKey,
+		"ap_southeast_2_access_key": settings.AwsApSouthEast2AccessKey,
+		"ap_southeast_2_secret_key": settings.AwsApSouthEast2SecretKey,
+		"ap_southeast_3_access_key": settings.AwsApSouthEast3AccessKey,
+		"ap_southeast_3_secret_key": settings.AwsApSouthEast3SecretKey,
+		"ap_east_1_access_key":      settings.AwsApEast1AccessKey,
+		"ap_east_1_secret_key":      settings.AwsApEast1SecretKey,
+		"ap_south_1_access_key":     settings.AwsApSouth1AccessKey,
+		"ap_south_1_secret_key":     settings.AwsApSouth1SecretKey,
+		"sa_east_1_access_key":      settings.AwsSaEast1AccessKey,
+		"sa_east_1_secret_key":      settings.AwsSaEast1SecretKey,
+	}
+	d.Set("cloud_provider_aws_settings", []map[string]interface{}{awsSettings})
+
 	d.Set("cloud_provider_oracle_settings", []map[string]interface{}{
 		{
 			"oracle_user_ocid":  settings.OracleUserOcid,
 			"oracle_public_key": settings.OraclePublicKey,
+		},
+	})
+
+	d.Set("cloud_provider_pritunl_settings", []map[string]interface{}{
+		{
+			"host":   settings.PritunlCloudHost,
+			"token":  settings.PritunlCloudToken,
+			"secret": settings.PritunlCloudSecret,
 		},
 	})
 
@@ -278,12 +537,72 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.ReverseProxy = v.(bool)
 	}
 
-	if v, ok := d.GetOk("sso_cache"); ok {
-		settings.SSOCache = v.(bool)
+	if v, ok := d.GetOk("email_from"); ok {
+		settings.EmailFrom = v.(string)
 	}
 
-	if v, ok := d.GetOk("sso_client_cache"); ok {
-		settings.SSOClientCache = v.(bool)
+	if v, ok := d.GetOk("email_server"); ok {
+		settings.EmailServer = v.(string)
+	}
+
+	if v, ok := d.GetOk("email_username"); ok {
+		settings.EmailUsername = v.(string)
+	}
+
+	if v, ok := d.GetOk("email_password"); ok {
+		settings.EmailPassword = v.(string)
+	}
+
+	if v, ok := d.GetOk("influxdb_url"); ok {
+		settings.InfluxdbUrl = v.(string)
+	}
+
+	if v, ok := d.GetOk("influxdb_token"); ok {
+		settings.InfluxdbToken = v.(string)
+	}
+
+	if v, ok := d.GetOk("influxdb_org"); ok {
+		settings.InfluxdbOrg = v.(string)
+	}
+
+	if v, ok := d.GetOk("influxdb_bucket"); ok {
+		settings.InfluxdbBucket = v.(string)
+	}
+
+	if v, ok := d.GetOk("server_cert"); ok {
+		settings.ServerCert = v.(string)
+	}
+
+	if v, ok := d.GetOk("server_key"); ok {
+		settings.ServerKey = v.(string)
+	}
+
+	if v, ok := d.GetOk("public_address"); ok {
+		settings.PublicAddress = v.(string)
+	}
+
+	if v, ok := d.GetOk("public_address6"); ok {
+		settings.PublicAddress6 = v.(string)
+	}
+
+	if v, ok := d.GetOk("routed_subnet6"); ok {
+		settings.RoutedSubnet6 = v.(string)
+	}
+
+	if v, ok := d.GetOk("routed_subnet6_wg"); ok {
+		settings.RoutedSubnet6Wg = v.(string)
+	}
+
+	if v, ok := d.GetOk("ipv6"); ok {
+		settings.IPv6 = v.(bool)
+	}
+
+	if v, ok := d.GetOk("drop_permissions"); ok {
+		settings.DropPermissions = v.(bool)
+	}
+
+	if v, ok := d.GetOk("restrict_client"); ok {
+		settings.RestrictClient = v.(bool)
 	}
 
 	if v, ok := d.GetOk("restrict_import"); ok {
@@ -292,6 +611,10 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 	if v, ok := d.GetOk("client_reconnect"); ok {
 		settings.ClientReconnect = v.(bool)
+	}
+
+	if v, ok := d.GetOk("sso"); ok {
+		settings.SSO = v.(string)
 	}
 
 	if v, ok := d.GetOk("cloud_provider"); ok {
@@ -450,6 +773,14 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.AwsApSouthEast2SecretKey = v.(string)
 	}
 
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_southeast_3_access_key"); ok {
+		settings.AwsApSouthEast3AccessKey = v.(string)
+	}
+
+	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_southeast_3_secret_key"); ok {
+		settings.AwsApSouthEast3SecretKey = v.(string)
+	}
+
 	if v, ok := d.GetOk("cloud_provider_aws_settings.0.ap_east_1_access_key"); ok {
 		settings.AwsApEast1AccessKey = v.(string)
 	}
@@ -482,6 +813,18 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.OraclePublicKey = v.(string)
 	}
 
+	if v, ok := d.GetOk("cloud_provider_pritunl_settings.0.host"); ok {
+		settings.PritunlCloudHost = v.(string)
+	}
+
+	if v, ok := d.GetOk("cloud_provider_pritunl_settings.0.token"); ok {
+		settings.PritunlCloudToken = v.(string)
+	}
+
+	if v, ok := d.GetOk("cloud_provider_pritunl_settings.0.secret"); ok {
+		settings.PritunlCloudSecret = v.(string)
+	}
+
 	if v, ok := d.GetOk("sso_settings.0.default_organization_id"); ok {
 		settings.SSOOrg = v.(string)
 	}
@@ -492,6 +835,10 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 	if v, ok := d.GetOk("sso_settings.0.client_cache"); ok {
 		settings.SSOClientCache = v.(bool)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.server_sso_url"); ok {
+		settings.ServerSSOUrl = v.(string)
 	}
 
 	if v, ok := d.GetOk("sso_settings.0.saml.0.url"); ok {
@@ -598,6 +945,14 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOAzureAppSecret = v.(string)
 	}
 
+	if v, ok := d.GetOk("sso_settings.0.azure.0.region"); ok {
+		settings.SSOAzureRegion = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.azure.0.version"); ok {
+		settings.SSOAzureVersion = v.(int)
+	}
+
 	if v, ok := d.GetOk("sso_settings.0.radius.0.host"); ok {
 		settings.SSORadiusHost = v.(string)
 	}
@@ -606,8 +961,13 @@ func resourceCreateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSORadiusSecret = v.(string)
 	}
 
-	// FIXME: calculate sso mode based on config
-	settings.SSO = "radius_duo"
+	if v, ok := d.GetOk("sso_settings.0.jumpcloud.0.app_id"); ok {
+		settings.SSOJumpcloudAppId = v.(string)
+	}
+
+	if v, ok := d.GetOk("sso_settings.0.jumpcloud.0.secret"); ok {
+		settings.SSOJumpcloudSecret = v.(string)
+	}
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -653,12 +1013,72 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.ReverseProxy = d.Get("reverse_proxy").(bool)
 	}
 
-	if d.HasChange("sso_cache") {
-		settings.SSOCache = d.Get("sso_cache").(bool)
+	if d.HasChange("email_from") {
+		settings.EmailFrom = d.Get("email_from").(string)
 	}
 
-	if d.HasChange("sso_client_cache") {
-		settings.SSOClientCache = d.Get("sso_client_cache").(bool)
+	if d.HasChange("email_server") {
+		settings.EmailServer = d.Get("email_server").(string)
+	}
+
+	if d.HasChange("email_username") {
+		settings.EmailUsername = d.Get("email_username").(string)
+	}
+
+	if d.HasChange("email_password") {
+		settings.EmailPassword = d.Get("email_password").(string)
+	}
+
+	if d.HasChange("influxdb_url") {
+		settings.InfluxdbUrl = d.Get("influxdb_url").(string)
+	}
+
+	if d.HasChange("influxdb_token") {
+		settings.InfluxdbToken = d.Get("influxdb_token").(string)
+	}
+
+	if d.HasChange("influxdb_org") {
+		settings.InfluxdbOrg = d.Get("influxdb_org").(string)
+	}
+
+	if d.HasChange("influxdb_bucket") {
+		settings.InfluxdbBucket = d.Get("influxdb_bucket").(string)
+	}
+
+	if d.HasChange("server_cert") {
+		settings.ServerCert = d.Get("server_cert").(string)
+	}
+
+	if d.HasChange("server_key") {
+		settings.ServerKey = d.Get("server_key").(string)
+	}
+
+	if d.HasChange("public_address") {
+		settings.PublicAddress = d.Get("public_address").(string)
+	}
+
+	if d.HasChange("public_address6") {
+		settings.PublicAddress6 = d.Get("public_address6").(string)
+	}
+
+	if d.HasChange("routed_subnet6") {
+		settings.RoutedSubnet6 = d.Get("routed_subnet6").(string)
+	}
+
+	if d.HasChange("routed_subnet6_wg") {
+		settings.RoutedSubnet6Wg = d.Get("routed_subnet6_wg").(string)
+	}
+
+	if d.HasChange("ipv6") {
+		settings.IPv6 = d.Get("ipv6").(bool)
+	}
+
+	if d.HasChange("drop_permissions") {
+		settings.DropPermissions = d.Get("drop_permissions").(bool)
+	}
+
+	if d.HasChange("restrict_client") {
+		settings.RestrictClient = d.Get("restrict_client").(bool)
 	}
 
 	if d.HasChange("restrict_import") {
@@ -667,6 +1087,10 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 	if d.HasChange("client_reconnect") {
 		settings.ClientReconnect = d.Get("client_reconnect").(bool)
+	}
+
+	if d.HasChange("sso") {
+		settings.SSO = d.Get("sso").(string)
 	}
 
 	if d.HasChange("cloud_provider") {
@@ -825,6 +1249,14 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.AwsApSouthEast2SecretKey = d.Get("cloud_provider_aws_settings.0.ap_southeast_2_secret_key").(string)
 	}
 
+	if d.HasChange("cloud_provider_aws_settings.0.ap_southeast_3_access_key") {
+		settings.AwsApSouthEast3AccessKey = d.Get("cloud_provider_aws_settings.0.ap_southeast_3_access_key").(string)
+	}
+
+	if d.HasChange("cloud_provider_aws_settings.0.ap_southeast_3_secret_key") {
+		settings.AwsApSouthEast3SecretKey = d.Get("cloud_provider_aws_settings.0.ap_southeast_3_secret_key").(string)
+	}
+
 	if d.HasChange("cloud_provider_aws_settings.0.ap_east_1_access_key") {
 		settings.AwsApEast1AccessKey = d.Get("cloud_provider_aws_settings.0.ap_east_1_access_key").(string)
 	}
@@ -857,6 +1289,18 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.OraclePublicKey = d.Get("cloud_provider_oracle_settings.0.oracle_public_key").(string)
 	}
 
+	if d.HasChange("cloud_provider_pritunl_settings.0.host") {
+		settings.PritunlCloudHost = d.Get("cloud_provider_pritunl_settings.0.host").(string)
+	}
+
+	if d.HasChange("cloud_provider_pritunl_settings.0.token") {
+		settings.PritunlCloudToken = d.Get("cloud_provider_pritunl_settings.0.token").(string)
+	}
+
+	if d.HasChange("cloud_provider_pritunl_settings.0.secret") {
+		settings.PritunlCloudSecret = d.Get("cloud_provider_pritunl_settings.0.secret").(string)
+	}
+
 	if d.HasChange("sso_settings.0.default_organization_id") {
 		settings.SSOOrg = d.Get("sso_settings.0.default_organization_id").(string)
 	}
@@ -867,6 +1311,10 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 
 	if d.HasChange("sso_settings.0.client_cache") {
 		settings.SSOClientCache = d.Get("sso_settings.0.client_cache").(bool)
+	}
+
+	if d.HasChange("sso_settings.0.server_sso_url") {
+		settings.ServerSSOUrl = d.Get("sso_settings.0.server_sso_url").(string)
 	}
 
 	if d.HasChange("sso_settings.0.saml.0.url") {
@@ -973,6 +1421,14 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSOAzureAppSecret = d.Get("sso_settings.0.azure.0.app_secret").(string)
 	}
 
+	if d.HasChange("sso_settings.0.azure.0.region") {
+		settings.SSOAzureRegion = d.Get("sso_settings.0.azure.0.region").(string)
+	}
+
+	if d.HasChange("sso_settings.0.azure.0.version") {
+		settings.SSOAzureVersion = d.Get("sso_settings.0.azure.0.version").(int)
+	}
+
 	if d.HasChange("sso_settings.0.radius.0.host") {
 		settings.SSORadiusHost = d.Get("sso_settings.0.radius.0.host").(string)
 	}
@@ -981,8 +1437,13 @@ func resourceUpdateSettingsOverride(ctx context.Context, d *schema.ResourceData,
 		settings.SSORadiusSecret = d.Get("sso_settings.0.radius.0.secret").(string)
 	}
 
-	// FIXME: calculate sso mode based on config
-	settings.SSO = "radius_duo"
+	if d.HasChange("sso_settings.0.jumpcloud.0.app_id") {
+		settings.SSOJumpcloudAppId = d.Get("sso_settings.0.jumpcloud.0.app_id").(string)
+	}
+
+	if d.HasChange("sso_settings.0.jumpcloud.0.secret") {
+		settings.SSOJumpcloudSecret = d.Get("sso_settings.0.jumpcloud.0.secret").(string)
+	}
 
 	err = apiClient.UpdateSettings(settings)
 	if err != nil {
@@ -1011,6 +1472,35 @@ var cloudProviderOracleSchema = map[string]*schema.Schema{
 	},
 }
 
+var cloudProviderPritunlSchema = map[string]*schema.Schema{
+	"host": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "Pritunl Cloud host",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"token": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Sensitive:   true,
+		Description: "Pritunl Cloud token",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"secret": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Sensitive:   true,
+		Description: "Pritunl Cloud secret",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+}
+
 var cloudProviderAwsSchema = map[string]*schema.Schema{
 	"route53_region": {
 		Type:        schema.TypeString,
@@ -1035,6 +1525,7 @@ var cloudProviderAwsSchema = map[string]*schema.Schema{
 			"ap-northeast-2",
 			"ap-southeast-1",
 			"ap-southeast-2",
+			"ap-southeast-3",
 			"ap-east-1",
 			"ap-south-1",
 			"sa-east-1",
@@ -1334,6 +1825,22 @@ var cloudProviderAwsSchema = map[string]*schema.Schema{
 			return validation.StringIsNotEmpty(i, s)
 		},
 	},
+	"ap_southeast_3_access_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Jakarta) Access Key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"ap_southeast_3_secret_key": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Asia Pacific (Jakarta) Secret key or 'role' to use the instance IAM role",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
 	"ap_east_1_access_key": {
 		Type:        schema.TypeString,
 		Optional:    true,
@@ -1403,11 +1910,17 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Description: "Enable a two day secondary authentication cache using a token stored on the client. This will allow clients to reconnect without secondary authentication. Works with Duo push, Okta push, OneLogin push, Duo passcodes and YubiKeys. Only supported by Pritunl client",
 	},
+	"server_sso_url": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Computed:    true,
+		Description: "Server SSO URL",
+	},
 	"okta": {
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius", "sso_settings.0.jumpcloud"},
 		RequiredWith:  []string{"sso_settings.0.saml"},
 		Elem: &schema.Resource{
 			Schema: oktaSsoSettingsSchema,
@@ -1417,7 +1930,7 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius", "sso_settings.0.jumpcloud"},
 		RequiredWith:  []string{"sso_settings.0.saml"},
 		Elem: &schema.Resource{
 			Schema: oneloginSsoSettingsSchema,
@@ -1427,7 +1940,7 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius", "sso_settings.0.jumpcloud"},
 		Elem: &schema.Resource{
 			Schema: authzeroSsoSettingsSchema,
 		},
@@ -1436,7 +1949,7 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius", "sso_settings.0.jumpcloud"},
 		Elem: &schema.Resource{
 			Schema: slackSsoSettingsSchema,
 		},
@@ -1445,7 +1958,7 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.slack", "sso_settings.0.authzero", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.slack", "sso_settings.0.authzero", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius", "sso_settings.0.jumpcloud"},
 		Elem: &schema.Resource{
 			Schema: googleSsoSettingsSchema,
 		},
@@ -1454,16 +1967,16 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.saml", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.saml", "sso_settings.0.radius", "sso_settings.0.jumpcloud"},
 		Elem: &schema.Resource{
 			Schema: azureSsoSettingsSchema,
 		},
 	},
-	"saml": { // uses with okta, onelogin
+	"saml": {
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius"},
+		ConflictsWith: []string{"sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.radius", "sso_settings.0.jumpcloud"},
 		Elem: &schema.Resource{
 			Schema: samlSsoSettingsSchema,
 		},
@@ -1472,9 +1985,18 @@ var ssoSettingsSchema = map[string]*schema.Schema{
 		Type:          schema.TypeList,
 		Optional:      true,
 		MaxItems:      1,
-		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml"},
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.jumpcloud"},
 		Elem: &schema.Resource{
 			Schema: radiusSsoSettingsSchema,
+		},
+	},
+	"jumpcloud": {
+		Type:          schema.TypeList,
+		Optional:      true,
+		MaxItems:      1,
+		ConflictsWith: []string{"sso_settings.0.okta", "sso_settings.0.onelogin", "sso_settings.0.authzero", "sso_settings.0.slack", "sso_settings.0.google", "sso_settings.0.azure", "sso_settings.0.saml", "sso_settings.0.radius"},
+		Elem: &schema.Resource{
+			Schema: jumpcloudSsoSettingsSchema,
 		},
 	},
 	"duo": {
@@ -1664,6 +2186,17 @@ var azureSsoSettingsSchema = map[string]*schema.Schema{
 			return validation.StringIsNotEmpty(i, s)
 		},
 	},
+	"region": {
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Azure region",
+	},
+	"version": {
+		Type:         schema.TypeInt,
+		Optional:     true,
+		Description:  "Azure API version",
+		ValidateFunc: validation.IntInSlice([]int{1, 2}),
+	},
 }
 
 var googleSsoSettingsSchema = map[string]*schema.Schema{
@@ -1685,6 +2218,26 @@ var googleSsoSettingsSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Sensitive:   true,
 		Description: "The private key for service account in JSON format. This will allow a case sensitive match for any of the user groups to an existing organization. The group names will be matched to the first matching organization name in sorted order. If empty organization wont be matched to user groups. Also requires Google Admin Email",
+	},
+}
+
+var jumpcloudSsoSettingsSchema = map[string]*schema.Schema{
+	"app_id": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Description: "JumpCloud application ID",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
+	},
+	"secret": {
+		Type:        schema.TypeString,
+		Required:    true,
+		Sensitive:   true,
+		Description: "JumpCloud secret",
+		ValidateFunc: func(i interface{}, s string) ([]string, []error) {
+			return validation.StringIsNotEmpty(i, s)
+		},
 	},
 }
 
@@ -1715,12 +2268,9 @@ var duoSsoSettingsSchema = map[string]*schema.Schema{
 		},
 	},
 	"mode": {
-		Type:        schema.TypeString,
-		Required:    true,
-		Description: "Duo authentication mode",
-		// TODO: Add validation for:
-		// Duo passcode cannot be when only authenticating with Duo.
-		// Duo passcode cannot be used with Radius.
+		Type:         schema.TypeString,
+		Required:     true,
+		Description:  "Duo authentication mode",
 		ValidateFunc: validation.StringInSlice([]string{"push", "phone", "push_phone", "passcode"}, false),
 	},
 }

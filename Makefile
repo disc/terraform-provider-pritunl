@@ -17,16 +17,14 @@ test:
 	@chmod +x ./tools/wait-for-mongo.sh
 	./tools/wait-for-mongo.sh tf_pritunl_acc_test 60
 
-	# enables an api access for the pritunl user, updates an api token and secret
+	@chmod +x ./tools/wait-for-admin.sh
+	./tools/wait-for-admin.sh tf_pritunl_acc_test 60
+
 	@docker exec -i tf_pritunl_acc_test mongo pritunl < ./tools/mongo.js
 
-	# Wait for Pritunl web server
-	@chmod +x ./tools/wait-for-it.sh
-	./tools/wait-for-it.sh localhost:443 -t 60 -- echo "pritunl web server is up"
-
-	# Wait for API to be ready with credentials
-	@chmod +x ./tools/wait-for-api.sh
-	./tools/wait-for-api.sh https://localhost/state 60
+	# Wait for Pritunl API to accept authenticated requests
+	@chmod +x ./tools/wait-for-auth.sh
+	./tools/wait-for-auth.sh tfacctest_token tfacctest_secret https://localhost/state 120
 
 	TF_ACC=1 \
 	PRITUNL_URL="https://localhost/" \

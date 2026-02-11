@@ -67,13 +67,12 @@ func (c client) TestApiCall() error {
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Non-200 response on the tests api call\ncode=%d\nbody=%s\n", resp.StatusCode, body)
-	}
-
-	// 401 - invalid credentials
 	if resp.StatusCode == 401 {
 		return fmt.Errorf("unauthorized: Invalid token or secret")
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Non-200 response on the tests api call\ncode=%d\nbody=%s\n", resp.StatusCode, body)
 	}
 
 	return nil
@@ -870,7 +869,7 @@ func (c client) GetSettings() (*Settings, error) {
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("Non-200 response on getting settings\nbody=%s", body)
 	}
@@ -900,7 +899,7 @@ func (c client) UpdateSettings(settings *Settings) error {
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Non-200 response on updating settings\nbody=%s", body)
 	}
@@ -910,7 +909,7 @@ func (c client) UpdateSettings(settings *Settings) error {
 
 func NewClient(baseUrl, apiToken, apiSecret string, insecure bool) Client {
 	underlyingTransport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		Proxy:           http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
 	}
 	httpClient := &http.Client{

@@ -1,10 +1,43 @@
 package pritunl
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
+func (s *Settings) UnmarshalJSON(data []byte) error {
+	// Use an alias to prevent infinite recursion.
+	// Override SSO with interface{} because the API returns false (bool)
+	// when SSO is disabled, but a string (e.g. "duo") when enabled.
+	type Alias Settings
+	aux := &struct {
+		SSO interface{} `json:"sso"`
+		*Alias
+	}{
+		Alias: (*Alias)(s),
+	}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	switch v := aux.SSO.(type) {
+	case string:
+		s.SSO = v
+	case bool, nil:
+		s.SSO = ""
+	default:
+		s.SSO = fmt.Sprintf("%v", v)
+	}
+	return nil
+}
+
 type Settings struct {
 	Username                 string   `json:"username"`
 	Auditing                 string   `json:"auditing,omitempty"`
 	Monitoring               string   `json:"monitoring,omitempty"`
-	InfluxdbUri              string   `json:"influxdb_uri,omitempty"`
+	InfluxdbUrl              string   `json:"influxdb_url,omitempty"`
+	InfluxdbToken            string   `json:"influxdb_token,omitempty"`
+	InfluxdbOrg              string   `json:"influxdb_org,omitempty"`
+	InfluxdbBucket           string   `json:"influxdb_bucket,omitempty"`
 	EmailFrom                string   `json:"email_from,omitempty"`
 	EmailServer              string   `json:"email_server,omitempty"`
 	EmailUsername            string   `json:"email_username,omitempty"`
@@ -39,9 +72,17 @@ type Settings struct {
 	SSOOneloginMode          string   `json:"sso_onelogin_mode,omitempty"`
 	SSORadiusHost            string   `json:"sso_radius_host,omitempty"`
 	SSORadiusSecret          string   `json:"sso_radius_secret,omitempty"`
+	SSOJumpcloudAppId        string   `json:"sso_jumpcloud_app_id,omitempty"`
+	SSOJumpcloudSecret       string   `json:"sso_jumpcloud_secret,omitempty"`
+	SSOAzureRegion           string   `json:"sso_azure_region,omitempty"`
+	SSOAzureVersion          int      `json:"sso_azure_version,omitempty"`
+	ServerSSOUrl             string   `json:"server_sso_url,omitempty"`
 	SSOCache                 bool     `json:"sso_cache,omitempty"`
 	SSOClientCache           bool     `json:"sso_client_cache,omitempty"`
+	IPv6                     bool     `json:"ipv6,omitempty"`
+	DropPermissions          bool     `json:"drop_permissions,omitempty"`
 	RestrictImport           bool     `json:"restrict_import,omitempty"`
+	RestrictClient           bool     `json:"restrict_client,omitempty"`
 	ClientReconnect          bool     `json:"client_reconnect,omitempty"`
 	PublicAddress            string   `json:"public_address,omitempty"`
 	PublicAddress6           string   `json:"public_address6,omitempty"`
@@ -54,6 +95,9 @@ type Settings struct {
 	ServerKey                string   `json:"server_key,omitempty"`
 	AcmeDomain               string   `json:"acme_domain,omitempty"`
 	CloudProvider            string   `json:"cloud_provider,omitempty"`
+	PritunlCloudHost         string   `json:"pritunl_cloud_host,omitempty"`
+	PritunlCloudToken        string   `json:"pritunl_cloud_token,omitempty"`
+	PritunlCloudSecret       string   `json:"pritunl_cloud_secret,omitempty"`
 	Route53Region            string   `json:"route53_region,omitempty"`
 	Route53Zone              string   `json:"route53_zone,omitempty"`
 	OracleUserOcid           string   `json:"oracle_user_ocid,omitempty"`
@@ -94,6 +138,8 @@ type Settings struct {
 	AwsApSouthEast1SecretKey string   `json:"ap_southeast_1_secret_key,omitempty"`
 	AwsApSouthEast2AccessKey string   `json:"ap_southeast_2_access_key,omitempty"`
 	AwsApSouthEast2SecretKey string   `json:"ap_southeast_2_secret_key,omitempty"`
+	AwsApSouthEast3AccessKey string   `json:"ap_southeast_3_access_key,omitempty"`
+	AwsApSouthEast3SecretKey string   `json:"ap_southeast_3_secret_key,omitempty"`
 	AwsApEast1AccessKey      string   `json:"ap_east_1_access_key,omitempty"`
 	AwsApEast1SecretKey      string   `json:"ap_east_1_secret_key,omitempty"`
 	AwsApSouth1AccessKey     string   `json:"ap_south_1_access_key,omitempty"`
