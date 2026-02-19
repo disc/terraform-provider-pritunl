@@ -5,7 +5,7 @@ build:
 .PHONY: test
 test:
 	@docker rm tf_pritunl_acc_test -f || true
-	@docker run --name tf_pritunl_acc_test --hostname pritunl.local --rm -d --privileged \
+	@docker run --name tf_pritunl_acc_test --hostname pritunl.local --platform linux/amd64 --rm -d --privileged \
 		-p 1194:1194/udp \
 		-p 1194:1194/tcp \
 		-p 80:80/tcp \
