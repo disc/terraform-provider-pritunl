@@ -61,6 +61,7 @@ func resourceServer() *schema.Resource {
 				ValidateFunc: func(i interface{}, s string) ([]string, []error) {
 					// [10,172,192].[0-255,16-31,168].[0-255].0/[8-24]
 					// 10.0.0.0/8
+					// 100.64.0.0/10
 					// 172.16.0.0/12
 					// 192.168.0.0/16
 					warnings := make([]string, 0)
@@ -75,6 +76,7 @@ func resourceServer() *schema.Resource {
 
 					expectedIpNets := []string{
 						"10.0.0.0/8",
+						"100.64.0.0/10",
 						"172.16.0.0/12",
 						"192.168.0.0/16",
 					}

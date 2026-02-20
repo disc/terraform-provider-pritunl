@@ -457,13 +457,20 @@ func TestAccPritunlServer(t *testing.T) {
 				Steps: []resource.TestStep{
 					{
 						Config:      testGetServerConfigWithNetworkAndPort(serverName, unsupportedNetwork, port),
-						ExpectError: regexp.MustCompile(fmt.Sprintf("provided subnet %s does not belong to expected subnets 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16", unsupportedNetwork)),
+						ExpectError: regexp.MustCompile(fmt.Sprintf("provided subnet %s does not belong to expected subnets 10.0.0.0/8, 100.64.0.0/10, 172.16.0.0/12, 192.168.0.0/16", unsupportedNetwork)),
 					},
 					{
 						Config: testGetServerConfigWithNetworkAndPort(serverName, supportedNetwork, port),
 						Check: resource.ComposeTestCheckFunc(
 							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
 							resource.TestCheckResourceAttr("pritunl_server.test", "network", supportedNetwork),
+						),
+					},
+					{
+						Config: testGetServerConfigWithNetworkAndPort(serverName, "100.64.0.0/16", port),
+						Check: resource.ComposeTestCheckFunc(
+							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
+							resource.TestCheckResourceAttr("pritunl_server.test", "network", "100.64.0.0/16"),
 						),
 					},
 				},
