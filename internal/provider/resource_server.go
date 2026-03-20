@@ -34,7 +34,7 @@ func resourceServer() *schema.Resource {
 				Optional:     true,
 				Description:  "The cipher for the server",
 				Default:      "aes128",
-				ValidateFunc: validation.StringInSlice([]string{"none", "bf128", "bf256", "aes128", "aes192", "aes256"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"none", "bf128", "bf256", "aes128", "aes192", "aes256", "chacha20poly1205"}, false),
 			},
 			"hash": {
 				Type:         schema.TypeString,
