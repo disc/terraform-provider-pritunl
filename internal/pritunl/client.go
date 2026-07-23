@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type Client interface {
@@ -19,6 +20,7 @@ type Client interface {
 	DeleteOrganization(name string) error
 
 	GetUser(id string, orgId string) (*User, error)
+	GetKeyLink(orgId, userId string) (*KeyLink, error)
 	CreateUser(newUser User) (*User, error)
 	UpdateUser(id string, user *User) error
 	DeleteUser(id string, orgId string) error
@@ -697,6 +699,43 @@ func (c client) GetUser(id string, orgId string) (*User, error) {
 	return &user, nil
 }
 
+type KeyLink struct {
+	ViewUrl string `json:"view_url"`
+	UriUrl  string `json:"uri_url"`
+}
+
+func (c client) GetKeyLink(orgId, userId string) (*KeyLink, error) {
+	url := fmt.Sprintf("/data/%s/%s", orgId, userId)
+	req, _ := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetKeyLink: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting key link\nbody=%s", body)
+	}
+
+	var link KeyLink
+	err = json.Unmarshal(body, &link)
+	if err != nil {
+		return nil, fmt.Errorf("GetKeyLink: %s, body=%s", err, body)
+	}
+
+	base := strings.TrimRight(c.baseUrl, "/")
+	if link.ViewUrl != "" {
+		link.ViewUrl = base + link.ViewUrl
+	}
+	if link.UriUrl != "" {
+		link.UriUrl = base + link.UriUrl
+	}
+
+	return &link, nil
+}
+
 func (c client) CreateUser(newUser User) (*User, error) {
 	jsonData, err := json.Marshal(newUser)
 	if err != nil {
@@ -871,5 +910,5 @@ func NewClient(baseUrl, apiToken, apiSecret string, insecure bool) Client {
 		},
 	}
 
-	return &client{httpClient: httpClient}
+	return &client{httpClient: httpClient, baseUrl: baseUrl}
 }

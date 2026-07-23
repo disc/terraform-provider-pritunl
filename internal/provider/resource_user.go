@@ -107,6 +107,16 @@ func resourceUser() *schema.Resource {
 				Sensitive:   true,
 				Description: "The PIN for user authentication.",
 			},
+			"profile_url": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Temporary profile page URL for the user.",
+			},
+			"profile_uri": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Temporary profile import URI for the user.",
+			},
 		},
 		CreateContext: resourceUserCreate,
 		ReadContext:   resourceUserRead,
@@ -321,6 +331,11 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 
 	d.SetId(user.ID)
 
+	if link, err := apiClient.GetKeyLink(d.Get("organization_id").(string), user.ID); err == nil {
+		d.Set("profile_url", link.ViewUrl)
+		d.Set("profile_uri", link.UriUrl)
+	}
+
 	return nil
 }
 
@@ -341,6 +356,11 @@ func resourceUserImport(_ context.Context, d *schema.ResourceData, meta interfac
 	_, err := apiClient.GetUser(userId, orgId)
 	if err != nil {
 		return nil, fmt.Errorf("error on getting user during import: %s", err)
+	}
+
+	if link, err := apiClient.GetKeyLink(orgId, userId); err == nil {
+		d.Set("profile_url", link.ViewUrl)
+		d.Set("profile_uri", link.UriUrl)
 	}
 
 	return []*schema.ResourceData{d}, nil
