@@ -706,7 +706,10 @@ type KeyLink struct {
 
 func (c client) GetKeyLink(orgId, userId string) (*KeyLink, error) {
 	url := fmt.Sprintf("/data/%s/%s", orgId, userId)
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetKeyLink: Error creating request: %s", err)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -714,9 +717,12 @@ func (c client) GetKeyLink(orgId, userId string) (*KeyLink, error) {
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("GetKeyLink: Error reading response body: %s", err)
+	}
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Non-200 response on getting key link\nbody=%s", body)
+		return nil, fmt.Errorf("Non-200 response on getting key link\ncode=%d\nbody=%s", resp.StatusCode, body)
 	}
 
 	var link KeyLink

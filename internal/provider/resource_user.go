@@ -110,11 +110,13 @@ func resourceUser() *schema.Resource {
 			"profile_url": {
 				Type:        schema.TypeString,
 				Computed:    true,
+				Sensitive:   true,
 				Description: "Temporary profile page URL for the user.",
 			},
 			"profile_uri": {
 				Type:        schema.TypeString,
 				Computed:    true,
+				Sensitive:   true,
 				Description: "Temporary profile import URI for the user.",
 			},
 		},
