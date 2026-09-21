@@ -55,6 +55,7 @@ type Server struct {
 	DeviceAuth       bool     `json:"device_auth,omitempty"`
 	DynamicFirewall  bool     `json:"dynamic_firewall,omitempty"`
 	MssFix           int      `json:"mss_fix,omitempty"`
+	TunMtu           int      `json:"tun_mtu,omitempty"`
 	LzoCompression   bool     `json:"lzo_compression,omitempty"`
 	BlockOutsideDns  bool     `json:"block_outside_dns,omitempty"`
 	JumboFrames      bool     `json:"jumbo_frames,omitempty"`

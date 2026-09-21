@@ -325,6 +325,12 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Description: "MSS fix value",
 			},
+			"tun_mtu": {
+				Type:        schema.TypeInt,
+				Required:    false,
+				Optional:    true,
+				Description: "Tunnel MTU value. Must match mss_fix to avoid an asymmetric MTU between server and client tunnel interfaces.",
+			},
 			"max_devices": {
 				Type:         schema.TypeInt,
 				Required:     false,
@@ -562,6 +568,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("network_start", server.NetworkStart)
 	d.Set("network_end", server.NetworkEnd)
 	d.Set("mss_fix", server.MssFix)
+	d.Set("tun_mtu", server.TunMtu)
 	d.Set("max_devices", server.MaxDevices)
 	d.Set("pre_connect_msg", server.PreConnectMsg)
 	d.Set("allowed_devices", server.AllowedDevices)
@@ -686,6 +693,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		"network_start":      d.Get("network_start"),
 		"network_end":        d.Get("network_end"),
 		"mss_fix":            d.Get("mss_fix"),
+		"tun_mtu":            d.Get("tun_mtu"),
 		"max_devices":        d.Get("max_devices"),
 		"pre_connect_msg":    d.Get("pre_connect_msg"),
 		"allowed_devices":    d.Get("allowed_devices"),
@@ -896,6 +904,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("mss_fix") {
 		server.MssFix = d.Get("mss_fix").(int)
+	}
+
+	if d.HasChange("tun_mtu") {
+		server.TunMtu = d.Get("tun_mtu").(int)
 	}
 
 	if d.HasChange("max_devices") {

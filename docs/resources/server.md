@@ -63,6 +63,7 @@ The organization resource allows managing information about a particular Pritunl
 - `session_timeout` (Number) Disconnect users after the specified number of seconds.
 - `sso_auth` (Boolean) Require client to authenticate with single sign-on provider on each connection using web browser. Requires client to have access to Pritunl web server port and running updated Pritunl Client. Single sign-on provider must already be configured for this feature to work properly
 - `status` (String) The status of the server
+- `tun_mtu` (Number) Tunnel MTU value. Must match mss_fix to avoid an asymmetric MTU between server and client tunnel interfaces.
 - `vxlan` (Boolean) Use VXLan for routing client-to-client traffic with replicated servers.
 
 ### Read-Only
