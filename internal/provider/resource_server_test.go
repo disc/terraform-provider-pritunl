@@ -82,6 +82,30 @@ func TestAccPritunlServer(t *testing.T) {
 		})
 	})
 
+	t.Run("creates a server with mss_fix and tun_mtu attributes", func(t *testing.T) {
+		serverName := "tfacc-server1"
+		mssFix := 1280
+		tunMtu := 1280
+
+		resource.Test(t, resource.TestCase{
+			PreCheck:          func() { preCheck(t) },
+			ProviderFactories: providerFactories,
+			CheckDestroy:      testPritunlServerDestroy,
+			Steps: []resource.TestStep{
+				{
+					Config: testPritunlServerConfigWithMssFixAndTunMtu(serverName, mssFix, tunMtu),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
+						resource.TestCheckResourceAttr("pritunl_server.test", "mss_fix", strconv.Itoa(mssFix)),
+						resource.TestCheckResourceAttr("pritunl_server.test", "tun_mtu", strconv.Itoa(tunMtu)),
+					),
+				},
+				// import test
+				importStep("pritunl_server.test"),
+			},
+		})
+	})
+
 	t.Run("creates a server with device_auth attribute", func(t *testing.T) {
 		serverName := "tfacc-server1"
 
@@ -585,6 +609,16 @@ func testPritunlServerConfigWithSsoAuth(name string, ssoAuth bool) string {
 			sso_auth = %[2]v
 		}
 	`, name, ssoAuth)
+}
+
+func testPritunlServerConfigWithMssFixAndTunMtu(name string, mssFix int, tunMtu int) string {
+	return fmt.Sprintf(`
+		resource "pritunl_server" "test" {
+			name    = "%[1]s"
+			mss_fix = %[2]d
+			tun_mtu = %[3]d
+		}
+	`, name, mssFix, tunMtu)
 }
 
 func testPritunlServerConfigWithDeviceAuth(name string, deviceAuth bool) string {

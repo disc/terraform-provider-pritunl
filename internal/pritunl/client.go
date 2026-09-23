@@ -363,6 +363,10 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 		serverStruct.MssFix = v.(int)
 	}
 
+	if v, ok := serverData["tun_mtu"]; ok {
+		serverStruct.TunMtu = v.(int)
+	}
+
 	if v, ok := serverData["max_devices"]; ok {
 		serverStruct.MaxDevices = v.(int)
 	}
