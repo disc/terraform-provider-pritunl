@@ -434,7 +434,8 @@ func resourceServer() *schema.Resource {
 				Description: "The list of attached hosts to the server",
 			},
 			"route": {
-				Type: schema.TypeList,
+				Type: schema.TypeSet,
+				Set:  hashRouteByNetwork,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"network": {
@@ -625,15 +626,6 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	if len(routes) > 0 {
-		declaredRoutes, ok := d.Get("route").([]interface{})
-		if !ok {
-			return diag.Errorf("failed to parse routes for the server: %s", server.Name)
-		}
-
-		if len(declaredRoutes) > 0 {
-			routes = matchRoutesWithSchema(routes, declaredRoutes)
-		}
-
 		d.Set("route", flattenRoutesData(routes))
 	}
 
@@ -742,7 +734,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		_, newRoutes := d.GetChange("route")
 		routes := make([]pritunl.Route, 0)
 
-		for _, v := range newRoutes.([]interface{}) {
+		for _, v := range newRoutes.(*schema.Set).List() {
 			routes = append(routes, pritunl.ConvertMapToRoute(v.(map[string]interface{})))
 		}
 
@@ -1004,12 +996,12 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		oldRoutes, newRoutes := d.GetChange("route")
 
 		newRoutesMap := make(map[string]pritunl.Route)
-		for _, v := range newRoutes.([]interface{}) {
+		for _, v := range newRoutes.(*schema.Set).List() {
 			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
 			newRoutesMap[route.Network] = route
 		}
 		oldRoutesMap := make(map[string]pritunl.Route)
-		for _, v := range oldRoutes.([]interface{}) {
+		for _, v := range oldRoutes.(*schema.Set).List() {
 			route := pritunl.ConvertMapToRoute(v.(map[string]interface{}))
 			oldRoutesMap[route.Network] = route
 		}
@@ -1137,34 +1129,10 @@ func flattenRoutesData(routesList []pritunl.Route) []interface{} {
 	return routes
 }
 
-// This cannot currently be handled efficiently by a DiffSuppressFunc
-// See: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
-func matchRoutesWithSchema(routes []pritunl.Route, declaredRoutes []interface{}) []pritunl.Route {
-	result := make([]pritunl.Route, len(declaredRoutes))
-
-	routesMap := make(map[string]pritunl.Route)
-	for _, route := range routes {
-		routesMap[route.Network] = route
-	}
-
-	for i, declaredRoute := range declaredRoutes {
-		declaredRouteMap := declaredRoute.(map[string]interface{})
-		network, ok := declaredRouteMap["network"].(string)
-		if !ok {
-			continue
-		}
-
-		if apiRoute, exists := routesMap[network]; exists {
-			result[i] = apiRoute
-			delete(routesMap, network)
-		}
-	}
-
-	for _, route := range routesMap {
-		result = append(result, route)
-	}
-
-	return result
+// Routes are identified by their network: two routes with the same network are the
+// same route, whatever their comment or NAT flag is.
+func hashRouteByNetwork(v interface{}) int {
+	return schema.HashString(v.(map[string]interface{})["network"].(string))
 }
 
 // This cannot currently be handled efficiently by a DiffSuppressFunc

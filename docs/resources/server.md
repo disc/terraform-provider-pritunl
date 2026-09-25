@@ -58,7 +58,7 @@ The organization resource allows managing information about a particular Pritunl
 - `protocol` (String) The protocol for the server
 - `replica_count` (Number) Replicate server across multiple hosts.
 - `restrict_routes` (Boolean) Prevent traffic from networks not specified in the servers routes from being tunneled over the vpn.
-- `route` (Block List) The list of attached routes to the server (see [below for nested schema](#nestedblock--route))
+- `route` (Block Set) The list of attached routes to the server (see [below for nested schema](#nestedblock--route))
 - `search_domain` (String) DNS search domain for clients. Separate multiple search domains by a comma.
 - `session_timeout` (Number) Disconnect users after the specified number of seconds.
 - `sso_auth` (Boolean) Require client to authenticate with single sign-on provider on each connection using web browser. Requires client to have access to Pritunl web server port and running updated Pritunl Client. Single sign-on provider must already be configured for this feature to work properly
