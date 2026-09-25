@@ -371,18 +371,11 @@ func TestAccPritunlServer(t *testing.T) {
 						Config: testPritunlServerConfigWithAttachedRoute(serverName, routeNetwork),
 						Check: resource.ComposeTestCheckFunc(
 							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
-
-							func(s *terraform.State) error {
-								actualRouteNetwork := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.0.network"]
-								actualRouteComment := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.0.comment"]
-								if actualRouteNetwork != routeNetwork {
-									return fmt.Errorf("route network is invalid: expected is %s, but actual is %s", routeNetwork, actualRouteNetwork)
-								}
-								if actualRouteComment != routeComment {
-									return fmt.Errorf("route comment is invalid: expected is %s, but actual is %s", routeComment, actualRouteComment)
-								}
-								return nil
-							},
+							resource.TestCheckResourceAttr("pritunl_server.test", "route.#", "1"),
+							resource.TestCheckTypeSetElemNestedAttrs("pritunl_server.test", "route.*", map[string]string{
+								"network": routeNetwork,
+								"comment": routeComment,
+							}),
 						),
 					},
 					// import test
@@ -407,34 +400,19 @@ func TestAccPritunlServer(t *testing.T) {
 						Config: testPritunlServerConfigWithAFewAttachedRoutes(serverName, route1Network, route2Network, route3Network),
 						Check: resource.ComposeTestCheckFunc(
 							resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
-
-							func(s *terraform.State) error {
-								actualRoute1Network := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.0.network"]
-								actualRoute2Network := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.1.network"]
-								actualRoute3Network := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.2.network"]
-								actualRoute1Comment := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.0.comment"]
-								actualRoute2Comment := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.1.comment"]
-								actualRoute3Comment := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["route.2.comment"]
-								if actualRoute1Network != route1Network {
-									return fmt.Errorf("first route network is invalid: expected is %s, but actual is %s", route1Network, actualRoute1Network)
-								}
-								if actualRoute2Network != route2Network {
-									return fmt.Errorf("second route network is invalid: expected is %s, but actual is %s", route2Network, actualRoute2Network)
-								}
-								if actualRoute3Network != route3Network {
-									return fmt.Errorf("second route network is invalid: expected is %s, but actual is %s", route3Network, actualRoute3Network)
-								}
-								if actualRoute1Comment != routeComment {
-									return fmt.Errorf("first route comment is invalid: expected is %s, but actual is %s", routeComment, actualRoute1Comment)
-								}
-								if actualRoute2Comment != routeComment {
-									return fmt.Errorf("second route comment is invalid: expected is %s, but actual is %s", routeComment, actualRoute2Comment)
-								}
-								if actualRoute3Comment != routeComment {
-									return fmt.Errorf(" route comment is invalid: expected is %s, but actual is %s", routeComment, actualRoute3Comment)
-								}
-								return nil
-							},
+							resource.TestCheckResourceAttr("pritunl_server.test", "route.#", "3"),
+							resource.TestCheckTypeSetElemNestedAttrs("pritunl_server.test", "route.*", map[string]string{
+								"network": route1Network,
+								"comment": routeComment,
+							}),
+							resource.TestCheckTypeSetElemNestedAttrs("pritunl_server.test", "route.*", map[string]string{
+								"network": route2Network,
+								"comment": routeComment,
+							}),
+							resource.TestCheckTypeSetElemNestedAttrs("pritunl_server.test", "route.*", map[string]string{
+								"network": route3Network,
+								"comment": routeComment,
+							}),
 						),
 					},
 					// import test
