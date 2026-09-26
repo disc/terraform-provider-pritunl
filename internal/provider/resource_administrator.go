@@ -345,16 +345,30 @@ func resourceCreateAdministrator(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
+	// the local_otp_auth support check runs before the POST: an account
+	// created first and refused after would be left tainted, destroyed and
+	// recreated on the next apply just to fail the same way again. Any
+	// existing account tells whether the instance knows the field, and there
+	// is always at least one, the account this provider authenticates as.
+	if administratorConfigured(d, "local_otp_auth") && d.Get("local_otp_auth").(bool) {
+		administrators, err := apiClient.GetAdministrators()
+		if err != nil {
+			return administratorDiagnostics(err)
+		}
+
+		if len(administrators) > 0 {
+			if err := checkAdministratorLocalOtpAuth(d, administrators[0]); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
 	created, err := apiClient.CreateAdministrator(administrator)
 	if err != nil {
 		return administratorDiagnostics(err)
 	}
 
 	d.SetId(created.String("id"))
-
-	if err = checkAdministratorLocalOtpAuth(d, created); err != nil {
-		return diag.FromErr(err)
-	}
 
 	return resourceReadAdministrator(ctx, d, meta)
 }
