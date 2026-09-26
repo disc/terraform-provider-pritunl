@@ -38,6 +38,7 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"pritunl_administrator": resourceAdministrator(),
 			"pritunl_organization":  resourceOrganization(),
 			"pritunl_server":        resourceServer(),
 			"pritunl_settings":      resourceSettings(),
