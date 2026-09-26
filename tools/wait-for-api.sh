@@ -17,18 +17,26 @@ echo "Waiting for Pritunl API at '$URL'..."
 
 elapsed=0
 while [ $elapsed -lt $TIMEOUT ]; do
-    # the status code is appended to the body, an unreachable endpoint leaves
-    # both of them empty
-    response=$(curl -sk --max-time "$INTERVAL" -w '%{http_code}' "$URL" 2>/dev/null)
+    # the status code goes on a line of its own after the body; curl still
+    # writes it on a connection failure, as 000, so the status is parsed
+    # rather than pattern-matched away
+    response=$(curl -sk --max-time "$INTERVAL" -w '\n%{http_code}' "$URL" 2>/dev/null)
+    status=${response##*$'\n'}
+    body=${response%$'\n'*}
 
-    case "$response" in
-        *"Missing token"*|*"Not initialized"*|*502)
-            ;;
-        ?*)
-            echo "Pritunl API is ready after ${elapsed}s"
-            exit 0
-            ;;
-    esac
+    # the API is ready once the request makes it through to the backend, which
+    # answers an unauthenticated one with a 401 of its own; pritunl-web's own
+    # answers while the backend is not there yet carry the startup markers
+    if [ "$status" = "401" ]; then
+        case "$body" in
+            *"Missing token"*|*"Not initialized"*)
+                ;;
+            *)
+                echo "Pritunl API is ready after ${elapsed}s"
+                exit 0
+                ;;
+        esac
+    fi
 
     echo "Attempt $((elapsed / INTERVAL + 1)): API not ready, waiting ${INTERVAL}s..."
     sleep $INTERVAL
