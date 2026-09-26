@@ -2,6 +2,7 @@ package pritunl
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -46,6 +47,16 @@ type Client interface {
 
 	StartServer(serverId string) error
 	StopServer(serverId string) error
+
+	PingWebServer(ctx context.Context) error
+	GetSettings() (Settings, error)
+	UpdateSettings(settings Settings) error
+
+	GetAdministrators() ([]Administrator, error)
+	GetAdministrator(id string) (Administrator, error)
+	CreateAdministrator(administrator Administrator) (Administrator, error)
+	UpdateAdministrator(id string, administrator Administrator) error
+	DeleteAdministrator(id string) error
 }
 
 type client struct {
@@ -861,9 +872,266 @@ func (c client) DetachHostFromServer(hostId, serverId string) error {
 	return nil
 }
 
+// PingWebServer tells whether the web server answers again after a restart.
+// The request honors the context, so a listener that accepts a connection and
+// then hangs cannot outlive the caller's deadline the way TestApiCall can.
+// The error is returned wrapped, which lets the caller tell a TLS certificate
+// verification failure apart: right after the settings resource replaced or
+// reset the certificate, being presented one the client does not trust is
+// itself proof the server is up and serving again.
+func (c client) PingWebServer(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", "/state", nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("PingWebServer: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("non-200 response from the web server\ncode=%d\nbody=%s\n", resp.StatusCode, body)
+	}
+
+	return nil
+}
+
+func (c client) GetSettings() (Settings, error) {
+	url := "/settings"
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetSettings: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting the settings\ncode=%d", resp.StatusCode)
+	}
+
+	settings := Settings{}
+
+	// a successful response carries the web server private key along with every
+	// other secret of the instance, so neither the body nor the parsed object
+	// are reported back on failure. Numbers are decoded as json.Number so that
+	// the settings handed back to the API keep the representation it returned.
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+
+	err = decoder.Decode(&settings)
+	if err != nil {
+		return nil, fmt.Errorf("GetSettings: Error on unmarshalling response: %s", err)
+	}
+
+	return settings, nil
+}
+
+// UpdateSettings replaces the whole settings object of the instance. PUT
+// /settings is a full replace, so the settings handed over here have to be the
+// complete object read from GetSettings with the wanted changes applied on top
+// of it, otherwise every setting missing from the body is cleared.
+func (c client) UpdateSettings(settings Settings) error {
+	settings.normalize()
+
+	jsonData, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("UpdateSettings: Error on marshalling data: %s", err)
+	}
+
+	url := "/settings"
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("UpdateSettings: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		// a body the web server could not deserialise is answered with an empty
+		// 400, so the status code is reported next to it
+		return fmt.Errorf("Non-200 response on updating the settings\ncode=%d\nbody=%s", resp.StatusCode, body)
+	}
+
+	return nil
+}
+
+// GetAdministrators reads every administrator account of the instance. It also
+// backs the lookup of an administrator by username, which is what makes an
+// import possible without knowing the object id Pritunl gave it.
+func (c client) GetAdministrators() ([]Administrator, error) {
+	url := "/admin"
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetAdministrators: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, newApiError("getting the administrators", resp.StatusCode, body)
+	}
+
+	var administrators []Administrator
+
+	if err = decodeAdministrators(body, &administrators); err != nil {
+		return nil, fmt.Errorf("GetAdministrators: Error on unmarshalling response: %s", err)
+	}
+
+	return administrators, nil
+}
+
+// GetAdministrator reads a single administrator account.
+//
+// Pritunl has no answer of its own for an administrator that does not exist:
+// the handler looks it up, gets nothing back and fails while building the
+// response, which reaches the client as a plain 500 rather than as a 404. That
+// is indistinguishable from an instance in trouble, so a failed read is
+// checked against the list of administrators, which does answer properly, and
+// only an id that is really gone yields ErrAdministratorNotFound.
+func (c client) GetAdministrator(id string) (Administrator, error) {
+	url := fmt.Sprintf("/admin/%s", id)
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetAdministrator: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		apiError := newApiError("getting the administrator", resp.StatusCode, body)
+
+		administrators, listErr := c.GetAdministrators()
+		if listErr != nil {
+			return nil, apiError
+		}
+
+		for _, administrator := range administrators {
+			if administrator.String("id") == id {
+				return nil, apiError
+			}
+		}
+
+		return nil, ErrAdministratorNotFound
+	}
+
+	administrator := Administrator{}
+
+	if err = decodeAdministrators(body, &administrator); err != nil {
+		return nil, fmt.Errorf("GetAdministrator: Error on unmarshalling response: %s", err)
+	}
+
+	return administrator, nil
+}
+
+// CreateAdministrator adds an administrator account. Unlike the update, the
+// create takes a partial body without any risk: there is no existing account
+// to preserve, and every field the request leaves out is defaulted to false by
+// the backend.
+func (c client) CreateAdministrator(administrator Administrator) (Administrator, error) {
+	jsonData, err := json.Marshal(administrator)
+	if err != nil {
+		return nil, fmt.Errorf("CreateAdministrator: Error on marshalling data: %s", err)
+	}
+
+	url := "/admin"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateAdministrator: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, newApiError("creating the administrator", resp.StatusCode, body)
+	}
+
+	created := Administrator{}
+
+	if err = decodeAdministrators(body, &created); err != nil {
+		return nil, fmt.Errorf("CreateAdministrator: Error on unmarshalling response: %s", err)
+	}
+
+	return created, nil
+}
+
+// UpdateAdministrator replaces the whole administrator account. PUT
+// /admin/<id> is a full replace, so the administrator handed over here has to
+// be the complete object read from GetAdministrator with the wanted changes
+// applied on top of it, otherwise every field missing from the body is reset,
+// the super user flag and the API access included.
+func (c client) UpdateAdministrator(id string, administrator Administrator) error {
+	administrator.normalize()
+
+	jsonData, err := json.Marshal(administrator)
+	if err != nil {
+		return fmt.Errorf("UpdateAdministrator: Error on marshalling data: %s", err)
+	}
+
+	url := fmt.Sprintf("/admin/%s", id)
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("UpdateAdministrator: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return newApiError("updating the administrator", resp.StatusCode, body)
+	}
+
+	return nil
+}
+
+// DeleteAdministrator removes an administrator account for good, it is not a
+// soft disable. Pritunl refuses to remove the last super user of the instance
+// with a no_admins error, which is what keeps a destroy from locking everyone
+// out of the web console.
+func (c client) DeleteAdministrator(id string) error {
+	url := fmt.Sprintf("/admin/%s", id)
+	req, err := http.NewRequest("DELETE", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("DeleteAdministrator: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return newApiError("deleting the administrator", resp.StatusCode, body)
+	}
+
+	return nil
+}
+
+// decodeAdministrators decodes an administrator response into the raw objects
+// the round trip hands back, keeping numbers as json.Number so that a field
+// this provider does not model is written back exactly as it was read.
+func decodeAdministrators(body []byte, target interface{}) error {
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+
+	return decoder.Decode(target)
+}
+
 func NewClient(baseUrl, apiToken, apiSecret string, insecure bool) Client {
 	underlyingTransport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		Proxy:           http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
 	}
 	httpClient := &http.Client{
