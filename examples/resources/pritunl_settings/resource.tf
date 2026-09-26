@@ -2,8 +2,13 @@
 # settings of the instance immediately before each write and overlays only the
 # attributes below on top of them, the same way the Pritunl web console does.
 # `PUT /settings` is a full replace and not a partial update, so applying this
-# resource leaves the single sign-on, SMTP, monitoring and every other unmanaged
-# setting of the instance untouched.
+# resource leaves the SMTP, monitoring and every other unmanaged setting of the
+# instance untouched.
+#
+# The settings of a Pritunl instance are a singleton, so the resources below are
+# alternatives rather than a configuration to apply as a whole: a given instance
+# is managed by a single pritunl_settings resource, carrying all the attributes
+# that instance is meant to have.
 
 # Rotating the TLS certificate served by the Pritunl web console and API from a
 # certificate stored in Azure Key Vault.
@@ -103,3 +108,76 @@ resource "pritunl_settings" "local_files" {
 #
 # Changing the port makes Pritunl restart its web server on the new one, so the
 # `url` of the provider has to be updated before the next run.
+
+# The instance wide toggles and the pin mode. Every attribute left out of the
+# configuration is read back from the instance and handed over unchanged, so
+# this only ever moves the settings it mentions:
+
+resource "pritunl_settings" "toggles" {
+  pin_mode         = "required"
+  ipv6             = true
+  restrict_import  = true
+  client_reconnect = true
+
+  # The two authentication caches are two different settings with deceptively
+  # similar names, and both are managed here:
+  #
+  #   sso_cache        an 8 hour cache keyed on the client id, the IP and the
+  #                    MAC address, supported by every OpenVPN client
+  #   sso_client_cache a 7 day cache kept as a token on the client itself, only
+  #                    supported by the Pritunl client
+  sso_cache        = false
+  sso_client_cache = true
+}
+
+# Okta single sign-on. Okta is a SAML integration on this side of the API, which
+# is why the configuration carries both the SAML settings of the identity
+# provider and the Okta ones. The whole of it travels together on every write:
+# Pritunl clears every single sign-on credential it holds as soon as it is
+# handed a blank provider, and rejects a provider that comes without an
+# organization or a domain. The organization is referenced by id, which is what
+# makes it natural to manage next to it.
+
+resource "pritunl_organization" "sso" {
+  name = "sso"
+}
+
+resource "pritunl_settings" "sso" {
+  sso            = "saml_okta"
+  sso_org        = pritunl_organization.sso.id
+  server_sso_url = "https://vpn.example.com"
+
+  # from the SAML setup of the Okta application
+  sso_saml_url        = "https://example.okta.com/app/pritunl/exampleappid/sso/saml"
+  sso_saml_issuer_url = "https://www.okta.com/exampleappid"
+  sso_saml_cert       = file("${path.module}/certs/okta-saml.pem")
+
+  # the Okta side of it: the app id is optional, Pritunl only needs it to check
+  # that a user is still attached to the application on every VPN connection
+  sso_okta_app_id = "0oaexampleappid"
+  sso_okta_token  = var.okta_api_token
+
+  # the secondary factor Okta asks for: "passcode", "push", "push_none" for a
+  # push whenever the user has a device that takes one, or "" for none at all
+  sso_okta_mode = "push"
+}
+
+# The web console offers "Okta + Duo Security" and "Okta + Yubico" next to
+# "Okta", the same integration with a second factor bolted on, which this
+# resource does not support: they need credentials it does not manage.
+#
+# Pritunl only takes `sso_okta_mode` over while `sso` is exactly `saml_okta`, it
+# drops the setting for every other provider, which is why every Okta attribute
+# above is required with `sso`.
+#
+# Single sign-on is never turned off by this resource: dropping `sso` from the
+# configuration keeps what the instance has, and destroying the resource keeps
+# it as well, since handing Pritunl a blank provider would take the credentials
+# of the instance down with it. It is disabled from the web console instead, and
+# the next plan then reports it as a drift from the configuration.
+#
+# `server_sso_url`, `sso_saml_url` and `sso_saml_issuer_url` are normalised by
+# recent Pritunl versions, which add the `https://` scheme when the value
+# carries none and lowercase the host, so they are best configured already
+# normalised: a value Pritunl rewrites reads back differently from the
+# configured one and leaves a plan that never settles.

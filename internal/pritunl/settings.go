@@ -30,6 +30,14 @@ func (s Settings) String(key string) string {
 	return value
 }
 
+// Bool returns the value of a boolean setting, or false when the setting is
+// absent, null or not a boolean.
+func (s Settings) Bool(key string) bool {
+	value, _ := s[key].(bool)
+
+	return value
+}
+
 // Int returns the value of a numeric setting, or zero when the setting is
 // absent, null or not a number.
 func (s Settings) Int(key string) int {

@@ -26,7 +26,7 @@ test:
 
 	# Wait for API to be ready with credentials
 	@chmod +x ./tools/wait-for-api.sh
-	./tools/wait-for-api.sh https://localhost/state 60
+	./tools/wait-for-api.sh https://localhost/state 180
 
 	TF_ACC=1 \
 	PRITUNL_URL="https://localhost/" \

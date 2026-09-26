@@ -719,7 +719,14 @@ func testPritunlServerConfigWithGroups(name string, groupName string) string {
 }
 
 func testPritunlServerDestroy(s *terraform.State) error {
-	serverId := s.RootModule().Resources["pritunl_server.test"].Primary.Attributes["id"]
+	// When the step under test fails before the server reaches the state (e.g.
+	// a dependency's API call errors), the resource is absent here — there is
+	// no id to check, and dereferencing the missing entry would panic.
+	rs, ok := s.RootModule().Resources["pritunl_server.test"]
+	if !ok || rs.Primary == nil {
+		return nil
+	}
+	serverId := rs.Primary.Attributes["id"]
 
 	servers, err := testClient.GetServers()
 	if err != nil {
