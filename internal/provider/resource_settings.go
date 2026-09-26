@@ -52,7 +52,7 @@ func resourceSettings() *schema.Resource {
 				Sensitive:    true,
 				RequiredWith: []string{"server_cert"},
 				StateFunc:    trimSpaceStateFunc,
-				Description:  "The PEM encoded private key matching `server_cert`. It is write-only: the value is never read back from the Pritunl API, so it is neither refreshed nor populated on import.",
+				Description:  "The PEM encoded private key matching `server_cert`. It is write-only: the value is never read back from the Pritunl API, so it is neither refreshed nor populated on import. A side effect is that the plan can only compare the configured value against the previously configured one, never against what the instance is actually serving: if the key is changed on the instance outside of Terraform, the plan will not show it as changed on its own. It is still corrected whenever `server_cert` plans a change, since both are always written together; only a drift limited to `server_key` on its own goes undetected by the plan, and is applied on the next write that touches `server_cert`.",
 			},
 			"server_port": {
 				Type:         schema.TypeInt,

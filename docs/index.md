@@ -8,7 +8,11 @@ description: |-
 
 # Pritunl Provider
 
+Manages a [Pritunl](https://pritunl.com/) instance through its API: the organizations, VPN servers and VPN users it hosts, and — through [`pritunl_settings`](https://registry.terraform.io/providers/lfventura/pritunl/latest/docs/resources/settings) and [`pritunl_administrator`](https://registry.terraform.io/providers/lfventura/pritunl/latest/docs/resources/administrator) — the instance itself: its web console TLS certificate, its Okta single sign-on, its VPN client defaults and its administrator accounts.
 
+This provider is a fork of [`disc/pritunl`](https://registry.terraform.io/providers/disc/pritunl/latest), carrying the instance-settings and administrator management pending their upstream merge. It is a drop-in replacement: state written by `disc/pritunl` is adopted with [`terraform state replace-provider`](https://developer.hashicorp.com/terraform/cli/commands/state/replace-provider) `registry.terraform.io/disc/pritunl registry.terraform.io/lfventura/pritunl`.
+
+The provider authenticates with the API token and secret of an administrator account. Plain organization, server and user management works with any administrator holding API access; `pritunl_settings` and `pritunl_administrator` require that account to be a super user.
 
 ## Example Usage
 
@@ -16,7 +20,7 @@ description: |-
 terraform {
   required_providers {
     pritunl = {
-      version = "~> 0.0.1"
+      version = "~> 0.10"
       source  = "lfventura/pritunl"
     }
   }
@@ -81,8 +85,8 @@ resource "pritunl_server" "test" {
 
 ### Optional
 
-- `connection_check` (Boolean)
-- `insecure` (Boolean)
-- `secret` (String)
-- `token` (String)
-- `url` (String)
+- `connection_check` (Boolean) Whether to verify the connection to the Pritunl API when the provider is configured. Defaults to `true`; also taken from the `PRITUNL_CONNECTION_CHECK` environment variable.
+- `insecure` (Boolean) Whether to skip the TLS verification of the Pritunl API endpoint, for instances still running on a self-signed certificate. Defaults to `false`; also taken from the `PRITUNL_INSECURE` environment variable.
+- `secret` (String) The API secret of the administrator account the provider authenticates as. Also taken from the `PRITUNL_SECRET` environment variable.
+- `token` (String) The API token of the administrator account the provider authenticates as. Also taken from the `PRITUNL_TOKEN` environment variable.
+- `url` (String) The URL of the Pritunl instance, as in `https://vpn.example.com`. Also taken from the `PRITUNL_URL` environment variable.
