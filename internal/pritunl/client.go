@@ -2,6 +2,7 @@ package pritunl
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -46,6 +47,11 @@ type Client interface {
 
 	StartServer(serverId string) error
 	StopServer(serverId string) error
+
+	PingWebServer(ctx context.Context) error
+	GetSettings() (Settings, error)
+	UpdateSettings(settings Settings) error
+
 }
 
 type client struct {
@@ -861,9 +867,99 @@ func (c client) DetachHostFromServer(hostId, serverId string) error {
 	return nil
 }
 
+// PingWebServer tells whether the web server answers again after a restart.
+// The request honors the context, so a listener that accepts a connection and
+// then hangs cannot outlive the caller's deadline the way TestApiCall can.
+// The error is returned wrapped, which lets the caller tell a TLS certificate
+// verification failure apart: right after the settings resource replaced or
+// reset the certificate, being presented one the client does not trust is
+// itself proof the server is up and serving again.
+func (c client) PingWebServer(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", "/state", nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("PingWebServer: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("non-200 response from the web server\ncode=%d\nbody=%s\n", resp.StatusCode, body)
+	}
+
+	return nil
+}
+
+func (c client) GetSettings() (Settings, error) {
+	url := "/settings"
+	req, err := http.NewRequest("GET", url, nil)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("GetSettings: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Non-200 response on getting the settings\ncode=%d", resp.StatusCode)
+	}
+
+	settings := Settings{}
+
+	// a successful response carries the web server private key along with every
+	// other secret of the instance, so neither the body nor the parsed object
+	// are reported back on failure. Numbers are decoded as json.Number so that
+	// the settings handed back to the API keep the representation it returned.
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+
+	err = decoder.Decode(&settings)
+	if err != nil {
+		return nil, fmt.Errorf("GetSettings: Error on unmarshalling response: %s", err)
+	}
+
+	return settings, nil
+}
+
+// UpdateSettings replaces the whole settings object of the instance. PUT
+// /settings is a full replace, so the settings handed over here have to be the
+// complete object read from GetSettings with the wanted changes applied on top
+// of it, otherwise every setting missing from the body is cleared.
+func (c client) UpdateSettings(settings Settings) error {
+	settings.normalize()
+
+	jsonData, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("UpdateSettings: Error on marshalling data: %s", err)
+	}
+
+	url := "/settings"
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("UpdateSettings: Error on HTTP request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		// a body the web server could not deserialise is answered with an empty
+		// 400, so the status code is reported next to it
+		return fmt.Errorf("Non-200 response on updating the settings\ncode=%d\nbody=%s", resp.StatusCode, body)
+	}
+
+	return nil
+}
+
 func NewClient(baseUrl, apiToken, apiSecret string, insecure bool) Client {
 	underlyingTransport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		Proxy:           http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure},
 	}
 	httpClient := &http.Client{
