@@ -2,6 +2,8 @@ package provider
 
 import (
 	"context"
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -22,11 +24,12 @@ const (
 	// Pritunl schedules the web server restart shortly after answering the
 	// request, so the endpoint is given a head start before being polled and
 	// has to answer a few times in a row to be considered back
-	settingsRestartDelay     = 5 * time.Second
-	settingsRestartPoll      = 2 * time.Second
-	settingsRestartSettle    = time.Second
-	settingsRestartSuccesses = 3
-	settingsRestartTimeout   = 2 * time.Minute
+	settingsRestartDelay        = 5 * time.Second
+	settingsRestartPoll         = 2 * time.Second
+	settingsRestartSettle       = time.Second
+	settingsRestartSuccesses    = 3
+	settingsRestartTimeout      = 2 * time.Minute
+	settingsRestartProbeTimeout = 10 * time.Second
 )
 
 func resourceSettings() *schema.Resource {
@@ -498,7 +501,7 @@ func overlaySettings(d *schema.ResourceData, settings pritunl.Settings) bool {
 	// configuration that manages no single sign-on hands no provider over at
 	// all, blank or otherwise, and the round trip gives the instance its own
 	// one back along with the credentials that belong to it.
-	if sso := strings.TrimSpace(d.Get("sso").(string)); sso != "" {
+	if sso := strings.TrimSpace(d.Get("sso").(string)); settingConfigured(d, "sso") && sso != "" {
 		settings["sso"] = sso
 
 		for _, attribute := range settingsSsoAttributes {
@@ -521,9 +524,10 @@ func overlaySettings(d *schema.ResourceData, settings pritunl.Settings) bool {
 
 	portChanged := false
 
-	if port, ok := d.GetOk("server_port"); ok {
-		portChanged = port.(int) != settings.Int("server_port")
-		settings["server_port"] = port.(int)
+	if settingConfigured(d, "server_port") {
+		port := d.Get("server_port").(int)
+		portChanged = port != settings.Int("server_port")
+		settings["server_port"] = port
 	}
 
 	return portChanged
@@ -536,6 +540,16 @@ func overlaySettings(d *schema.ResourceData, settings pritunl.Settings) bool {
 // write only ones read back as empty by design, so writing them empty would
 // clear on the instance what the state simply does not know.
 func overlaySettingsString(d *schema.ResourceData, settings pritunl.Settings, key string) {
+	// presence comes from the raw configuration: d.Get answers with the prior
+	// state for an optional and computed attribute the configuration dropped,
+	// and overlaying that would push a stale value over whatever the instance
+	// holds now. The value itself still comes from d.Get, because attributes
+	// with a StateFunc (the SAML certificate) only exist canonicalised in the
+	// plan, never in the raw configuration.
+	if !settingConfigured(d, key) {
+		return
+	}
+
 	if value := strings.TrimSpace(d.Get(key).(string)); value != "" {
 		settings[key] = value
 	}
@@ -617,7 +631,7 @@ func waitForWebServer(ctx context.Context, apiClient pritunl.Client) error {
 	successes := 0
 
 	for {
-		err := apiClient.TestApiCall()
+		err := pingWebServer(ctx, apiClient)
 		if err == nil {
 			successes++
 			if successes >= settingsRestartSuccesses {
@@ -641,6 +655,27 @@ func waitForWebServer(ctx context.Context, apiClient pritunl.Client) error {
 			return err
 		}
 	}
+}
+
+// pingWebServer bounds every probe on its own, so a listener that accepts and
+// hangs cannot freeze the whole wait, and takes a TLS certificate verification
+// failure as success: the handshake got far enough to be handed a certificate,
+// which proves the web server is up — and right after this resource replaced
+// or reset the certificate, the one presented is exactly the one the client
+// does not trust yet. Nothing authenticated is sent on such a probe, the
+// handshake fails before the request leaves.
+func pingWebServer(ctx context.Context, apiClient pritunl.Client) error {
+	ctx, cancel := context.WithTimeout(ctx, settingsRestartProbeTimeout)
+	defer cancel()
+
+	err := apiClient.PingWebServer(ctx)
+
+	var certErr *tls.CertificateVerificationError
+	if errors.As(err, &certErr) {
+		return nil
+	}
+
+	return err
 }
 
 func sleepContext(ctx context.Context, duration time.Duration) error {
