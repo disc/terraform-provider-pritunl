@@ -5,10 +5,11 @@
 # resource leaves the SMTP, monitoring and every other unmanaged setting of the
 # instance untouched.
 #
-# The settings of a Pritunl instance are a singleton, so the resources below are
-# alternatives rather than a configuration to apply as a whole: a given instance
-# is managed by a single pritunl_settings resource, carrying all the attributes
-# that instance is meant to have.
+# The settings of a Pritunl instance are a singleton with a fixed id, so ONE
+# pritunl_settings resource manages a given instance, carrying all the
+# attributes that instance is meant to have. Only the first example below is
+# active; the others are alternatives, kept commented out because activating
+# more than one would have several resources fighting over the same object.
 
 # Rotating the TLS certificate served by the Pritunl web console and API from a
 # certificate stored in Azure Key Vault.
@@ -65,20 +66,20 @@ resource "pritunl_settings" "main" {
 # gives explicit control over the pair's lifecycle and works seamlessly with
 # Terraform.
 
-data "aws_secretsmanager_secret_version" "tls" {
-  secret_id = "pritunl-tls-cert"
-}
-
-locals {
-  # Parse the JSON secret containing cert and key.
-  # Adjust the field names to match your secret structure.
-  tls_secret = jsondecode(data.aws_secretsmanager_secret_version.tls.secret_string)
-}
-
-resource "pritunl_settings" "aws" {
-  server_cert = local.tls_secret.certificate
-  server_key  = local.tls_secret.private_key
-}
+# data "aws_secretsmanager_secret_version" "tls" {
+#   secret_id = "pritunl-tls-cert"
+# }
+#
+# locals {
+#   # Parse the JSON secret containing cert and key.
+#   # Adjust the field names to match your secret structure.
+#   tls_secret = jsondecode(data.aws_secretsmanager_secret_version.tls.secret_string)
+# }
+#
+# resource "pritunl_settings" "aws" {
+#   server_cert = local.tls_secret.certificate
+#   server_key  = local.tls_secret.private_key
+# }
 
 # The PEM-encoded values fetched from Secrets Manager must already be clean:
 # no `Bag Attributes`, `subject=`, or `issuer=` lines, and no root CA. If the
@@ -89,10 +90,10 @@ resource "pritunl_settings" "aws" {
 # simplest option for on-premises or development setups without a cloud
 # secrets manager.
 
-resource "pritunl_settings" "local_files" {
-  server_cert = file("${path.module}/certs/server.pem")
-  server_key  = file("${path.module}/certs/server.key")
-}
+# resource "pritunl_settings" "local_files" {
+#   server_cert = file("${path.module}/certs/server.pem")
+#   server_key  = file("${path.module}/certs/server.key")
+# }
 
 # Files must contain pure PEM: no root CA, no Bag Attributes, no extra text.
 # Treat server_key as sensitive: keep the file out of version control and
@@ -113,22 +114,22 @@ resource "pritunl_settings" "local_files" {
 # configuration is read back from the instance and handed over unchanged, so
 # this only ever moves the settings it mentions:
 
-resource "pritunl_settings" "toggles" {
-  pin_mode         = "required"
-  ipv6             = true
-  restrict_import  = true
-  client_reconnect = true
-
-  # The two authentication caches are two different settings with deceptively
-  # similar names, and both are managed here:
-  #
-  #   sso_cache        an 8 hour cache keyed on the client id, the IP and the
-  #                    MAC address, supported by every OpenVPN client
-  #   sso_client_cache a 7 day cache kept as a token on the client itself, only
-  #                    supported by the Pritunl client
-  sso_cache        = false
-  sso_client_cache = true
-}
+# resource "pritunl_settings" "toggles" {
+#   pin_mode         = "required"
+#   ipv6             = true
+#   restrict_import  = true
+#   client_reconnect = true
+#
+#   # The two authentication caches are two different settings with deceptively
+#   # similar names, and both are managed here:
+#   #
+#   #   sso_cache        an 8 hour cache keyed on the client id, the IP and the
+#   #                    MAC address, supported by every OpenVPN client
+#   #   sso_client_cache a 7 day cache kept as a token on the client itself, only
+#   #                    supported by the Pritunl client
+#   sso_cache        = false
+#   sso_client_cache = true
+# }
 
 # Okta single sign-on. Okta is a SAML integration on this side of the API, which
 # is why the configuration carries both the SAML settings of the identity
@@ -138,29 +139,29 @@ resource "pritunl_settings" "toggles" {
 # organization or a domain. The organization is referenced by id, which is what
 # makes it natural to manage next to it.
 
-resource "pritunl_organization" "sso" {
-  name = "sso"
-}
-
-resource "pritunl_settings" "sso" {
-  sso            = "saml_okta"
-  sso_org        = pritunl_organization.sso.id
-  server_sso_url = "https://vpn.example.com"
-
-  # from the SAML setup of the Okta application
-  sso_saml_url        = "https://example.okta.com/app/pritunl/exampleappid/sso/saml"
-  sso_saml_issuer_url = "https://www.okta.com/exampleappid"
-  sso_saml_cert       = file("${path.module}/certs/okta-saml.pem")
-
-  # the Okta side of it: the app id is optional, Pritunl only needs it to check
-  # that a user is still attached to the application on every VPN connection
-  sso_okta_app_id = "0oaexampleappid"
-  sso_okta_token  = var.okta_api_token
-
-  # the secondary factor Okta asks for: "passcode", "push", "push_none" for a
-  # push whenever the user has a device that takes one, or "" for none at all
-  sso_okta_mode = "push"
-}
+# resource "pritunl_organization" "sso" {
+#   name = "sso"
+# }
+#
+# resource "pritunl_settings" "sso" {
+#   sso            = "saml_okta"
+#   sso_org        = pritunl_organization.sso.id
+#   server_sso_url = "https://vpn.example.com"
+#
+#   # from the SAML setup of the Okta application
+#   sso_saml_url        = "https://example.okta.com/app/pritunl/exampleappid/sso/saml"
+#   sso_saml_issuer_url = "https://www.okta.com/exampleappid"
+#   sso_saml_cert       = file("${path.module}/certs/okta-saml.pem")
+#
+#   # the Okta side of it: the app id is optional, Pritunl only needs it to check
+#   # that a user is still attached to the application on every VPN connection
+#   sso_okta_app_id = "0oaexampleappid"
+#   sso_okta_token  = var.okta_api_token
+#
+#   # the secondary factor Okta asks for: "passcode", "push", "push_none" for a
+#   # push whenever the user has a device that takes one, or "" for none at all
+#   sso_okta_mode = "push"
+# }
 
 # The web console offers "Okta + Duo Security" and "Okta + Yubico" next to
 # "Okta", the same integration with a second factor bolted on, which this

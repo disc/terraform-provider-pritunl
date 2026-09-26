@@ -2,6 +2,7 @@ package pritunl
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -47,6 +48,7 @@ type Client interface {
 	StartServer(serverId string) error
 	StopServer(serverId string) error
 
+	PingWebServer(ctx context.Context) error
 	GetSettings() (Settings, error)
 	UpdateSettings(settings Settings) error
 
@@ -365,6 +367,10 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 
 	if v, ok := serverData["mss_fix"]; ok {
 		serverStruct.MssFix = v.(int)
+	}
+
+	if v, ok := serverData["tun_mtu"]; ok {
+		serverStruct.TunMtu = v.(int)
 	}
 
 	if v, ok := serverData["max_devices"]; ok {
@@ -856,6 +862,33 @@ func (c client) DetachHostFromServer(hostId, serverId string) error {
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Non-200 response on detaching the host from the server\nbody=%s", body)
+	}
+
+	return nil
+}
+
+// PingWebServer tells whether the web server answers again after a restart.
+// The request honors the context, so a listener that accepts a connection and
+// then hangs cannot outlive the caller's deadline the way TestApiCall can.
+// The error is returned wrapped, which lets the caller tell a TLS certificate
+// verification failure apart: right after the settings resource replaced or
+// reset the certificate, being presented one the client does not trust is
+// itself proof the server is up and serving again.
+func (c client) PingWebServer(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", "/state", nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("PingWebServer: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("non-200 response from the web server\ncode=%d\nbody=%s\n", resp.StatusCode, body)
 	}
 
 	return nil
