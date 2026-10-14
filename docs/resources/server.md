@@ -62,6 +62,7 @@ The organization resource allows managing information about a particular Pritunl
 - `search_domain` (String) DNS search domain for clients. Separate multiple search domains by a comma.
 - `session_timeout` (Number) Disconnect users after the specified number of seconds.
 - `sso_auth` (Boolean) Require client to authenticate with single sign-on provider on each connection using web browser. Requires client to have access to Pritunl web server port and running updated Pritunl Client. Single sign-on provider must already be configured for this feature to work properly
+- `sso_webauth` (Boolean) Enable Single Sign-On Mobile Support for OpenVPN mobile clients (Pritunl >= 1.34.4763.45). Requires `sso_auth` to also be enabled.
 - `status` (String) The status of the server
 - `tun_mtu` (Number) Optional, connection MTU value. This option sets the OpenVPN and WireGuard tunnel interface MTU value on both the client and server. Changing this option can break client configurations if not updated with configuration sync or reimported. Try adjusting MSS MTU and Fragment MTU before attempting to modify this value. This option should be left blank to allow the server to detect the optimal MTU. Refer to the debugging documentation to resolve MTU issues. Should never exceed 1500
 - `vxlan` (Boolean) Use VXLan for routing client-to-client traffic with replicated servers.

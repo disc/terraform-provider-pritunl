@@ -295,6 +295,10 @@ func (c client) CreateServer(serverData map[string]interface{}) (*Server, error)
 		serverStruct.SsoAuth = v.(bool)
 	}
 
+	if v, ok := serverData["sso_webauth"]; ok {
+		serverStruct.SsoWebauth = v.(bool)
+	}
+
 	if v, ok := serverData["otp_auth"]; ok {
 		serverStruct.OtpAuth = v.(bool)
 	}

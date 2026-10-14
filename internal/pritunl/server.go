@@ -51,6 +51,7 @@ type Server struct {
 	DnsMapping       bool     `json:"dns_mapping,omitempty"`
 	PreConnectMsg    string   `json:"pre_connect_msg,omitempty"`
 	SsoAuth          bool     `json:"sso_auth,omitempty"`
+	SsoWebauth       bool     `json:"sso_webauth,omitempty"`
 	OtpAuth          bool     `json:"otp_auth,omitempty"`
 	DeviceAuth       bool     `json:"device_auth,omitempty"`
 	DynamicFirewall  bool     `json:"dynamic_firewall,omitempty"`
