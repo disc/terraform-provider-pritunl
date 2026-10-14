@@ -200,6 +200,12 @@ func resourceServer() *schema.Resource {
 				Optional:    true,
 				Description: "Require client to authenticate with single sign-on provider on each connection using web browser. Requires client to have access to Pritunl web server port and running updated Pritunl Client. Single sign-on provider must already be configured for this feature to work properly",
 			},
+			"sso_webauth": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Enable Single Sign-On Mobile Support for OpenVPN mobile clients (Pritunl >= 1.34.4763.45). Requires sso_auth to also be enabled.",
+			},
 			"otp_auth": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -552,6 +558,7 @@ func resourceReadServer(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("network_wg", server.NetworkWG)
 	d.Set("port_wg", server.PortWG)
 	d.Set("sso_auth", server.SsoAuth)
+	d.Set("sso_webauth", server.SsoWebauth)
 	d.Set("otp_auth", server.OtpAuth)
 	d.Set("device_auth", server.DeviceAuth)
 	d.Set("dynamic_firewall", server.DynamicFirewall)
@@ -677,6 +684,7 @@ func resourceCreateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		"network_wg":         d.Get("network_wg"),
 		"port_wg":            d.Get("port_wg"),
 		"sso_auth":           d.Get("sso_auth"),
+		"sso_webauth":        d.Get("sso_webauth"),
 		"otp_auth":           d.Get("otp_auth"),
 		"device_auth":        d.Get("device_auth"),
 		"dynamic_firewall":   d.Get("dynamic_firewall"),
@@ -836,6 +844,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 
 	if d.HasChange("sso_auth") {
 		server.SsoAuth = d.Get("sso_auth").(bool)
+	}
+
+	if d.HasChange("sso_webauth") {
+		server.SsoWebauth = d.Get("sso_webauth").(bool)
 	}
 
 	if d.HasChange("otp_auth") {
