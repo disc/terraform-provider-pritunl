@@ -21,22 +21,22 @@ type Server struct {
 	Hash             string   `json:"hash,omitempty"`
 	Port             int      `json:"port,omitempty"`
 	Network          string   `json:"network,omitempty"`
-	WG               bool     `json:"wg,omitempty"`
+	WG               bool     `json:"wg"`
 	PortWG           int      `json:"port_wg,omitempty"`
 	NetworkWG        string   `json:"network_wg,omitempty"`
 	NetworkMode      string   `json:"network_mode,omitempty"`
 	NetworkStart     string   `json:"network_start,omitempty"`
 	NetworkEnd       string   `json:"network_end,omitempty"`
-	RestrictRoutes   bool     `json:"restrict_routes,omitempty"`
-	IPv6             bool     `json:"ipv6,omitempty"`
-	IPv6Firewall     bool     `json:"ipv6_firewall,omitempty"`
+	RestrictRoutes   bool     `json:"restrict_routes"`
+	IPv6             bool     `json:"ipv6"`
+	IPv6Firewall     bool     `json:"ipv6_firewall"`
 	BindAddress      string   `json:"bind_address,omitempty"`
 	DhParamBits      int      `json:"dh_param_bits,omitempty"`
 	Groups           []string `json:"groups,omitempty"`
-	MultiDevice      bool     `json:"multi_device,omitempty"`
+	MultiDevice      bool     `json:"multi_device"`
 	DnsServers       []string `json:"dns_servers,omitempty"`
 	SearchDomain     string   `json:"search_domain,omitempty"`
-	InterClient      bool     `json:"inter_client,omitempty"`
+	InterClient      bool     `json:"inter_client"`
 	PingInterval     int      `json:"ping_interval,omitempty"`
 	PingTimeout      int      `json:"ping_timeout,omitempty"`
 	LinkPingInterval int      `json:"link_ping_interval,omitempty"`
@@ -47,20 +47,20 @@ type Server struct {
 	MaxClients       int      `json:"max_clients,omitempty"`
 	MaxDevices       int      `json:"max_devices,omitempty"`
 	ReplicaCount     int      `json:"replica_count,omitempty"`
-	VxLan            bool     `json:"vxlan,omitempty"`
-	DnsMapping       bool     `json:"dns_mapping,omitempty"`
+	VxLan            bool     `json:"vxlan"`
+	DnsMapping       bool     `json:"dns_mapping"`
 	PreConnectMsg    string   `json:"pre_connect_msg,omitempty"`
-	SsoAuth          bool     `json:"sso_auth,omitempty"`
-	OtpAuth          bool     `json:"otp_auth,omitempty"`
-	DeviceAuth       bool     `json:"device_auth,omitempty"`
-	DynamicFirewall  bool     `json:"dynamic_firewall,omitempty"`
+	SsoAuth          bool     `json:"sso_auth"`
+	OtpAuth          bool     `json:"otp_auth"`
+	DeviceAuth       bool     `json:"device_auth"`
+	DynamicFirewall  bool     `json:"dynamic_firewall"`
 	MssFix           int      `json:"mss_fix,omitempty"`
 	TunMtu           int      `json:"tun_mtu,omitempty"`
-	LzoCompression   bool     `json:"lzo_compression,omitempty"`
-	BlockOutsideDns  bool     `json:"block_outside_dns,omitempty"`
-	JumboFrames      bool     `json:"jumbo_frames,omitempty"`
-	Debug            bool     `json:"debug,omitempty"`
-	GeoSort          bool     `json:"geo_sort,omitempty"`
+	LzoCompression   bool     `json:"lzo_compression"`
+	BlockOutsideDns  bool     `json:"block_outside_dns"`
+	JumboFrames      bool     `json:"jumbo_frames"`
+	Debug            bool     `json:"debug"`
+	GeoSort          bool     `json:"geo_sort"`
 	Status           string   `json:"status,omitempty"`
 }
 

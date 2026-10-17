@@ -950,6 +950,10 @@ func resourceUpdateServer(ctx context.Context, d *schema.ResourceData, meta inte
 		server.DnsMapping = d.Get("dns_mapping").(bool)
 	}
 
+	if d.HasChange("inter_client") {
+		server.InterClient = d.Get("inter_client").(bool)
+	}
+
 	if d.HasChange("vxlan") {
 		server.VxLan = d.Get("vxlan").(bool)
 	}
