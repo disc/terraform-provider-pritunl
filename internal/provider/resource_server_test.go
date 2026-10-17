@@ -256,6 +256,36 @@ func TestAccPritunlServer(t *testing.T) {
 		})
 	})
 
+	t.Run("updates boolean attributes from true to false", func(t *testing.T) {
+		serverName := "tfacc-server1"
+
+		testStep := func(enabled bool) resource.TestStep {
+			return resource.TestStep{
+				Config: testPritunlServerConfigWithBoolAttributes(serverName, enabled),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("pritunl_server.test", "name", serverName),
+					resource.TestCheckResourceAttr("pritunl_server.test", "inter_client", strconv.FormatBool(enabled)),
+					resource.TestCheckResourceAttr("pritunl_server.test", "multi_device", strconv.FormatBool(enabled)),
+					resource.TestCheckResourceAttr("pritunl_server.test", "restrict_routes", strconv.FormatBool(enabled)),
+					resource.TestCheckResourceAttr("pritunl_server.test", "debug", strconv.FormatBool(enabled)),
+				),
+			}
+		}
+
+		resource.Test(t, resource.TestCase{
+			PreCheck:          func() { preCheck(t) },
+			ProviderFactories: providerFactories,
+			CheckDestroy:      testPritunlServerDestroy,
+			Steps: []resource.TestStep{
+				testStep(true),
+				testStep(false),
+				testStep(true),
+				// import test
+				importStep("pritunl_server.test"),
+			},
+		})
+	})
+
 	t.Run("creates a server with an attached organization", func(t *testing.T) {
 		serverName := "tfacc-server1"
 		orgName := "tfacc-org1"
@@ -646,6 +676,18 @@ func testPritunlServerConfigWithGeoSort(name string, geoSort bool) string {
 			geo_sort = %[2]v
 		}
 	`, name, geoSort)
+}
+
+func testPritunlServerConfigWithBoolAttributes(name string, enabled bool) string {
+	return fmt.Sprintf(`
+		resource "pritunl_server" "test" {
+			name            = "%[1]s"
+			inter_client    = %[2]v
+			multi_device    = %[2]v
+			restrict_routes = %[2]v
+			debug           = %[2]v
+		}
+	`, name, enabled)
 }
 
 func testPritunlServerConfigWithAttachedOrganization(name, organizationName string) string {
